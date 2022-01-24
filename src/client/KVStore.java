@@ -20,7 +20,7 @@ public class KVStore implements KVCommInterface {
      * @param port    the port of the KVServer
      */
     public KVStore(String address, int port) {
-        // TODO Auto-generated method stub
+        // TODO: this should be mainly using the communciation code from echo and injecting it
 		// create the file store if it doesn't exist
 		boolean storeCreated = createStore();
 
@@ -79,8 +79,6 @@ public class KVStore implements KVCommInterface {
             return new KVMessage(key, value, IKVMessage.StatusType.PUT_UPDATE);
         } else {
             // delete
-
-            // keep on trying to delete it until it succeeds
             // TODO: change this because it will likely break something
             boolean fileDeleteSuccess = file.delete();
             return new KVMessage(key, null, fileDeleteSuccess ? IKVMessage.StatusType.DELETE_SUCCESS : IKVMessage.StatusType.DELETE_ERROR);

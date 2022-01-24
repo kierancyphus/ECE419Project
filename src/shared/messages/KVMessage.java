@@ -25,4 +25,11 @@ public class KVMessage implements IKVMessage {
     public StatusType getStatus() {
         return this.status;
     }
+
+    /**
+     * To string used when serializing the message
+     * */
+    public String toString() {
+        return this.getStatus() + " " + this.getKey() + " " + this.getValue();
+    }
 }
