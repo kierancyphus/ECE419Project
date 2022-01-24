@@ -28,12 +28,12 @@ public class Messager {
     private OutputStream output;
 
     /**
-     * Constructs a new CientConnection object for a given TCP socket.
+     * Constructs a new Connection object for a given TCP socket.
      *
-     * @param clientSocket the Socket object for the client connection.
+     * @param socket the Socket object for the connection.
      */
-    public Messager(Socket clientSocket) {
-        this.clientSocket = clientSocket;
+    public Messager(Socket socket) {
+        this.clientSocket = socket;
 
         initializeStreams();
     }

@@ -1,0 +1,135 @@
+package app_kvServer;
+
+import org.apache.log4j.Logger;
+import shared.messages.IKVMessage;
+import shared.messages.KVMessage;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.Scanner;
+import java.util.stream.Stream;
+
+public class KVRepo {
+    private String storePath;
+    private static Logger logger = Logger.getRootLogger();
+
+    public KVRepo() {
+        // create the file store if it doesn't exist
+        boolean storeCreated = createStore();
+
+        if (!storeCreated) {
+            logger.error("Error! Could not create the Repo folder.");
+            // shit
+        }
+
+        this.storePath = "./store/";
+    }
+
+    public IKVMessage put(String key, String value) {
+        // if we can't write to a file, then it means that it's in use
+
+        String filename = this.storePath + key;
+        File file = new File(filename);
+
+        boolean isNewKey;
+        try {
+            isNewKey = file.createNewFile();
+        } catch (Exception e) {
+            logger.error("Error! Could not create entry for new key");
+            return new KVMessage(key, value, IKVMessage.StatusType.PUT_ERROR);
+        }
+
+        // TODO: there is a race condition here - something might lock the file right after we created it
+        if (isNewKey) {
+            // TODO: this lock should loop
+            lockFile(file);
+            try {
+                writeToFile(filename, value);
+                unlockFile(file);
+                return new KVMessage(key, value, IKVMessage.StatusType.PUT_SUCCESS);
+            } catch (IOException e) {
+                unlockFile(file);
+                return new KVMessage(key, value, IKVMessage.StatusType.PUT_ERROR);
+            }
+        } else if (value != null) {
+            // update
+
+            // need to wait for file to become available
+            while (!file.canWrite()) {
+            }
+
+            // TODO: have a check for if the file got deleted
+            lockFile(file);
+            try {
+                writeToFile(filename, value);
+                unlockFile(file);
+                return new KVMessage(key, value, IKVMessage.StatusType.PUT_UPDATE);
+            } catch (IOException e) {
+                unlockFile(file);
+                return new KVMessage(key, value, IKVMessage.StatusType.PUT_ERROR);
+            }
+        } else {
+            // delete
+            // TODO: change this because it will likely break something - Need to check what errors it throws
+            boolean fileDeleteSuccess = file.delete();
+            return new KVMessage(key, null, fileDeleteSuccess ? IKVMessage.StatusType.DELETE_SUCCESS : IKVMessage.StatusType.DELETE_ERROR);
+        }
+    }
+
+    public IKVMessage get(String key) {
+        String filename = "./store/" + key;
+        File file = new File(filename);
+
+        try {
+            while (!file.canWrite()) {
+            }
+            Scanner scanner = new Scanner(file);
+            String value = scanner.nextLine();
+            return new KVMessage(key, value, IKVMessage.StatusType.GET_SUCCESS);
+        } catch (FileNotFoundException e) {
+            return new KVMessage(key, null, IKVMessage.StatusType.GET_ERROR);
+        }
+    }
+
+    private static void writeToFile(String filename, String value) throws IOException {
+        FileWriter writer = new FileWriter(filename);
+        writer.write(value);
+        writer.close();
+    }
+
+    private boolean createStore() {
+        File store = new File("./store");
+        if (!store.exists()) {
+            return store.mkdirs();
+        }
+        return true;
+    }
+
+    private boolean lockFile(File file) {
+        return file.setWritable(false, false) && file.setWritable(true, true);
+    }
+
+    private boolean unlockFile(File file) {
+        return file.setWritable(true, false);
+    }
+
+    public void nukeStore() {
+        // TODO: make this return something more useful
+        File file = new File(this.storePath);
+        for (File otherFile: file.listFiles()) {
+            otherFile.delete();
+        }
+    }
+
+    public void listKeys() {
+        File file = new File(this.storePath);
+        for (File otherFile: file.listFiles()) {
+            System.out.println(otherFile.getName());
+        }
+        System.out.println("Done listing files");
+    }
+}
+

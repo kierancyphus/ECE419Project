@@ -3,10 +3,10 @@ package app_kvServer;
 import org.apache.log4j.Logger;
 import server.TextMessage;
 import shared.Messager;
+import shared.messages.IKVMessage;
+import shared.messages.KVMessage;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.Socket;
 
 /**
@@ -24,16 +24,18 @@ public class KVClientConnection implements Runnable {
 
     private Socket clientSocket;
     private Messager messager;
+    private KVRepo repo;
 
     /**
      * Constructs a new CientConnection object for a given TCP socket.
      *
      * @param clientSocket the Socket object for the client connection.
      */
-    public KVClientConnection(Socket clientSocket) {
+    public KVClientConnection(Socket clientSocket, KVRepo repo) {
         this.clientSocket = clientSocket;
         this.isOpen = true;
         this.messager = new Messager(clientSocket);
+        this.repo = repo;
     }
 
     /**
@@ -51,13 +53,31 @@ public class KVClientConnection implements Runnable {
                 try {
                     TextMessage latestMsg = messager.receiveMessage();
 
-                    // TODO: IKVMessage message = parseMessage(...)
-                    // if message.status = ...
+                    IKVMessage message = parseMessage(latestMsg.getMsg());
 
-                    messager.sendMessage(latestMsg);
+                    System.out.println(message.getStatus() + message.getKey() + message.getValue());
 
-                    /* connection either terminated by the client or lost due to
-                     * network problems*/
+                    if (message == null) {
+                        // TODO: error message
+//                        messager.sendMessage();
+                        continue;
+                    }
+
+                    IKVMessage response;
+
+                    if (message.getStatus() == IKVMessage.StatusType.GET) {
+                        response = repo.get(message.getKey());
+                    } else if (message.getStatus() == IKVMessage.StatusType.PUT) {
+                        response = repo.put(message.getKey(), message.getValue());
+                    } else {
+                        response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
+                    }
+
+
+                    messager.sendMessage(new TextMessage(response.toString()));
+
+                /* connection either terminated by the client or lost due to
+                 * network problems*/
                 } catch (IOException ioe) {
                     logger.error("Error! Connection lost!");
                     isOpen = false;
@@ -70,6 +90,22 @@ public class KVClientConnection implements Runnable {
         } finally {
             messager.closeConnections();
         }
+    }
+
+    private IKVMessage parseMessage(String message) {
+        String[] parts = message.split(" ");
+        IKVMessage kvMessage = null;
+        try {
+            String key = parts[1];
+            String value = parts[2];
+            IKVMessage.StatusType status = IKVMessage.StatusType.values()[Integer.parseInt(parts[0])];
+            kvMessage = new KVMessage(key, value, status);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            logger.error("Error! Message could not be parsed. Make sure it is in the correct format.");
+        } catch (NumberFormatException e) {
+            logger.error("Error! Could not parse message status.");
+        }
+        return kvMessage;
     }
 
 }
