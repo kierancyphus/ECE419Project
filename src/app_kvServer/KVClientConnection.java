@@ -1,7 +1,7 @@
 package app_kvServer;
 
 import org.apache.log4j.Logger;
-import server.TextMessage;
+import shared.messages.TextMessage;
 import shared.Messager;
 import shared.messages.IKVMessage;
 import shared.messages.KVMessage;
@@ -49,21 +49,14 @@ public class KVClientConnection implements Runnable {
                             + clientSocket.getLocalAddress() + " / "
                             + clientSocket.getLocalPort()));
 
+            IKVMessage message;
+            IKVMessage response;
+
             while (isOpen) {
                 try {
                     TextMessage latestMsg = messager.receiveMessage();
 
-                    IKVMessage message = parseMessage(latestMsg.getMsg());
-
-                    System.out.println(message.getStatus() + message.getKey() + message.getValue());
-
-                    if (message == null) {
-                        // TODO: error message
-//                        messager.sendMessage();
-                        continue;
-                    }
-
-                    IKVMessage response;
+                    message = parseMessage(latestMsg.getMsg());
 
                     if (message.getStatus() == IKVMessage.StatusType.GET) {
                         response = repo.get(message.getKey());
@@ -73,8 +66,7 @@ public class KVClientConnection implements Runnable {
                         response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
                     }
 
-
-                    messager.sendMessage(new TextMessage(response.toString()));
+                    messager.sendMessage(new TextMessage(response));
 
                 /* connection either terminated by the client or lost due to
                  * network problems*/

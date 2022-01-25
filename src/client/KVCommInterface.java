@@ -42,9 +42,4 @@ public interface KVCommInterface {
 	 *             KV server).
 	 */
 	public IKVMessage get(String key) throws Exception;
-
-	/**
-	 * Clears memory
-	 * */
-	public void nukeStore();
 }

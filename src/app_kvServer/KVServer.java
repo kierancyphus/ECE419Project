@@ -1,5 +1,7 @@
 package app_kvServer;
 
+import logger.LogSetup;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import shared.messages.IKVMessage;
 
@@ -7,13 +9,13 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Objects;
 
 public class KVServer extends Thread implements IKVServer {
     private String hostname;
     private int port;
     int cacheSize;
-    // TODO: Change to enum
-    String strategy;
+    IKVServer.CacheStrategy strategy;
     KVRepo repo;
 
     private static Logger logger = Logger.getRootLogger();
@@ -34,8 +36,14 @@ public class KVServer extends Thread implements IKVServer {
     public KVServer(int port, int cacheSize, String strategy) {
         this.port = port;
         this.cacheSize = cacheSize;
-        this.strategy = strategy;
         this.repo = new KVRepo();
+        if (Objects.equals(strategy, "FIFO")) {
+            this.strategy = CacheStrategy.FIFO;
+        } else if (Objects.equals(strategy, "LRU")) {
+            this.strategy = CacheStrategy.LRU;
+        } else {
+            this.strategy = CacheStrategy.LFU;
+        }
     }
 
     @Override
@@ -52,20 +60,17 @@ public class KVServer extends Thread implements IKVServer {
 
     @Override
     public CacheStrategy getCacheStrategy() {
-        // TODO Auto-generated method stub
-        return IKVServer.CacheStrategy.None;
+        return this.strategy;
     }
 
     @Override
     public int getCacheSize() {
-        // TODO Auto-generated method stub
         return this.cacheSize;
     }
 
     @Override
     public boolean inStorage(String key) {
-        // TODO Auto-generated method stub
-        return false;
+        return this.repo.inStorage(key);
     }
 
     @Override
@@ -76,14 +81,12 @@ public class KVServer extends Thread implements IKVServer {
 
     @Override
     public String getKV(String key) throws Exception {
-        // TODO: these are never actually used because the individual threads access the store
         IKVMessage response = this.repo.get(key);
         return response.getValue();
     }
 
     @Override
     public void putKV(String key, String value) throws Exception {
-        // TODO: same as above
         this.repo.put(key, value);
     }
 
@@ -138,8 +141,7 @@ public class KVServer extends Thread implements IKVServer {
         try {
             serverSocket.close();
         } catch (IOException e) {
-            logger.error("Error! " +
-                    "Unable to close socket on port: " + port, e);
+            logger.error("Error! " + "Unable to close socket on port: " + port, e);
         }
     }
 
@@ -161,6 +163,33 @@ public class KVServer extends Thread implements IKVServer {
                 logger.error("Port " + port + " is already bound!");
             }
             return false;
+        }
+    }
+
+    /**
+     * Main entry point for the m1 server application.
+     * @param args contains the port number at args[0].
+     */
+    public static void main(String[] args) {
+        try {
+            new LogSetup("logs/server.log", Level.ALL);
+            if(args.length != 3) {
+                System.out.println("Error! Invalid number of arguments!");
+                System.out.println("Usage: Server <port> <cacheSize> <stategy>!");
+            } else {
+                int port = Integer.parseInt(args[0]);
+                int cacheSize = Integer.parseInt(args[1]);
+                String strategy = args[2];
+                new KVServer(port, cacheSize, strategy).start();
+            }
+        } catch (IOException e) {
+            System.out.println("Error! Unable to initialize logger!");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (NumberFormatException nfe) {
+            System.out.println("Error! Invalid argument <port>! Not a number!");
+            System.out.println("Usage: Server <port>!");
+            System.exit(1);
         }
     }
 

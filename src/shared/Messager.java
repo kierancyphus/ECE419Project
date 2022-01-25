@@ -1,7 +1,7 @@
 package shared;
 
 import org.apache.log4j.Logger;
-import server.TextMessage;
+import shared.messages.TextMessage;
 
 import java.io.IOException;
 import java.io.InputStream;

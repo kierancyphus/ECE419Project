@@ -1,9 +1,6 @@
 package shared.messages;
 
-import java.io.Serializable;
-
-// TODO: this needs to implement serializable
-public class KVMessage implements IKVMessage, Serializable {
+public class KVMessage implements IKVMessage {
     String key;
     String value;
     IKVMessage.StatusType status;
@@ -29,9 +26,6 @@ public class KVMessage implements IKVMessage, Serializable {
         return this.status;
     }
 
-    /**
-     * Used to get serialized message content
-     * */
     public String toString() {
         return this.getStatus() + " " + this.getKey() + " " + this.getValue();
     }
