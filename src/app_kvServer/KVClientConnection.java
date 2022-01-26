@@ -2,7 +2,7 @@ package app_kvServer;
 
 import org.apache.log4j.Logger;
 import shared.messages.TextMessage;
-import shared.Messager;
+import shared.Messenger;
 import shared.messages.IKVMessage;
 import shared.messages.KVMessage;
 
@@ -23,7 +23,7 @@ public class KVClientConnection implements Runnable {
     private boolean isOpen;
 
     private Socket clientSocket;
-    private Messager messager;
+    private Messenger messenger;
     private KVRepo repo;
 
     /**
@@ -34,7 +34,7 @@ public class KVClientConnection implements Runnable {
     public KVClientConnection(Socket clientSocket, KVRepo repo) {
         this.clientSocket = clientSocket;
         this.isOpen = true;
-        this.messager = new Messager(clientSocket);
+        this.messenger = new Messenger(clientSocket);
         this.repo = repo;
     }
 
@@ -44,7 +44,7 @@ public class KVClientConnection implements Runnable {
      */
     public void run() {
         try {
-            messager.sendMessage(new TextMessage(
+            messenger.sendMessage(new TextMessage(
                     "Connection to KVStore server established: "
                             + clientSocket.getLocalAddress() + " / "
                             + clientSocket.getLocalPort()));
@@ -54,7 +54,7 @@ public class KVClientConnection implements Runnable {
 
             while (isOpen) {
                 try {
-                    TextMessage latestMsg = messager.receiveMessage();
+                    TextMessage latestMsg = messenger.receiveMessage();
 
                     message = parseMessage(latestMsg.getMsg());
 
@@ -66,7 +66,7 @@ public class KVClientConnection implements Runnable {
                         response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
                     }
 
-                    messager.sendMessage(new TextMessage(response));
+                    messenger.sendMessage(new TextMessage(response));
 
                 /* connection either terminated by the client or lost due to
                  * network problems*/
@@ -80,7 +80,7 @@ public class KVClientConnection implements Runnable {
             logger.error("Error! Connection could not be established!", ioe);
 
         } finally {
-            messager.closeConnections();
+            messenger.closeConnections();
         }
     }
 
