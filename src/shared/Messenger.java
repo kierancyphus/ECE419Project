@@ -16,7 +16,7 @@ import java.net.Socket;
  * The class also implements the echo functionality. Thus whenever a message
  * is received it is going to be echoed back to the client.
  */
-public class Messager {
+public class Messenger {
 
     private static Logger logger = Logger.getRootLogger();
 
@@ -32,7 +32,7 @@ public class Messager {
      *
      * @param socket the Socket object for the connection.
      */
-    public Messager(Socket socket) {
+    public Messenger(Socket socket) {
         this.clientSocket = socket;
 
         initializeStreams();
