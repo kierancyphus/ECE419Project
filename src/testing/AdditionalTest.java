@@ -14,4 +14,10 @@ public class AdditionalTest extends TestCase {
 	}
 
 
+	@Test
+	public void testString() {
+		String test = "something" + null + " else";
+		System.out.println(test);
+	}
+
 }

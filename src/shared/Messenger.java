@@ -40,28 +40,18 @@ public class Messenger {
 
     private void initializeStreams() {
         try {
+            logger.info("Attempting to initialize input and output");
             output = clientSocket.getOutputStream();
             input = clientSocket.getInputStream();
 
         } catch (IOException ioe) {
             logger.error("Error! Connection could not be established!", ioe);
-
-        } finally {
-
-            try {
-                if (clientSocket != null) {
-                    input.close();
-                    output.close();
-                    clientSocket.close();
-                }
-            } catch (IOException ioe) {
-                logger.error("Error! Unable to tear down connection!", ioe);
-            }
         }
     }
 
     public void closeConnections() {
         try {
+            logger.info("Attempting to close all connections.");
             if (clientSocket != null) {
                 input.close();
                 output.close();
