@@ -41,6 +41,7 @@ public class KVClient implements IKVClient{
     }
 
     private void handleCommand(String cmdLine) {
+        // TODO Figure out if splitting by all whitespace is ok or if we should like be more careful since when we parse it back we just add spaces and like that's def not ideal and jsut not good
         String[] tokens = cmdLine.split("\\s+");
 
         if(tokens[0].equals("quit")) {
