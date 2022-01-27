@@ -32,6 +32,7 @@ public class Client extends Thread {
         listeners = new HashSet<ClientSocketListener>();
         setRunning(true);
         logger.info("Connection established");
+        logger.info("Connection established");
     }
 
     /**
@@ -55,8 +56,7 @@ public class Client extends Thread {
                         try {
                             tearDownConnection();
                             for (ClientSocketListener listener : listeners) {
-                                listener.handleStatus(
-                                        SocketStatus.CONNECTION_LOST);
+                                listener.handleStatus(SocketStatus.CONNECTION_LOST);
                             }
                         } catch (IOException e) {
                             logger.error("Unable to close connection!");

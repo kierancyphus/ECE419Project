@@ -11,6 +11,13 @@ public class KVMessage implements IKVMessage {
         this.status = status;
     }
 
+    public KVMessage(TextMessage textMessage) {
+        String[] tokens = textMessage.getMsg().trim().split(" ");
+        this.status = IKVMessage.StatusType.valueOf(tokens[0]);
+        this.key = tokens[1];
+        this.value = tokens[2].equals("null") ? null : tokens[2];
+    }
+
     @Override
     public String getKey() {
         return this.key;

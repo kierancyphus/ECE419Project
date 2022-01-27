@@ -18,13 +18,10 @@ import java.net.Socket;
  */
 public class KVClientConnection implements Runnable {
 
-    private static Logger logger = Logger.getRootLogger();
-
+    private static final Logger logger = Logger.getRootLogger();
+    private final Messenger messenger;
+    private final KVRepo repo;
     private boolean isOpen;
-
-    private Socket clientSocket;
-    private Messenger messenger;
-    private KVRepo repo;
 
     /**
      * Constructs a new CientConnection object for a given TCP socket.
@@ -32,7 +29,7 @@ public class KVClientConnection implements Runnable {
      * @param clientSocket the Socket object for the client connection.
      */
     public KVClientConnection(Socket clientSocket, KVRepo repo) {
-        this.clientSocket = clientSocket;
+        logger.info("Initializing the Client connection with " + clientSocket.getPort());
         this.isOpen = true;
         this.messenger = new Messenger(clientSocket);
         this.repo = repo;
@@ -44,10 +41,6 @@ public class KVClientConnection implements Runnable {
      */
     public void run() {
         try {
-            messenger.sendMessage(new TextMessage(
-                    "Connection to KVStore server established: "
-                            + clientSocket.getLocalAddress() + " / "
-                            + clientSocket.getLocalPort()));
 
             IKVMessage message;
             IKVMessage response;
@@ -56,7 +49,7 @@ public class KVClientConnection implements Runnable {
                 try {
                     TextMessage latestMsg = messenger.receiveMessage();
 
-                    message = parseMessage(latestMsg.getMsg());
+                    message = new KVMessage(latestMsg);
 
                     if (message.getStatus() == IKVMessage.StatusType.GET) {
                         response = repo.get(message.getKey());
@@ -65,39 +58,18 @@ public class KVClientConnection implements Runnable {
                     } else {
                         response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
                     }
-
                     messenger.sendMessage(new TextMessage(response));
 
                 /* connection either terminated by the client or lost due to
                  * network problems*/
                 } catch (IOException ioe) {
-                    logger.error("Error! Connection lost!");
+                    logger.error("Error! Connection lost!", ioe);
                     isOpen = false;
                 }
             }
-
-        } catch (IOException ioe) {
-            logger.error("Error! Connection could not be established!", ioe);
 
         } finally {
             messenger.closeConnections();
         }
     }
-
-    private IKVMessage parseMessage(String message) {
-        String[] parts = message.split(" ");
-        IKVMessage kvMessage = null;
-        try {
-            String key = parts[1];
-            String value = parts[2];
-            IKVMessage.StatusType status = IKVMessage.StatusType.values()[Integer.parseInt(parts[0])];
-            kvMessage = new KVMessage(key, value, status);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            logger.error("Error! Message could not be parsed. Make sure it is in the correct format.");
-        } catch (NumberFormatException e) {
-            logger.error("Error! Could not parse message status.");
-        }
-        return kvMessage;
-    }
-
 }
