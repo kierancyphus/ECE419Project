@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Objects;
 
 public class KVServer extends Thread implements IKVServer {
     private String hostname;
@@ -36,14 +35,24 @@ public class KVServer extends Thread implements IKVServer {
     public KVServer(int port, int cacheSize, String strategy) {
         this.port = port;
         this.cacheSize = cacheSize;
-        this.repo = new KVRepo();
-        if (Objects.equals(strategy, "FIFO")) {
-            this.strategy = CacheStrategy.FIFO;
-        } else if (Objects.equals(strategy, "LRU")) {
+        try {
+            this.strategy = CacheStrategy.valueOf(strategy);
+        } catch (IllegalArgumentException e) {
             this.strategy = CacheStrategy.LRU;
-        } else {
-            this.strategy = CacheStrategy.LFU;
         }
+        this.repo = new KVRepo(cacheSize, this.strategy);
+
+    }
+
+    public KVServer(int port, int cacheSize, String strategy, String storePath) {
+        this.port = port;
+        this.cacheSize = cacheSize;
+        try {
+            this.strategy = CacheStrategy.valueOf(strategy);
+        } catch (IllegalArgumentException e) {
+            this.strategy = CacheStrategy.LRU;
+        }
+        this.repo = new KVRepo(cacheSize, this.strategy, storePath);
     }
 
     @Override

@@ -1,9 +1,12 @@
 package shared.messages;
 
+import org.apache.log4j.Logger;
+
 public class KVMessage implements IKVMessage {
-    String key;
-    String value;
-    IKVMessage.StatusType status;
+    private String key;
+    private String value;
+    private IKVMessage.StatusType status;
+    private final static Logger logger = Logger.getRootLogger();
 
     public KVMessage(String key, String value, IKVMessage.StatusType status) {
         this.key = key;

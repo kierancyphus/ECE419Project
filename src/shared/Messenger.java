@@ -3,9 +3,7 @@ package shared;
 import org.apache.log4j.Logger;
 import shared.messages.TextMessage;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 
 
@@ -26,6 +24,7 @@ public class Messenger {
     private Socket clientSocket;
     private InputStream input;
     private OutputStream output;
+
 
     /**
      * Constructs a new Connection object for a given TCP socket.

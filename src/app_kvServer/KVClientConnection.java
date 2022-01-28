@@ -47,7 +47,12 @@ public class KVClientConnection implements Runnable {
 
             while (isOpen) {
                 try {
-                    TextMessage latestMsg = messenger.receiveMessage();
+
+                    // sometimes the client sends weird empty messages, so this loop ensures we ignore those
+                    TextMessage latestMsg = null;
+                    while (latestMsg == null || latestMsg.getMsg().trim().length() < 1) {
+                        latestMsg = messenger.receiveMessage();
+                    }
 
                     message = new KVMessage(latestMsg);
 
@@ -63,7 +68,7 @@ public class KVClientConnection implements Runnable {
                 /* connection either terminated by the client or lost due to
                  * network problems*/
                 } catch (IOException ioe) {
-                    logger.error("Error! Connection lost!", ioe);
+                    logger.info("Error! Connection lost or client closed connection!", ioe);
                     isOpen = false;
                 }
             }

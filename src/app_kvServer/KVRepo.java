@@ -17,16 +17,21 @@ public class KVRepo {
     private Set<String> keys;
     private int cacheSize;
     private IKVServer.CacheStrategy cacheStrategy;
+    private String defaultStorePath = "./store";
 
     public KVRepo() {
-        createStore();
+        createStore(defaultStorePath);
     }
 
     public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy) {
-        createStore();
+        createStore(defaultStorePath);
 //        createCache();
         this.cacheSize = cacheSize;
         this.cacheStrategy = strategy;
+    }
+
+    public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy, String storePath) {
+        createStore(storePath);
     }
 
     synchronized public IKVMessage put(String key, String value) {
@@ -64,76 +69,10 @@ public class KVRepo {
     }
 
     synchronized public IKVMessage get(String key) {
-        String filename = "./store/" + key;
-        File file = new File(filename);
-
-        try {
-            Scanner scanner = new Scanner(file);
-            String value = scanner.nextLine();
-            return new KVMessage(key, value, IKVMessage.StatusType.GET_SUCCESS);
-        } catch (FileNotFoundException e) {
-            return new KVMessage(key, null, IKVMessage.StatusType.GET_ERROR);
-        }
-    }
-
-    public IKVMessage putDep(String key, String value) {
-        // if we can't write to a file, then it means that it's in use
-
         String filename = this.storePath + key;
         File file = new File(filename);
 
-        boolean isNewKey;
         try {
-            isNewKey = file.createNewFile();
-        } catch (Exception e) {
-            logger.error("Error! Could not create entry for new key");
-            return new KVMessage(key, value, IKVMessage.StatusType.PUT_ERROR);
-        }
-
-        // TODO: there is a race condition here - something might lock the file right after we created it
-        if (isNewKey) {
-            // TODO: this lock should loop
-            lockFile(file);
-            try {
-                writeToFile(filename, value);
-                unlockFile(file);
-                return new KVMessage(key, value, IKVMessage.StatusType.PUT_SUCCESS);
-            } catch (IOException e) {
-                unlockFile(file);
-                return new KVMessage(key, value, IKVMessage.StatusType.PUT_ERROR);
-            }
-        } else if (value != null) {
-            // update
-
-            // need to wait for file to become available
-            while (!file.canWrite()) {
-            }
-
-            // TODO: have a check for if the file got deleted
-            lockFile(file);
-            try {
-                writeToFile(filename, value);
-                unlockFile(file);
-                return new KVMessage(key, value, IKVMessage.StatusType.PUT_UPDATE);
-            } catch (IOException e) {
-                unlockFile(file);
-                return new KVMessage(key, value, IKVMessage.StatusType.PUT_ERROR);
-            }
-        } else {
-            // delete
-            // TODO: change this because it will likely break something - Need to check what errors it throws
-            boolean fileDeleteSuccess = file.delete();
-            return new KVMessage(key, null, fileDeleteSuccess ? IKVMessage.StatusType.DELETE_SUCCESS : IKVMessage.StatusType.DELETE_ERROR);
-        }
-    }
-
-    public IKVMessage getDep(String key) {
-        String filename = "./store/" + key;
-        File file = new File(filename);
-
-        try {
-            while (!file.canWrite()) {
-            }
             Scanner scanner = new Scanner(file);
             String value = scanner.nextLine();
             return new KVMessage(key, value, IKVMessage.StatusType.GET_SUCCESS);
@@ -148,15 +87,15 @@ public class KVRepo {
         writer.close();
     }
 
-    private void createStore() {
-        File store = new File("./store");
+    private void createStore(String filepath) {
+        File store = new File(filepath);
         if (!store.exists()) {
             boolean created = store.mkdirs();
             if (!created) {
                 logger.error("Error! Could not create the Repo folder.");
             }
         }
-        this.storePath = "./store/";
+        this.storePath = filepath + "/";
     }
 
     private boolean lockFile(File file) {

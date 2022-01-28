@@ -3,5 +3,6 @@ bin
 *.tgz
 out
 store
+testStore
 .idea
 logs
