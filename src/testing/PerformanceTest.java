@@ -1,12 +1,8 @@
 package testing;
 
-import junit.framework.TestCase;
-import app_kvServer.KVServer;
 import client.KVStore;
+import junit.framework.TestCase;
 
-import shared.messages.IKVMessage;
-
-import java.io.IOException;
 import java.util.Random;
 
 public class PerformanceTest extends TestCase {
@@ -19,81 +15,87 @@ public class PerformanceTest extends TestCase {
         Exception ex = null;
         try {
             kvClient.connect();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            ex = e;
         }
         try {
-            runTime(kvClient,0.80, 10000, 200);
+            runTime(kvClient, 0.80, 10000, 200);
+//            kvClient.disconnect();
         } catch (Exception e) {
             ex = e;
         }
         assertNull(ex);
     }
-//
-//    public void test6535() {
-//        KVStore kvClient = new KVStore("localhost", 50000);
-//        Exception ex = null;
-//        try {
-//            kvClient.connect();
-//        } catch (Exception e) {
-//            ex = e;
-//        }
-//        try {
-//            runTime(kvClient,0.65, 10000, 200);
-//        } catch (Exception e) {
-//            ex = e;
-//        }
-//        assertNull(ex);
-//    }
-//
-//    public void test5050() {
-//        KVStore kvClient = new KVStore("localhost", 50000);
-//        Exception ex = null;
-//        try {
-//            kvClient.connect();
-//        } catch (Exception e) {
-//            ex = e;
-//        }
-//        try {
-//            runTime(kvClient,0.50, 10000, 200);
-//        } catch (Exception e) {
-//            ex = e;
-//        }
-//        assertNull(ex);
-//    }
-//
-//    public void test3565() {
-//        KVStore kvClient = new KVStore("localhost", 50000);
-//        Exception ex = null;
-//        try {
-//            kvClient.connect();
-//        } catch (Exception e) {
-//            ex = e;
-//        }
-//        try {
-//            runTime(kvClient,0.35, 10000, 200);
-//        } catch (Exception e) {
-//            ex = e;
-//        }
-//        assertNull(ex);
-//    }
-//
-//    public void test2080() {
-//        KVStore kvClient = new KVStore("localhost", 50000);
-//        Exception ex = null;
-//        try {
-//            kvClient.connect();
-//        } catch (Exception e) {
-//            ex = e;
-//        }try {
-//            runTime(kvClient,0.20, 10000, 200);
-//        } catch (Exception e) {
-//            ex = e;
-//        }
-//        assertNull(ex);
-//    }
 
-    public void runTime(KVStore client, double percentPuts, int numRequests, int numUniqueKeys) throws Exception{
+    public void test6535() {
+        KVStore kvClient = new KVStore("localhost", 50000);
+        Exception ex = null;
+        try {
+            kvClient.connect();
+        } catch (Exception e) {
+            ex = e;
+        }
+        try {
+            runTime(kvClient, 0.65, 10000, 200);
+//            kvClient.disconnect();
+        } catch (Exception e) {
+            ex = e;
+        }
+        assertNull(ex);
+    }
+
+    public void test5050() {
+        KVStore kvClient = new KVStore("localhost", 50000);
+        Exception ex = null;
+        try {
+            kvClient.connect();
+        } catch (Exception e) {
+            ex = e;
+        }
+        try {
+            runTime(kvClient, 0.50, 10000, 200);
+//            kvClient.disconnect();
+        } catch (Exception e) {
+            ex = e;
+        }
+        assertNull(ex);
+    }
+
+    public void test3565() {
+        KVStore kvClient = new KVStore("localhost", 50000);
+        Exception ex = null;
+        try {
+            kvClient.connect();
+        } catch (Exception e) {
+            ex = e;
+        }
+        try {
+            runTime(kvClient, 0.35, 10000, 200);
+//            kvClient.disconnect();
+        } catch (Exception e) {
+            ex = e;
+        }
+        assertNull(ex);
+    }
+
+    public void test2080() {
+        KVStore kvClient = new KVStore("localhost", 50000);
+        Exception ex = null;
+        try {
+            kvClient.connect();
+        } catch (Exception e) {
+            ex = e;
+        }
+        try {
+            runTime(kvClient, 0.20, 10000, 200);
+//            kvClient.disconnect();
+        } catch (Exception e) {
+            ex = e;
+        }
+        assertNull(ex);
+    }
+
+    public void runTime(KVStore client, double percentPuts, int numRequests, int numUniqueKeys) throws Exception {
         // Currently, caching isn't implemented, so the arguments are useless
         int putCounter = 0;
         int getCounter = 0;
