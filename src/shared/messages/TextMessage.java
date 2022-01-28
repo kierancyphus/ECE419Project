@@ -61,7 +61,7 @@ public class TextMessage implements Serializable {
      * Returns an array of bytes that represent the ASCII coded message content.
      *
      * @return the content of this message as an array of bytes
-     * 		in ASCII coding.
+     * in ASCII coding.
      */
     public byte[] getMsgBytes() {
         return msgBytes;
@@ -77,7 +77,7 @@ public class TextMessage implements Serializable {
         return tmp;
     }
 
-    private byte[] toByteArray(String s){
+    private byte[] toByteArray(String s) {
         byte[] bytes = s.getBytes();
         byte[] ctrBytes = new byte[]{LINE_FEED, RETURN};
         byte[] tmp = new byte[bytes.length + ctrBytes.length];

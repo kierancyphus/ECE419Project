@@ -176,7 +176,7 @@ public class KVRepo {
     public void nukeStore() {
         // TODO: make this return something more useful
         File file = new File(this.storePath);
-        for (File otherFile: file.listFiles()) {
+        for (File otherFile : file.listFiles()) {
             otherFile.delete();
         }
     }

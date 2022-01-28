@@ -73,7 +73,7 @@ public class KVStore implements KVCommInterface {
 
     @Override
     public void disconnect() {
-        if(clientSocket != null) {
+        if (clientSocket != null) {
             messenger.closeConnections();
             clientSocket = null;
         }
