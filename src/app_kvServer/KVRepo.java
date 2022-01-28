@@ -40,7 +40,7 @@ public class KVRepo {
             logger.error("Error! Could not create entry for new key");
             return new KVMessage(key, value, IKVMessage.StatusType.PUT_ERROR);
         }
-        if (isNewKey) {
+        if (isNewKey && value != null) {
             // create
             try {
                 writeToFile(filename, value);

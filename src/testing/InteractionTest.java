@@ -31,6 +31,11 @@ public class InteractionTest extends TestCase {
 		String value = "bar2";
 		IKVMessage response = null;
 		Exception ex = null;
+		// delete the key in case exist already
+		try {
+			kvClient.put(key, null);
+		} catch (Exception e) {
+		}
 
 		try {
 			response = kvClient.put(key, value);
