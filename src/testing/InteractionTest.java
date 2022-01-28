@@ -32,11 +32,19 @@ public class InteractionTest extends TestCase {
 		IKVMessage response = null;
 		Exception ex = null;
 
+		// delete the key value pair in case already exist
+		try {
+			response = kvClient.put(key,null);
+		} catch (Exception e) {
+		}
+
 		try {
 			response = kvClient.put(key, value);
 		} catch (Exception e) {
 			ex = e;
 		}
+		System.out.println(ex);
+		System.out.println(response.getStatus());
 
 		assertTrue(ex == null && response.getStatus() == StatusType.PUT_SUCCESS);
 	}
