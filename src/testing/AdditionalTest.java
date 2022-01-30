@@ -5,13 +5,16 @@ import org.junit.Test;
 
 import junit.framework.TestCase;
 import shared.messages.IKVMessage;
+import shared.messages.KVMessage;
+import shared.messages.TextMessage;
 
+import java.util.Collections;
 import java.util.concurrent.*;
 
 public class AdditionalTest extends TestCase {
-	
+
 	// TODO add your test cases, at least 3
-	
+
 	@Test
 	public void testPersistence() {
 		// put and disconnect, then reconnect and get
@@ -28,7 +31,7 @@ public class AdditionalTest extends TestCase {
 		}
 		// delete the key value pair in case already exist
 		try {
-			kvClient.put(key,null);
+			kvClient.put(key, null);
 		} catch (Exception e) {
 		}
 		// put
@@ -72,7 +75,7 @@ public class AdditionalTest extends TestCase {
 		}
 		// delete the key value pair in case already exist
 		try {
-			kvClient1.put(key,null);
+			kvClient1.put(key, null);
 		} catch (Exception e) {
 		}
 
@@ -138,18 +141,140 @@ public class AdditionalTest extends TestCase {
 	@Test
 	public void testConcurrencyPut() {
 		// run n put with t_max threads
-		class Task implements Runnable{
+		class Task implements Runnable {
 			private final KVStore client;
 			private final int idx;
 
-			public Task(KVStore s, int n){
+			public Task(KVStore s, int n) {
 				client = s;
 				idx = n;
 			}
 
-			public void run(){
+			public void run() {
 				try {
 					client.put(String.valueOf(idx), String.valueOf(idx));
+				} catch (Exception e) {
+				}
+			}
+		}
+
+		IKVMessage putResponse = null, getResponse = null;
+		Exception ex = null;
+		int n = 200, t_max = 100;
+		KVStore[] kvClient = new KVStore[n];
+		Runnable[] tasks = new Task[n];
+
+		try {
+			for (int i = 0; i < n; i++) {
+				kvClient[i] = new KVStore("localhost", 50000);
+				kvClient[i].connect();
+			}
+		} catch (Exception e) {
+			ex = e;
+		}
+
+		ExecutorService pool = Executors.newFixedThreadPool(t_max);
+
+		try {
+			for (int i = 0; i < n; i++) {
+				tasks[i] = new Task(kvClient[i], i);
+				pool.execute(tasks[i]);
+			}
+		} catch (Exception e) {
+			ex = e;
+		}
+		pool.shutdown();
+
+		// get them
+		try {
+			for (int i = 0; i < n; i++) {
+				getResponse = kvClient[0].get(String.valueOf(i));
+				assertEquals(getResponse.getValue(), String.valueOf(i));
+			}
+		} catch (Exception e) {
+			ex = e;
+		}
+		assertTrue(ex == null);
+	}
+
+	@Test
+	public void testConcurrencyGet() {
+		// run n get with t_max threads
+		class Task implements Callable<String> {
+			private final KVStore client;
+			private final int idx;
+
+			public Task(KVStore s, int n) {
+				client = s;
+				idx = n;
+			}
+
+			@Override
+			public String call() throws Exception {
+				try {
+					return client.get(String.valueOf(idx)).getValue();
+				} catch (Exception e) {
+				}
+				return "";
+			}
+		}
+
+		IKVMessage putResponse = null, getResponse = null;
+		Exception ex = null;
+		int n = 200, t_max = 100;
+		KVStore[] kvClient = new KVStore[n];
+		Task[] tasks = new Task[n];
+
+		try {
+			for (int i = 0; i < n; i++) {
+				kvClient[i] = new KVStore("localhost", 50000);
+				kvClient[i].connect();
+			}
+		} catch (Exception e) {
+			ex = e;
+		}
+
+		try {
+			for (int i = 0; i < n; i++) {
+				kvClient[0].put(String.valueOf(i), String.valueOf(i));
+				;
+			}
+		} catch (Exception e) {
+			ex = e;
+		}
+
+		ExecutorService executor = Executors.newFixedThreadPool(t_max);
+
+		// get them
+		try {
+			for (int i = 0; i < n; i++) {
+				tasks[i] = new Task(kvClient[i], i);
+				Future<String> result = executor.submit(tasks[i]);
+				assertEquals(result.get(), String.valueOf(i));
+			}
+		} catch (Exception e) {
+			ex = e;
+		}
+
+		executor.shutdown();
+		assertTrue(ex == null);
+	}
+
+	@Test
+	public void testConcurrencyUpdate() {
+		// run n put with t_max threads, then update them
+		class Task implements Runnable{
+			private KVStore client;
+			private int idx;
+
+			public Task(KVStore s, int n){
+				this.client = s;
+				this.idx = n;
+			}
+
+			public void run(){
+				try {
+					client.put(String.valueOf(this.idx), String.valueOf(2 * this.idx));
 				} catch(Exception e){
 				}
 			}
@@ -165,11 +290,13 @@ public class AdditionalTest extends TestCase {
 			for (int i = 0; i < n; i++){
 				kvClient[i] = new KVStore("localhost", 50000);
 				kvClient[i].connect();
+				kvClient[i].put(String.valueOf(i), String.valueOf(i));
 			}
 		} catch (Exception e) {
 			ex = e;
 		}
 
+		// update
 		ExecutorService pool = Executors.newFixedThreadPool(t_max);
 
 		try {
@@ -186,7 +313,7 @@ public class AdditionalTest extends TestCase {
 		try {
 			for (int i = 0; i < n; i++){
 				getResponse = kvClient[0].get(String.valueOf(i));
-				assertEquals(getResponse.getValue(),String.valueOf(i));
+				assertEquals(getResponse.getValue(),String.valueOf(i * 2));
 			}
 		} catch (Exception e) {
 			ex = e;
@@ -195,64 +322,101 @@ public class AdditionalTest extends TestCase {
 	}
 
 	@Test
-	public void testConcurrencyGet() {
-		// run n get with t_max threads
-		class Task implements Callable<String>{
-			private final KVStore client;
-			private final int idx;
-
-			public Task(KVStore s, int n){
-				client = s;
-				idx = n;
-			}
-
-			@Override
-			public String call() throws Exception{
-				try {
-					return client.get(String.valueOf(idx)).getValue();
-				} catch(Exception e){
-				}
-				return "";
-			}
-		}
-
-		IKVMessage putResponse = null, getResponse = null;
+	public void testValueWithSpace() {
+		String key = "a";
+		String value = "thank u next";
+		IKVMessage response = null;
 		Exception ex = null;
-		int n = 200, t_max = 100;
-		KVStore[] kvClient = new KVStore[n];
-		Task[] tasks = new Task[n];
+		KVStore kvClient = new KVStore("localhost", 50000);
 
 		try {
-			for (int i = 0; i < n; i++){
-				kvClient[i] = new KVStore("localhost", 50000);
-				kvClient[i].connect();
-			}
+			kvClient.connect();
+			kvClient.put(key, value);
 		} catch (Exception e) {
 			ex = e;
 		}
 
 		try {
-			for (int i = 0; i < n; i++){
-				kvClient[0].put(String.valueOf(i), String.valueOf(i));;
-			}
+			response = kvClient.get(key);
 		} catch (Exception e) {
 			ex = e;
 		}
 
-		ExecutorService executor = Executors.newFixedThreadPool(t_max);
+		assertTrue(ex == null && response.getValue().equals(value));
+	}
 
-		// get them
+	@Test
+	public void testEdgeCaseValues() {
+		// test some edge cases for messenger
+		Exception ex = null;
+		KVStore kvClient = new KVStore("localhost", 50000);
+
 		try {
-			for (int i = 0; i < n; i++){
-				tasks[i] = new Task(kvClient[i], i);
-				Future<String> result = executor.submit(tasks[i]);
-				assertEquals(result.get(), String.valueOf(i));
-			}
+			kvClient.connect();
+			// special characters
+			kvClient.put("test1", "~`!@#$%^&*()_+-={}[]|\\:;\"\'<>,.?/");
+			// multiple spaces
+			kvClient.put("test2", "thank   ,    u      next   !");
+			// very long string
+			kvClient.put("test3", String.join("", Collections.nCopies(10000, "hello world ")));
+			// "null" as key
+			kvClient.put("null", "test");
 		} catch (Exception e) {
 			ex = e;
 		}
 
-		executor.shutdown();
+		try {
+			assertEquals(kvClient.get("test1").getValue(), "~`!@#$%^&*()_+-={}[]|\\:;\"\'<>,.?/");
+			assertEquals(kvClient.get("test2").getValue(), "thank   ,    u      next   !");
+			assertEquals(kvClient.get("test3").getValue(),
+					String.join(" ", Collections.nCopies(10000, "hello world")));
+			assertEquals(kvClient.get("null").getValue(), "test");
+		} catch (Exception e) {
+			ex = e;
+		}
+
+		// null as value -> it should perform delete
+		try {
+			assertTrue(kvClient.put("test3", "null").getStatus() == IKVMessage.StatusType.DELETE_SUCCESS);
+		} catch (Exception e) {
+			ex = e;
+		}
+
+		assertTrue(ex == null);
+	}
+
+	@Test
+	public void testDisconnect() {
+		// test some edge cases for messenger
+		Exception ex = null;
+		KVStore kvClient = new KVStore("localhost", 50000);
+
+		try {
+			kvClient.connect();
+			kvClient.put("test", "test");
+			assertEquals(kvClient.get("test").getValue(), "test");
+			kvClient.disconnect();
+		} catch (Exception e) {
+			ex = e;
+		}
+
+		try {
+			kvClient.disconnect();
+			kvClient.put("test", "new value");
+		} catch (Exception e) {	// should throw exception because disconnected
+			ex = e;
+		}
+		assertTrue(ex != null);
+		ex = null;
+
+		try{
+			kvClient.connect();
+			// value should not be changed
+			assertEquals(kvClient.get("test").getValue(), "test");
+		} catch (Exception e) {
+			ex = e;
+		}
+
 		assertTrue(ex == null);
 	}
 
