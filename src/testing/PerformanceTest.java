@@ -20,7 +20,6 @@ public class PerformanceTest extends TestCase {
         }
         try {
             runTime(kvClient, 0.80, 10000, 200);
-//            kvClient.disconnect();
         } catch (Exception e) {
             ex = e;
         }
@@ -37,7 +36,6 @@ public class PerformanceTest extends TestCase {
         }
         try {
             runTime(kvClient, 0.65, 10000, 200);
-//            kvClient.disconnect();
         } catch (Exception e) {
             ex = e;
         }
@@ -54,7 +52,6 @@ public class PerformanceTest extends TestCase {
         }
         try {
             runTime(kvClient, 0.50, 10000, 200);
-//            kvClient.disconnect();
         } catch (Exception e) {
             ex = e;
         }
@@ -71,7 +68,6 @@ public class PerformanceTest extends TestCase {
         }
         try {
             runTime(kvClient, 0.35, 10000, 200);
-//            kvClient.disconnect();
         } catch (Exception e) {
             ex = e;
         }
@@ -88,7 +84,6 @@ public class PerformanceTest extends TestCase {
         }
         try {
             runTime(kvClient, 0.20, 10000, 200);
-//            kvClient.disconnect();
         } catch (Exception e) {
             ex = e;
         }
@@ -96,7 +91,7 @@ public class PerformanceTest extends TestCase {
     }
 
     public void runTime(KVStore client, double percentPuts, int numRequests, int numUniqueKeys) throws Exception {
-        // Currently, caching isn't implemented, so the arguments are useless
+        // Currently, caching isn't implemented
         int putCounter = 0;
         int getCounter = 0;
         long reqStart, reqEnd;
@@ -104,6 +99,7 @@ public class PerformanceTest extends TestCase {
         long[] reqTime = new long[numRequests];
         try {
             for (int i = 0; i < numRequests; i++) {
+                // Randomly choose to do put or gets based on the percentage split
                 boolean doPut = rand.nextDouble() < percentPuts;
                 String rand_key = "key" + rand.nextInt(numUniqueKeys);
                 String rand_value = "key" + rand.nextInt(numRequests);
@@ -126,7 +122,7 @@ public class PerformanceTest extends TestCase {
                 reqEnd = System.nanoTime();
                 reqTime[i] = (reqEnd - reqStart);
             }
-
+            // Calculate the total time for puts and gets
             long putTime, getTime, putMax, putMin, getMax, getMin;
             putTime = getTime = 0;
             putMax = putMin = getMax = getMin = reqTime[0];
@@ -144,7 +140,7 @@ public class PerformanceTest extends TestCase {
                 }
             }
             long totalTime = getTime + putTime;
-
+            // Calcualte the per request latency, and print values out.
             long totalAverage = totalTime / numRequests;
             long putAverage = putTime / putCounter;
             long getAverage = getTime / getCounter;
