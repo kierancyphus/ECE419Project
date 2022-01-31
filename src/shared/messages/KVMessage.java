@@ -18,7 +18,19 @@ public class KVMessage implements IKVMessage {
         String[] tokens = textMessage.getMsg().trim().split(" ");
         this.status = IKVMessage.StatusType.valueOf(tokens[0]);
         this.key = tokens[1];
-        this.value = tokens[2].equals("null") ? null : tokens[2];
+        StringBuilder val = new StringBuilder();
+        if (tokens.length > 3) {
+            for (int i = 2; i < tokens.length; i++) {
+                val.append(tokens[i]);
+                if (i != tokens.length - 1) {
+                    val.append(" ");
+                }
+            }
+            this.value = val.toString();
+        }
+        else {
+            this.value = tokens[2].equals("null") ? null : tokens[2];
+        }
     }
 
     @Override
