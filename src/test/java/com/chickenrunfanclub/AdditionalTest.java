@@ -4,7 +4,6 @@ import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -23,6 +22,12 @@ public class AdditionalTest {
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/Additional");
         server.clearStorage();
         server.start();
+
+        // This is bad practice for testing, but it looks like the server takes some time
+        // to set up before it can start accepting connections, so we just wait a second and then continue
+        long start = System.currentTimeMillis();
+        long end = start + 1000;
+        while (System.currentTimeMillis() < end) {}
     }
     // TODO add your test cases, at least 3
 
@@ -68,45 +73,24 @@ public class AdditionalTest {
     }
 
 
-	@Test
-	public void testValueWithSpace() {
-		String key = "something";
-		String value = "thank u next";
-		IKVMessage response = null;
-		Exception ex = null;
-		KVStore kvClient = new KVStore("localhost", port);
-
-		try {
-			kvClient.connect();
-			kvClient.put(key, value);
-		} catch (Exception e) {
-			ex = e;
-		}
+    @Test
+    public void testValueWithSpace() {
+        String key = "something";
+        String value = "thank u next";
+        IKVMessage response = null;
+        Exception ex = null;
+        KVStore kvClient = new KVStore("localhost", port);
 
         try {
+            kvClient.connect();
             kvClient.put(key, value);
+            response = kvClient.get(key);
         } catch (Exception e) {
             ex = e;
         }
 
-		try {
-			response = kvClient.get(key);
-		} catch (Exception e) {
-			ex = e;
-		}
-
-		if (ex != null) {
-			ex.printStackTrace();
-		}
-
-		if (response == null) {
-			System.out.println("Yikes response is none");
-		} else {
-			System.out.println("Response: " + response.getValue());
-		}
-
-		assertTrue(ex == null && response.getValue().equals(value));
-	}
+        assertTrue(ex == null && response.getValue().equals(value));
+    }
 
     @Test
     public void testTwoUserPutGet() {
