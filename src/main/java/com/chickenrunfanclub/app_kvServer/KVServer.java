@@ -154,7 +154,7 @@ public class KVServer extends Thread implements IKVServer {
         }
     }
 
-    private boolean isRunning() {
+    public boolean isRunning() {
         return this.running;
     }
 
