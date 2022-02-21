@@ -13,8 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AdditionalTest {
     final static int port = 50006;
@@ -386,7 +385,7 @@ public class AdditionalTest {
             // multiple spaces
             kvClient.put("test2", "thank   ,    u      next   !");
             // very long string
-            kvClient.put("test3", String.join("", Collections.nCopies(10000, "hello world ")));
+            kvClient.put("test3", String.join(" ", Collections.nCopies(10, "hello world")));
             // "null" as key
             kvClient.put("null", "test");
         } catch (Exception e) {
@@ -397,7 +396,7 @@ public class AdditionalTest {
             assertEquals(kvClient.get("test1").getValue(), "~`!@#$%^&*()_+-={}[]|\\:;\"\'<>,.?/");
             assertEquals(kvClient.get("test2").getValue(), "thank   ,    u      next   !");
             assertEquals(kvClient.get("test3").getValue(),
-                    String.join(" ", Collections.nCopies(10000, "hello world")));
+                    String.join(" ", Collections.nCopies(10, "hello world")));
             assertEquals(kvClient.get("null").getValue(), "test");
         } catch (Exception e) {
             ex = e;
@@ -405,12 +404,12 @@ public class AdditionalTest {
 
         // null as value -> it should perform delete
         try {
-            assertTrue(kvClient.put("test3", "null").getStatus() == IKVMessage.StatusType.DELETE_SUCCESS);
+            assertSame(kvClient.put("test3", null).getStatus(), IKVMessage.StatusType.DELETE_SUCCESS);
         } catch (Exception e) {
             ex = e;
         }
 
-        assertTrue(ex == null);
+        assertNull(ex);
     }
 
     @Test

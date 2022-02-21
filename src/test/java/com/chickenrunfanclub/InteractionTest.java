@@ -8,8 +8,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class InteractionTest {
@@ -105,7 +104,7 @@ public class InteractionTest {
 
         try {
             kvClient.put(key, value);
-            response = kvClient.put(key, "null");
+            response = kvClient.put(key, null);
 
         } catch (Exception e) {
             ex = e;
@@ -128,6 +127,8 @@ public class InteractionTest {
             ex = e;
         }
 
+//        assertTrue(ex == null);
+//        assertEquals(response.getValue(), value);
         assertTrue(ex == null && response.getValue().equals(value));
     }
 

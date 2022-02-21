@@ -1,5 +1,6 @@
 package com.chickenrunfanclub.shared.messages;
 
+import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,22 +17,10 @@ public class KVMessage implements IKVMessage {
     }
 
     public KVMessage(TextMessage textMessage) {
-        String[] tokens = textMessage.getMsg().trim().split(" ");
-        this.status = IKVMessage.StatusType.valueOf(tokens[0]);
-        this.key = tokens[1];
-        StringBuilder val = new StringBuilder();
-        if (tokens.length > 3) {
-            for (int i = 2; i < tokens.length; i++) {
-                val.append(tokens[i]);
-                if (i != tokens.length - 1) {
-                    val.append(" ");
-                }
-            }
-            this.value = val.toString();
-        }
-        else {
-            this.value = tokens[2].equals("null") ? null : tokens[2];
-        }
+        KVMessage message = new Gson().fromJson(textMessage.getMsg().trim(), KVMessage.class);
+        this.key = message.getKey();
+        this.value = message.getValue();
+        this.status = message.getStatus();
     }
 
     @Override
@@ -50,6 +39,6 @@ public class KVMessage implements IKVMessage {
     }
 
     public String toString() {
-        return this.getStatus() + " " + this.getKey() + " " + this.getValue();
+        return new Gson().toJson(this);
     }
 }
