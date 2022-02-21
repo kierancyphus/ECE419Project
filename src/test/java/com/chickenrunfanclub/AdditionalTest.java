@@ -89,16 +89,6 @@ public class AdditionalTest {
             ex = e;
         }
 
-        if (ex != null) {
-            ex.printStackTrace();
-        }
-
-        if (response == null) {
-            System.out.println("Yikes response is none");
-        } else {
-            System.out.println("Response: " + response.getValue());
-        }
-
         assertTrue(ex == null && response.getValue().equals(value));
     }
 
