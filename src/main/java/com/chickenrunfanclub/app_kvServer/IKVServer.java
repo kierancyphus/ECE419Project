@@ -1,5 +1,7 @@
 package com.chickenrunfanclub.app_kvServer;
 
+import com.chickenrunfanclub.shared.ServerMetadata;
+
 public interface IKVServer {
     public enum CacheStrategy {
         None,
@@ -86,4 +88,27 @@ public interface IKVServer {
      * Gracefully stop the server, can perform any additional actions
      */
     public void close();
+
+    /**
+     * Lock the KVServer for write operations.
+     * */
+    public void lockWrite();
+
+
+    /**
+     * Unlock the KVServer for write operations.
+     * */
+    public void unLockWrite();
+
+    /**
+     * Transfer a subset (range) of the KVServer’s data to another KVServer (reallocation before removing this server or adding a new KVServer to the ring);
+     * send a notification to the ECS, if data transfer is completed. Doesn't update the current metadata (assumed to already happen in another operation)
+     * */
+    public boolean moveData(ServerMetadata metaData);
+
+    /**
+     * Update the metadata repository of this server
+     * */
+    public void updateMetadata(ServerMetadata serverMetadata);
+
 }

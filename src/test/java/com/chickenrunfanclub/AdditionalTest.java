@@ -15,19 +15,16 @@ import java.util.concurrent.Future;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AdditionalTest {
-    final static int port = 50006;
+    final static int port = 50004;
+    final static TestUtils utils = new TestUtils();
 
     @BeforeAll
     static void setup() {
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/Additional");
         server.clearStorage();
         server.start();
-
-        // This is bad practice for testing, but it looks like the server takes some time
-        // to set up before it can start accepting connections, so we just wait a second and then continue
-        long start = System.currentTimeMillis();
-        long end = start + 1000;
-        while (System.currentTimeMillis() < end) {}
+        server.updateServerStopped(false);
+        utils.stall(1);
     }
     // TODO add your test cases, at least 3
 
@@ -42,23 +39,12 @@ public class AdditionalTest {
         KVStore kvClient = new KVStore("localhost", port);
         try {
             kvClient.connect();
-        } catch (Exception e) {
-            ex = e;
-        }
-        // delete the key value pair in case already exist
-        try {
-            kvClient.put(key, null);
-        } catch (Exception e) {
-        }
-        // put
-        try {
             putResponse = kvClient.put(key, value);
         } catch (Exception e) {
             ex = e;
         }
         // disconnect
         kvClient.disconnect();
-        kvClient = null;
         // get
         kvClient = new KVStore("localhost", port);
         try {
@@ -67,9 +53,9 @@ public class AdditionalTest {
         } catch (Exception e) {
             ex = e;
         }
-
-        assertTrue(ex == null && putResponse.getStatus() == IKVMessage.StatusType.PUT_SUCCESS
-                && getResponse.getValue().equals(value));
+        assertNull(ex);
+        assertSame(putResponse.getStatus(), IKVMessage.StatusType.PUT_SUCCESS);
+        assertEquals(getResponse.getValue(), value);
     }
 
 

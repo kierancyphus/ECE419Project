@@ -1,5 +1,9 @@
 package com.chickenrunfanclub.shared.messages;
 
+import com.chickenrunfanclub.app_kvServer.KVServer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.Serializable;
 
 /**
@@ -13,6 +17,7 @@ public class TextMessage implements Serializable {
     private byte[] msgBytes;
     private static final char LINE_FEED = 0x0A;
     private static final char RETURN = 0x0D;
+    private static Logger logger = LogManager.getLogger(TextMessage.class);
 
     /**
      * Constructs a TextMessage object with a given array of bytes that
@@ -43,6 +48,9 @@ public class TextMessage implements Serializable {
      * @param msg the String that forms the message.
      */
     public TextMessage(IKVMessage msg) {
+        if (msg == null) {
+            logger.info("Received null message");
+        }
         this.msg = msg.toString();
         this.msgBytes = toByteArray(msg.toString());
     }

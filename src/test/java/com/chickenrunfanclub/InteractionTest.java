@@ -22,6 +22,7 @@ public class InteractionTest {
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/Interaction");
         server.clearStorage();
         server.start();
+        server.updateServerStopped(false);
     }
 
     @BeforeEach
@@ -55,7 +56,8 @@ public class InteractionTest {
             ex = e;
         }
 
-        assertTrue(ex == null && response.getStatus() == StatusType.PUT_SUCCESS);
+        assertNull(ex);
+        assertSame(response.getStatus(), StatusType.PUT_SUCCESS);
     }
 
     @Test
@@ -89,9 +91,9 @@ public class InteractionTest {
         } catch (Exception e) {
             ex = e;
         }
-
-        assertTrue(ex == null && response.getStatus() == StatusType.PUT_UPDATE
-                && response.getValue().equals(updatedValue));
+        assertNull(ex);
+        assertSame(response.getStatus(), StatusType.PUT_UPDATE);
+        assertEquals(response.getValue(), updatedValue);
     }
 
     @Test
@@ -109,8 +111,8 @@ public class InteractionTest {
         } catch (Exception e) {
             ex = e;
         }
-
-        assertTrue(ex == null && response.getStatus() == StatusType.DELETE_SUCCESS);
+        assertNull(ex);
+        assertSame(response.getStatus(), StatusType.DELETE_SUCCESS);
     }
 
     @Test
@@ -127,9 +129,8 @@ public class InteractionTest {
             ex = e;
         }
 
-//        assertTrue(ex == null);
-//        assertEquals(response.getValue(), value);
-        assertTrue(ex == null && response.getValue().equals(value));
+        assertNull(ex);
+        assertEquals(response.getValue(), value);
     }
 
     @Test
@@ -143,7 +144,7 @@ public class InteractionTest {
         } catch (Exception e) {
             ex = e;
         }
-
-        assertTrue(ex == null && response.getStatus() == StatusType.GET_ERROR);
+        assertNull(ex);
+        assertSame(response.getStatus(), StatusType.GET_ERROR);
     }
 }
