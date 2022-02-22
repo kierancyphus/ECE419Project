@@ -1,7 +1,7 @@
 package com.chickenrunfanclub.app_kvServer;
 
-import com.chickenrunfanclub.logger.LogSetup;
-import org.apache.logging.log4j.Level;
+import com.chickenrunfanclub.client.KVStore;
+import com.chickenrunfanclub.shared.ServerMetadata;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
@@ -10,15 +10,16 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.*;
 
 public class KVServer extends Thread implements IKVServer {
-    private String hostname;
     private int port;
     int cacheSize;
     IKVServer.CacheStrategy strategy;
     KVRepo repo;
+    ServerMetadata serverMetadata;
 
-    private static Logger logger = LogManager.getLogger(KVServer.class);
+    private static final Logger logger = LogManager.getLogger(KVServer.class);
     private ServerSocket serverSocket;
     private boolean running;
 
@@ -53,8 +54,10 @@ public class KVServer extends Thread implements IKVServer {
         } catch (IllegalArgumentException e) {
             this.strategy = CacheStrategy.LRU;
         }
-        this.repo = new KVRepo(cacheSize, this.strategy, storePath);
+        serverMetadata = new ServerMetadata();
+        repo = new KVRepo(cacheSize, this.strategy, storePath, serverMetadata);
     }
+
 
     @Override
     public int getPort() {
@@ -64,8 +67,7 @@ public class KVServer extends Thread implements IKVServer {
 
     @Override
     public String getHostname() {
-        // TODO Auto-generated method stub
-        return null;
+        return serverMetadata.getHost();
     }
 
     @Override
@@ -154,8 +156,58 @@ public class KVServer extends Thread implements IKVServer {
         }
     }
 
+    @Override
+    public void lockWrite() {
+        serverMetadata.setWriteLock(true);
+    }
+
+    @Override
+    public void unLockWrite() {
+        serverMetadata.setWriteLock(false);
+    }
+
+    @Override
+    public boolean moveData(ServerMetadata serverMetadata) {
+        KVStore kvClient = new KVStore(serverMetadata.getHost(), serverMetadata.getPort());
+        try {
+            kvClient.connect();
+        } catch (IOException e) {
+            logger.error("Could not connect to server: " + serverMetadata.getHost() + ":" + serverMetadata.getPort());
+        }
+
+        List<Map.Entry<String, String>> failed = new ArrayList<>();
+
+        this.repo.getEntriesInHashRange(serverMetadata)
+                .forEach(entry -> {
+                    try {
+                        kvClient.put(entry.getKey(), entry.getValue());
+                    } catch (Exception e) {
+                        failed.add(entry);
+                    }
+                });
+
+        return failed.size() == 0;
+    }
+
+    /**
+     * Copies over field values from param: metadata to this.metadata. We can't directly assign it because then
+     * KVRepo's copy of metadata doesn't update.
+     * */
+    @Override
+    public void updateMetadata(ServerMetadata serverMetadata) {
+        this.serverMetadata.updateMetadata(serverMetadata);
+    }
+
+    public void updateServerStopped(boolean stopped) {
+        serverMetadata.setServerLock(stopped);
+    }
+
     private boolean isRunning() {
-        return this.running;
+        return running;
+    }
+
+    public Set<String> listKeys() {
+        return repo.listKeys();
     }
 
     private boolean initializeServer() {

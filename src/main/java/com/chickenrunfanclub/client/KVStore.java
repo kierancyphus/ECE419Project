@@ -1,11 +1,11 @@
 package com.chickenrunfanclub.client;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.chickenrunfanclub.shared.Messenger;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
 import com.chickenrunfanclub.shared.messages.TextMessage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -74,7 +74,7 @@ public class KVStore implements KVCommInterface {
 
     @Override
     public void disconnect() {
-        if(clientSocket != null) {
+        if (clientSocket != null) {
             messenger.closeConnections();
             clientSocket = null;
         }

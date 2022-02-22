@@ -48,7 +48,6 @@ public class KVClientConnection implements Runnable {
 
             while (isOpen) {
                 try {
-
                     // sometimes the client sends weird empty messages, so this loop ensures we ignore those
                     TextMessage latestMsg = null;
                     while (latestMsg == null || latestMsg.getMsg().trim().length() < 1) {
