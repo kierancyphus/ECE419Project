@@ -17,17 +17,17 @@ public class FIFOCache implements IKVCache{
     }
 
     @Override
-    public boolean inCache(String key) {
+    public synchronized boolean inCache(String key) {
         return cache.containsKey(key);
     }
 
     @Override
-    public String get(String key) {
+    public synchronized String get(String key) {
         return cache.get(key);
     }
 
     @Override
-    public void put(String key, String value) {
+    public synchronized void put(String key, String value) {
         if (value == null){
             cache.remove(key);
         } else {
@@ -36,12 +36,12 @@ public class FIFOCache implements IKVCache{
     }
 
     @Override
-    public int getCacheSize() {
+    public synchronized int getCacheSize() {
         return cacheSize;
     }
 
     @Override
-    public void clear() {
+    public synchronized void clear() {
         cache.clear();
     }
 }
