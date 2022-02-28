@@ -181,7 +181,7 @@ public class KVClient implements IKVClient {
             String value = getMessage.getValue();
             IKVMessage.StatusType status = getMessage.getStatus();
             if (status == IKVMessage.StatusType.GET_SUCCESS) {
-                System.out.println(PROMPT + value);
+                System.out.println(value);
             } else if (status == IKVMessage.StatusType.GET_ERROR) {
                 printError("Get Unsuccessful!");
             } else {

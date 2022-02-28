@@ -1,6 +1,5 @@
 package com.chickenrunfanclub.app_kvServer;
 
-import com.chickenrunfanclub.app_kvServer.kvCache.*;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.shared.ServerMetadata;
 import org.apache.logging.log4j.LogManager;
@@ -20,7 +19,6 @@ public class KVServer extends Thread implements IKVServer {
     private KVRepo repo;
     private ServerMetadata serverMetadata;
 
-    private IKVCache cache;
     private static final Logger logger = LogManager.getLogger(KVServer.class);
     private ServerSocket serverSocket;
     private boolean running;
@@ -55,7 +53,8 @@ public class KVServer extends Thread implements IKVServer {
         try {
             this.strategy = CacheStrategy.valueOf(strategy);
         } catch (IllegalArgumentException e) {
-            this.strategy = CacheStrategy.LRU;
+            logger.error("Error! Unknown cache strategy");
+            return;
         }
         serverMetadata = new ServerMetadata();
         repo = new KVRepo(cacheSize, this.strategy, storePath, serverMetadata);
@@ -90,29 +89,23 @@ public class KVServer extends Thread implements IKVServer {
 
     @Override
     public boolean inCache(String key) {
-        if(this.strategy==CacheStrategy.None) return false;
-        return cache.get(key) != null;
+        return this.repo.inCache(key);
     }
 
     @Override
     public String getKV(String key) throws Exception {
-        if(this.strategy != CacheStrategy.None){
-            String cValue = cache.get(key);
-            if(cValue!= null) return cValue;
-        }
         IKVMessage response = this.repo.get(key);
         return response.getValue();
     }
 
     @Override
     public void putKV(String key, String value) throws Exception {
-        if(this.strategy != CacheStrategy.None) cache.put(key, value);
         this.repo.put(key, value);
     }
 
     @Override
     public void clearCache() {
-        if (strategy != CacheStrategy.None) cache.clear();
+        this.repo.clearCache();
     }
 
     @Override
@@ -225,6 +218,7 @@ public class KVServer extends Thread implements IKVServer {
             serverSocket = new ServerSocket(port);
             logger.info("Server listening on port: "
                     + serverSocket.getLocalPort());
+            return true;
 
         } catch (IOException e) {
             logger.error("Error! Cannot open server socket:");
@@ -233,23 +227,5 @@ public class KVServer extends Thread implements IKVServer {
             }
             return false;
         }
-
-        switch (strategy) {
-            case LRU:
-                cache = new LRUCache(cacheSize);
-                break;
-            case FIFO:
-                cache = new FIFOCache(cacheSize);
-                break;
-            case LFU:
-                cache = new LFUCache(cacheSize);
-                break;
-            case None:
-                break;
-            default:
-                logger.error("Invalid Cache Strategy!");
-                return false;
-        }
-        return true;
     }
 }
