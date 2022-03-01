@@ -9,7 +9,7 @@ public class FIFOCache implements IKVCache{
 
     public FIFOCache(int maxSize){
         this.cacheSize = maxSize;
-        LinkedHashMap<String, String> cache = new LinkedHashMap<String, String>(cacheSize, (float) 1, false) {
+        this.cache = new LinkedHashMap<String, String>(cacheSize, (float) 1, false) {
             protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
                 return size() > cacheSize;
             }

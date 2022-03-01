@@ -9,7 +9,7 @@ public class LRUCache implements IKVCache{
 
     public LRUCache(int maxSize){
         this.cacheSize = maxSize;
-        LinkedHashMap<String, String> cache = new LinkedHashMap<String, String>(cacheSize, (float) 1, true) {
+        this.cache = new LinkedHashMap<String, String>(cacheSize, (float) 1, true) {
             protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
                 return size() > cacheSize;
             }
