@@ -10,16 +10,16 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class PerformanceTest {
+public class PerformanceTestLRU {
     private static final double NANO_MILLI = 1e6;
     private static final double NANO_SEC = 1e9;
     private static final Random rand = new Random();
 
-    final static int port = 50020;
+    final static int port = 50022;
 
     @BeforeAll
     static void setup() {
-        KVServer server = new KVServer(port, 10, "None", "./testStore/Performance");
+        KVServer server = new KVServer(port, 10, "LRU", "./testStore/Performance");
         server.clearStorage();
         server.start();
     }
