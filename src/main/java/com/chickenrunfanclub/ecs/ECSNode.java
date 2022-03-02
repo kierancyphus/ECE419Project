@@ -1,6 +1,8 @@
 package com.chickenrunfanclub.ecs;
 
 public class ECSNode implements IECSNode{
+
+
     public enum ECSNodeFlag {
         STOP,
         START,
@@ -70,6 +72,10 @@ public class ECSNode implements IECSNode{
 
     public void setCacheSize(int val){
         cacheSize = val;
+    }
+
+    public Object getCachesize() {
+        return cacheSize;
     }
 
     public int getCacheSize(){

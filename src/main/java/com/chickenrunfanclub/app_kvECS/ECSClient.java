@@ -26,6 +26,7 @@ public class ECSClient implements IECSClient {
     private HashMap<String, IECSNode> nameToNode = new HashMap<String, IECSNode>();     // hash to node
     private HashMap<String, ECSNodeFlag> serverStatus = new HashMap<String, ECSNodeFlag>();     // node status
     private CountDownLatch connectedSignal;
+    private static final String SCRIPT_TEXT = "ssh -n %s nohup java -jar ./m2-server.jar %s %s %s &";
     private final int TIMEOUT = 15000;
     private int numServers = 0;
 
@@ -97,7 +98,7 @@ public class ECSClient implements IECSClient {
                 logger.error("add node unsuccessful due to insufficient nodes.");
                 return null;
             }
-            ECSNode node;
+            ECSNode node = null;
             Set<String> nodesInUse = metaData.keySet();
             // get the list of nodes we are setting up, update metadata and status
             for (ECSNode n : nodeList){
@@ -120,8 +121,9 @@ public class ECSClient implements IECSClient {
             // writeMetaData();
 
             Runtime run=Runtime.getRuntime();
-            // TODO: create ssh command (idk how to write ssh)
-            Process proc= run.exec(ssh command here);           // the ssh command goes here. oone ssh for each node
+            String script = String.format(SCRIPT_TEXT, node.getNodeHost(), node.getNodePort(),
+                    node.getCachesize(), node.getCacheStrategy());
+            Process proc= run.exec(script);
             proc.waitFor();
         } catch (Exception e) {
             logger.error("can not add nodes " + e);
@@ -134,10 +136,12 @@ public class ECSClient implements IECSClient {
         try{
             ArrayList<ECSNode> newNodes = setupNodes(count, cacheStrategy, cacheSize);
             Runtime run=Runtime.getRuntime();
-            // TODO: create ssh command (idk how to write ssh)
-            // TODO: run ssh on each node in newNodes
-            Process proc= run.exec(ssh command here);           // the ssh command goes here. oone ssh for each node
-            proc.waitFor();
+            for(ECSNode node: newNodes) {
+                String script = String.format(SCRIPT_TEXT, node.getNodeHost(), node.getNodePort(),
+                        node.getCachesize(), node.getCacheStrategy());
+                Process proc = run.exec(script);
+                proc.waitFor();
+            }
             if (awaitNodes(newNodes.size(), TIMEOUT)) {
                 return newNodes;
             }
