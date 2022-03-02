@@ -3,11 +3,11 @@ package com.chickenrunfanclub.app_kvServer.kvCache;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class LRUCache implements IKVCache{
+public class LRUCache implements IKVCache {
     private int cacheSize;
     private LinkedHashMap<String, String> cache;
 
-    public LRUCache(int maxSize){
+    public LRUCache(int maxSize) {
         this.cacheSize = maxSize;
         this.cache = new LinkedHashMap<String, String>(cacheSize, (float) 1, true) {
             protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
@@ -28,7 +28,7 @@ public class LRUCache implements IKVCache{
 
     @Override
     public synchronized void put(String key, String value) {
-        if (value==null){
+        if (value == null) {
             cache.remove(key);
         } else {
             cache.put(key, value);

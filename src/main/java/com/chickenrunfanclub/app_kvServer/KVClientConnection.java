@@ -1,11 +1,11 @@
 package com.chickenrunfanclub.app_kvServer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import com.chickenrunfanclub.shared.messages.TextMessage;
 import com.chickenrunfanclub.shared.Messenger;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
+import com.chickenrunfanclub.shared.messages.TextMessage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -65,8 +65,8 @@ public class KVClientConnection implements Runnable {
                     }
                     messenger.sendMessage(new TextMessage(response));
 
-                /* connection either terminated by the client or lost due to
-                 * network problems*/
+                    /* connection either terminated by the client or lost due to
+                     * network problems*/
                 } catch (IOException ioe) {
                     logger.info("Error! Connection lost or client closed connection!", ioe);
                     isOpen = false;

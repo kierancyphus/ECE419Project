@@ -6,17 +6,17 @@ import com.chickenrunfanclub.app_kvServer.IKVServer;
 import com.chickenrunfanclub.app_kvServer.KVServer;
 
 public final class ObjectFactory {
-	/*
-	 * Creates a KVClient object for auto-testing purposes
-	 */
+    /*
+     * Creates a KVClient object for auto-testing purposes
+     */
     public static IKVClient createKVClientObject() {
-		return new KVClient();
+        return new KVClient();
     }
-    
+
     /*
      * Creates a KVServer object for auto-testing purposes
      */
-	public static IKVServer createKVServerObject(int port, int cacheSize, String strategy) {
-		return new KVServer(port, cacheSize, strategy);
-	}
+    public static IKVServer createKVServerObject(int port, int cacheSize, String strategy) {
+        return new KVServer(port, cacheSize, strategy);
+    }
 }

@@ -2,15 +2,18 @@ package com.chickenrunfanclub.app_kvServer;
 
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.shared.ServerMetadata;
+import com.chickenrunfanclub.shared.messages.IKVMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.chickenrunfanclub.shared.messages.IKVMessage;
 
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class KVServer extends Thread implements IKVServer {
     private int port;
@@ -194,7 +197,7 @@ public class KVServer extends Thread implements IKVServer {
     /**
      * Copies over field values from param: metadata to this.metadata. We can't directly assign it because then
      * KVRepo's copy of metadata doesn't update.
-     * */
+     */
     @Override
     public void updateMetadata(ServerMetadata serverMetadata) {
         this.serverMetadata.updateMetadata(serverMetadata);

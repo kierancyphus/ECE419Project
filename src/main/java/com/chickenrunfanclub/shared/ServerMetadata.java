@@ -42,7 +42,7 @@ public class ServerMetadata {
 
     /**
      * Returns whether the server is responsible for the request or not. Range isn't inclusive.
-     * */
+     */
     public boolean inRange(String hash) {
         // if startRange > endRange it means it wraps around and should be an or
         if (rangeStart.compareTo(rangeEnd) > 0) {
@@ -74,9 +74,13 @@ public class ServerMetadata {
         this.writeLock = serverMetadata.getWriteLock();
     }
 
-    public boolean serverLocked() { return serverLock; }
+    public boolean serverLocked() {
+        return serverLock;
+    }
 
-    public boolean writeLocked() { return writeLock; }
+    public boolean writeLocked() {
+        return writeLock;
+    }
 
     public String getHost() {
         return host;
@@ -114,7 +118,9 @@ public class ServerMetadata {
         this.serverLock = serverLock;
     }
 
-    public void setWriteLock(Boolean writeLock) { this.writeLock = writeLock; }
+    public void setWriteLock(Boolean writeLock) {
+        this.writeLock = writeLock;
+    }
 
     public String getRangeStart() {
         return rangeStart;

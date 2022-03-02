@@ -57,12 +57,12 @@ public class KVRepo {
 
     public IKVMessage put(String key, String value) {
         if (serverMetadata.notResponsibleFor(key)) {
-            logger.info("Repo not responsible. Put<" + key +", " + value + "> failed");
+            logger.info("Repo not responsible. Put<" + key + ", " + value + "> failed");
             return new KVMessage(key, value, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
         }
 
         if (serverMetadata.serverLocked()) {
-            logger.info("Repo is locked. Put<" + key +", " + value + "> failed");
+            logger.info("Repo is locked. Put<" + key + ", " + value + "> failed");
             return new KVMessage(key, value, IKVMessage.StatusType.SERVER_STOPPED);
         }
 
@@ -81,13 +81,13 @@ public class KVRepo {
             filesInUse.remove(key);
         }
         // if another file is using it, we need to wait until they are done and have removed the entry
-        while (filesInUse.putIfAbsent(key, newFileAccessor) != null){
+        while (filesInUse.putIfAbsent(key, newFileAccessor) != null) {
             FileAccessor fa = filesInUse.get(key);
             response = fa.put(value);
             filesInUse.remove(key);
         }
-        if(response.getStatus() != IKVMessage.StatusType.PUT_ERROR
-                && this.cacheStrategy != IKVServer.CacheStrategy.None){
+        if (response.getStatus() != IKVMessage.StatusType.PUT_ERROR
+                && this.cacheStrategy != IKVServer.CacheStrategy.None) {
             cache.put(key, value);
         }
         return response;
@@ -102,9 +102,9 @@ public class KVRepo {
             return new KVMessage(key, null, IKVMessage.StatusType.SERVER_STOPPED);
         }
 
-        if(this.cacheStrategy != IKVServer.CacheStrategy.None){
+        if (this.cacheStrategy != IKVServer.CacheStrategy.None) {
             String value = cache.get(key);
-            if(value!=null){
+            if (value != null) {
                 return new KVMessage(key, value, IKVMessage.StatusType.GET_SUCCESS);
             }
         }
@@ -117,7 +117,7 @@ public class KVRepo {
             response = fa.get();
             filesInUse.remove(key);
         }
-        while (filesInUse.putIfAbsent(key, newFileAccessor) != null){
+        while (filesInUse.putIfAbsent(key, newFileAccessor) != null) {
             FileAccessor fa = filesInUse.get(key);
             response = fa.get();
             filesInUse.remove(key);
@@ -137,7 +137,7 @@ public class KVRepo {
         filesInUse = new ConcurrentHashMap<>();
     }
 
-    private void createCache(int cacheSize, IKVServer.CacheStrategy strategy){
+    private void createCache(int cacheSize, IKVServer.CacheStrategy strategy) {
         this.cacheSize = cacheSize;
         this.cacheStrategy = strategy;
         switch (strategy) {
@@ -164,7 +164,7 @@ public class KVRepo {
     }
 
     public boolean inCache(String key) {
-        if(this.cacheStrategy != IKVServer.CacheStrategy.None){
+        if (this.cacheStrategy != IKVServer.CacheStrategy.None) {
             return cache.inCache(key);
         }
         return false;
@@ -178,8 +178,8 @@ public class KVRepo {
         }
     }
 
-    public void clearCache(){
-        if(this.cacheStrategy != IKVServer.CacheStrategy.None){
+    public void clearCache() {
+        if (this.cacheStrategy != IKVServer.CacheStrategy.None) {
             cache.clear();
         }
     }
@@ -206,7 +206,7 @@ public class KVRepo {
         hashes = new HashMap<>();
         File storePathFile = new File(this.storePath);
 
-        for (File file: Objects.requireNonNull(storePathFile.listFiles())) {
+        for (File file : Objects.requireNonNull(storePathFile.listFiles())) {
             String hash = Hasher.hash(file.getName());
             if (serverMetadata.inRange(hash)) {
                 hashes.put(hash, file.getName());

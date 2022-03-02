@@ -26,7 +26,7 @@ public class Entrypoint {
     private static void runServer(String[] args) {
         try {
             new LogSetup("logs/server.log", Level.ALL);
-            if(args.length != 3) {
+            if (args.length != 3) {
                 System.out.println("Error! Invalid number of arguments!");
                 System.out.println("Usage: Server <port> <cacheSize> <stategy>!");
             } else {
@@ -48,6 +48,7 @@ public class Entrypoint {
 
     /**
      * Main entry point for the m1 server application.
+     *
      * @param args contains the port number at args[0].
      */
     public static void main(String[] args) {
