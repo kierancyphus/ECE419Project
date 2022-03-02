@@ -22,4 +22,6 @@ public interface IECSNode {
      */
     public String[] getNodeHashRange();
 
+    public void setHashStart(String val);
+
 }

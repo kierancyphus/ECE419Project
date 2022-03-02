@@ -1,7 +1,11 @@
 package com.chickenrunfanclub.app_kvECS;
 
+import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.ecs.IECSNode;
+import org.apache.zookeeper.KeeperException;
 
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -31,7 +35,7 @@ public interface IECSClient {
      * Create a new KVServer with the specified cache size and replacement strategy and add it to the storage service at an arbitrary position.
      * @return  name of new server
      */
-    public IECSNode addNode(String cacheStrategy, int cacheSize);
+    public IECSNode addNode(String cacheStrategy, int cacheSize) throws InterruptedException, KeeperException;
 
     /**
      * Randomly choose <numberOfNodes> servers from the available machines and start the KVServer by issuing an SSH call to the respective machine.
@@ -40,13 +44,13 @@ public interface IECSClient {
      * NOTE: Must call setupNodes before the SSH calls to start the servers and must call awaitNodes before returning
      * @return  set of strings containing the names of the nodes
      */
-    public Collection<IECSNode> addNodes(int count, String cacheStrategy, int cacheSize);
+    public Collection<ECSNode> addNodes(int count, String cacheStrategy, int cacheSize) throws InterruptedException;
 
     /**
      * Sets up `count` servers with the ECS (in this case Zookeeper)
      * @return  array of strings, containing unique names of servers
      */
-    public Collection<IECSNode> setupNodes(int count, String cacheStrategy, int cacheSize);
+    public Collection<ECSNode> setupNodes(int count, String cacheStrategy, int cacheSize);
 
     /**
      * Wait for all nodes to report status or until timeout expires
@@ -61,7 +65,7 @@ public interface IECSClient {
      * @param nodeNames names of nodes to remove
      * @return  true on success, false otherwise
      */
-    public boolean removeNodes(Collection<String> nodeNames);
+    public boolean removeNodes(Collection<String> nodeNames) throws Exception;
 
     /**
      * Get a map of all nodes
@@ -71,5 +75,5 @@ public interface IECSClient {
     /**
      * Get the specific node responsible for the given key
      */
-    public IECSNode getNodeByKey(String Key);
+    public IECSNode getNodeByKey(String Key) throws UnsupportedEncodingException, NoSuchAlgorithmException;
 }

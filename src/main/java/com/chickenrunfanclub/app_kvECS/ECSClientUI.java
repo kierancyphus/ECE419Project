@@ -45,9 +45,9 @@ public class KVClient implements IKVClient {
         }
     }
 
-    private void start(string config_file) {
-        ecsClient = new ECSClient(config_file)
+    private void start(String config_file) {
         try {
+            ecsClient = new ECSClient(config_file);
             ecsClient.start();
         } catch (Exception e) {
             logger.info("Error! Could not initialize ECS");
