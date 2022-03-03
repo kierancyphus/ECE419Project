@@ -1,5 +1,6 @@
 package com.chickenrunfanclub.app_kvECS;
 
+import com.chickenrunfanclub.logger.LogSetup;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,25 +11,35 @@ import com.chickenrunfanclub.app_kvECS.ECSClient;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.net.UnknownHostException;
 
-public class KVClient implements IKVClient {
+public class ECSClientUI {
 
-    private static Logger logger = LogManager.getLogger(KVClient.class);
+    private static Logger logger = LogManager.getLogger(ECSClientUI.class);
     private static final String PROMPT = "ECSClient> ";
     private BufferedReader stdin;
     private ECSClient ecsClient = null;
     private boolean stop = false;
     private String config_file = null;
-
+    private String cacheStrategy;
+    private int cacheSize;
 
     public void main(String[] args) {
-        config_file = args[0]
+        config_file = args[0];
+        cacheStrategy = args[1];
         try {
-            start(args[0]);
+            cacheSize = Integer.parseInt(args[2]);
+        } catch (Exception e) {
+            printError("Cache Size must be an integer");
+        }
+        try {
+            start(args[0], args[1], cacheSize);
         } catch (Exception e) {
             stop = true;
-            printError("Issue with config file, servers could not be initialized ")
+            printError("Issue with config file, servers could not be initialized ");
         }
 
         while (!stop) {
@@ -45,9 +56,9 @@ public class KVClient implements IKVClient {
         }
     }
 
-    private void start(String config_file) {
+    private void start(String config_file, String cacheStrategy, int cacheSize) {
         try {
-            ecsClient = new ECSClient(config_file);
+            ecsClient = new ECSClient(config_file, cacheStrategy, cacheSize);
             ecsClient.start();
         } catch (Exception e) {
             logger.info("Error! Could not initialize ECS");
@@ -74,13 +85,13 @@ public class KVClient implements IKVClient {
             if (tokens.length >= 2) {
                 try {
                     int num_nodes = Integer.parseInt(tokens[1]);
+                    if (ecsClient != null && ecsClient.isRunning()) {
+                        addNodes(num_nodes);
+                    } else {
+                        printError("ECSClient is not running");
+                    }
                 } catch (Exception e) {
                     printError("Number of nodes must be an integer");
-                }
-                if (ecsClient != null && ecsClient.isRunning()) {
-                    addNodes(num_nodes);
-                } else {
-                    printError("ECSClient is not running");
                 }
             } else {
                 if (ecsClient != null && ecsClient.isRunning()) {
@@ -92,25 +103,26 @@ public class KVClient implements IKVClient {
 
         } else if (tokens[0].equals("start")) {
             if (ecsClient.isRunning()) {
-                printError("ECSClient is already running")
+                printError("ECSClient is already running");
             } else {
-                start(config_file)
+                start(config_file, cacheStrategy, cacheSize);
             }
 
         } else if (tokens[0].equals("remove")) {
-            if (tokens.length == 2) {
+            if (tokens.length > 1) {
                 try {
                     int node_idx = Integer.parseInt(tokens[1]);
+                    if (ecsClient != null && ecsClient.isRunning()) {
+                        List<String> nodes = Arrays.asList(Arrays.copyOfRange(tokens, 1, tokens.length));
+                        removeNodes(nodes);
+                    } else {
+                        printError("ECSClient is not running");
+                    }
                 } catch (Exception e) {
-                    printError("Node index must be an integer");
-                }
-                if (ecsClient != null && ecsClient.isRunning()) {
-                    remove(node_idx);
-                } else {
-                    printError("ECSClient is not running");
+                    printError("Incorrect nodes given, please give existing nodes.");
                 }
             } else {
-                printError("Incorrect number of arguments, needs one index");
+                printError("Incorrect number of arguments, no nodes given");
             }
 
         } else if (tokens[0].equals("logLevel")) {
@@ -181,10 +193,10 @@ public class KVClient implements IKVClient {
         }
     }
 
-    private void addNodes(int node_idx){
+    private void removeNodes(Collection<String> nodes){
         try {
             if (ecsClient != null) {
-                ecsClient.remove(node_idx);
+                ecsClient.removeNodes(nodes);
                 logger.info("Node Removed");
                 System.out.println(PROMPT + "Node removed successfully");
             }
@@ -207,8 +219,8 @@ public class KVClient implements IKVClient {
         sb.append("\t\t Restart all servers\n");
         sb.append(PROMPT).append("add <num_nodes>");
         sb.append("\t\t\t Adds given number of nodes. If no number is specified adds 1 \n");
-        sb.append(PROMPT).append("remove <node_idx>");
-        sb.append("\t\t\t Removes node at given index \n");
+        sb.append(PROMPT).append("remove <nodes>");
+        sb.append("\t\t\t Removes given nodes, any number of nodes can be given \n");
         sb.append(PROMPT).append("logLevel");
         sb.append("\t\t\t changes the logLevel \n");
         sb.append(PROMPT).append("\t\t\t\t ");

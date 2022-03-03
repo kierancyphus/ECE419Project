@@ -18,7 +18,7 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import java.security.NoSuchAlgorithmException;
 
 public class ECSClient implements IECSClient {
-    private static Logger logger = LogManager.getLogger(KVClient.class);
+    private static Logger logger = LogManager.getLogger(ECSClient.class);
     private ZooKeeper zk;
     private ArrayList<ECSNode> nodeList = new ArrayList<ECSNode>();
     private HashMap<String, String> metaData = new HashMap<String, String>();   // node to hash in use
@@ -29,10 +29,15 @@ public class ECSClient implements IECSClient {
     private static final String SCRIPT_TEXT = "ssh -n %s nohup java -jar ./m2-server.jar %s %s %s &";
     private final int TIMEOUT = 15000;
     private int numServers = 0;
+    private String cacheStrategy;
+    private int cacheSize;
+    private boolean running = false;
 
-    public ECSClient(String configFileName) throws IOException, InterruptedException, KeeperException {
+    public ECSClient(String configFileName, String cacheStrat, int cacheSiz) throws IOException, InterruptedException, KeeperException {
         // start zookeeper connection
         connectedSignal = new CountDownLatch(1);
+        cacheStrategy = cacheStrat;
+        cacheSize = cacheSiz;
         zk = new ZooKeeper("127.0.0.1",5000,new Watcher() {
             public void process(WatchedEvent we) { if (we.getState() == KeeperState.SyncConnected) {
                 connectedSignal.countDown();
@@ -54,6 +59,7 @@ public class ECSClient implements IECSClient {
                     metaData.put(node, hash(node));
                 }
             }
+            running = true;
             return true;
         } catch (Exception e) {
             System.out.println("Unable to start ECS.");
@@ -70,6 +76,7 @@ public class ECSClient implements IECSClient {
                 serverStatus.put(node, ECSNodeFlag.STOP);
             }
         }
+        running = false;
         return true;
     }
 
@@ -90,7 +97,7 @@ public class ECSClient implements IECSClient {
     }
 
     @Override
-    public IECSNode addNode(String cacheStrategy, int cacheSize) throws InterruptedException, KeeperException {
+    public IECSNode addNode() throws InterruptedException, KeeperException {
         try{
             // check for available node first
             if (metaData.size() >= nodeList.size()){
@@ -132,7 +139,7 @@ public class ECSClient implements IECSClient {
     }
 
     @Override
-    public ArrayList<ECSNode> addNodes(int count, String cacheStrategy, int cacheSize) throws InterruptedException {
+    public ArrayList<ECSNode> addNodes(int count) throws InterruptedException {
         try{
             ArrayList<ECSNode> newNodes = setupNodes(count, cacheStrategy, cacheSize);
             Runtime run=Runtime.getRuntime();
@@ -292,6 +299,10 @@ public class ECSClient implements IECSClient {
             return closest;
         }
         return min;
+    }
+
+    public boolean isRunning() {
+        return running;
     }
 
     // MD5 hashing
