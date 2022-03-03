@@ -16,7 +16,13 @@ public interface IKVMessage {
 
 		SERVER_STOPPED,			/* Server is stopped, no requests are processed */
 		SERVER_WRITE_LOCK,		/* Server locked for write, only get possible */
-		SERVER_NOT_RESPONSIBLE	/* Request not successful, server not responsible for key */
+		SERVER_NOT_RESPONSIBLE,	/* Request not successful, server not responsible for key */
+
+		SERVER_START,				/* Start Server, all requests are processed */
+		SERVER_STOP,				/* Stop server, no requests are processed */
+		SERVER_WRITE_UNLOCKED,		/* Unlock Write, write requests are processed */
+		SERVER_MOVE_DATA,			/* Move data between servers based on host and port */
+		SERVER_UPDATE_METADATA		/* Server metadata is updated */
 	}
 
 	/**
