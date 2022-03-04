@@ -1,6 +1,6 @@
 package com.chickenrunfanclub.unitTests;
 
-import com.chickenrunfanclub.shared.ServerMetadata;
+import com.chickenrunfanclub.ecs.ECSNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -11,9 +11,9 @@ public class ServerMetadataTest {
         String startRange = "AA";
         String endRange = "BB";
         String hash = "AB";
-        ServerMetadata serverMetadata = new ServerMetadata("host", 1, startRange, endRange, false, false);
+        ECSNode ECSNode = new ECSNode("host", 1, startRange, endRange, false, false);
 
-        assertTrue(serverMetadata.inRange(hash));
+        assertTrue(ECSNode.inRange(hash));
     }
 
     @Test
@@ -21,9 +21,9 @@ public class ServerMetadataTest {
         String startRange = "AA";
         String endRange = "BB";
         String hash = "AA";
-        ServerMetadata serverMetadata = new ServerMetadata("host", 1, startRange, endRange, false, false);
+        ECSNode ECSNode = new ECSNode("host", 1, startRange, endRange, false, false);
 
-        assertTrue(serverMetadata.inRange(hash));
+        assertTrue(ECSNode.inRange(hash));
     }
 
     @Test
@@ -31,9 +31,9 @@ public class ServerMetadataTest {
         String startRange = "AA";
         String endRange = "BB";
         String hash = "BB";
-        ServerMetadata serverMetadata = new ServerMetadata("host", 1, startRange, endRange, false, false);
+        ECSNode ECSNode = new ECSNode("host", 1, startRange, endRange, false, false);
 
-        assertFalse(serverMetadata.inRange(hash));
+        assertFalse(ECSNode.inRange(hash));
     }
 
     @Test
@@ -42,10 +42,10 @@ public class ServerMetadataTest {
         String endRange = "22";
         String hashHigh = "EE";
         String hashLow = "11";
-        ServerMetadata serverMetadata = new ServerMetadata("host", 1, startRange, endRange, false, false);
+        ECSNode ECSNode = new ECSNode("host", 1, startRange, endRange, false, false);
 
-        assertTrue(serverMetadata.inRange(hashHigh));
-        assertTrue(serverMetadata.inRange(hashLow));
+        assertTrue(ECSNode.inRange(hashHigh));
+        assertTrue(ECSNode.inRange(hashLow));
     }
 
 

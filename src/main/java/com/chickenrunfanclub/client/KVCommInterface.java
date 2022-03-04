@@ -1,6 +1,6 @@
 package com.chickenrunfanclub.client;
 
-import com.chickenrunfanclub.shared.ServerMetadata;
+import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 
 public interface KVCommInterface {
@@ -45,7 +45,7 @@ public interface KVCommInterface {
 	public IKVMessage shutDown() throws Exception;
 	public IKVMessage lockWrite() throws Exception;
 	public IKVMessage unlockWrite() throws Exception;
-	public IKVMessage moveData(ServerMetadata metadata) throws Exception;
-	public IKVMessage updateMetadata(ServerMetadata metadata) throws Exception;
+	public IKVMessage moveData(ECSNode metadata) throws Exception;
+	public IKVMessage updateMetadata(ECSNode metadata) throws Exception;
 
 }

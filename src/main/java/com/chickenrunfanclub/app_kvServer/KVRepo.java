@@ -5,7 +5,7 @@ import com.chickenrunfanclub.app_kvServer.kvCache.IKVCache;
 import com.chickenrunfanclub.app_kvServer.kvCache.LFUCache;
 import com.chickenrunfanclub.app_kvServer.kvCache.LRUCache;
 import com.chickenrunfanclub.shared.Hasher;
-import com.chickenrunfanclub.shared.ServerMetadata;
+import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
 import org.apache.logging.log4j.LogManager;
@@ -30,7 +30,7 @@ public class KVRepo {
     private IKVCache cache;
 
     // Server Metadata
-    private ServerMetadata serverMetadata;
+    private ECSNode ECSNode;
     private boolean writeLock = false;
     private boolean repoLocked = true;
 
@@ -48,25 +48,25 @@ public class KVRepo {
         initializeHash();
     }
 
-    public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy, String storePath, ServerMetadata serverMetadata) {
+    public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy, String storePath, ECSNode ECSNode) {
         createStore(storePath);
         createCache(cacheSize, strategy);
-        this.serverMetadata = serverMetadata;
+        this.ECSNode = ECSNode;
         initializeHash();
     }
 
     public IKVMessage put(String key, String value) {
-        if (serverMetadata.notResponsibleFor(key)) {
+        if (ECSNode.notResponsibleFor(key)) {
             logger.info("Repo not responsible. Put<" + key + ", " + value + "> failed");
             return new KVMessage(key, value, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
         }
 
-        if (serverMetadata.serverLocked()) {
+        if (ECSNode.serverLocked()) {
             logger.info("Repo is locked. Put<" + key + ", " + value + "> failed");
             return new KVMessage(key, value, IKVMessage.StatusType.SERVER_STOPPED);
         }
 
-        if (serverMetadata.writeLocked()) {
+        if (ECSNode.writeLocked()) {
             logger.info("Repo is write locked. Put<" + key + ", " + value + "> failed");
             return new KVMessage(key, value, IKVMessage.StatusType.SERVER_WRITE_LOCK);
         }
@@ -94,11 +94,11 @@ public class KVRepo {
     }
 
     public IKVMessage get(String key) {
-        if (serverMetadata.notResponsibleFor(key)) {
+        if (ECSNode.notResponsibleFor(key)) {
             return new KVMessage(key, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
         }
 
-        if (serverMetadata.serverLocked()) {
+        if (ECSNode.serverLocked()) {
             return new KVMessage(key, null, IKVMessage.StatusType.SERVER_STOPPED);
         }
 
@@ -189,14 +189,14 @@ public class KVRepo {
         return Arrays.stream(Objects.requireNonNull(file.listFiles())).map(File::getName).collect(Collectors.toSet());
     }
 
-    public List<Map.Entry<String, String>> getEntriesInHashRange(ServerMetadata rangeServerMetadata) {
+    public List<Map.Entry<String, String>> getEntriesInHashRange(ECSNode rangeECSNode) {
         // update the hashes to make sure it is up to date (I could do this incrementally but this works)
         // I could also do this for each put, but I'd rather not incur the overhead on the user
         initializeHash();
 
         return hashes.entrySet()
                 .stream()
-                .filter(entry -> rangeServerMetadata.inRange(entry.getKey()))  // filter out those not in range
+                .filter(entry -> rangeECSNode.inRange(entry.getKey()))  // filter out those not in range
                 .map(entry -> new AbstractMap.SimpleEntry<>(entry.getValue(), get(entry.getValue()).getValue()))  // construct kv pairs
                 .collect(Collectors.toList());
     }
@@ -208,7 +208,7 @@ public class KVRepo {
 
         for (File file : Objects.requireNonNull(storePathFile.listFiles())) {
             String hash = Hasher.hash(file.getName());
-            if (serverMetadata.inRange(hash)) {
+            if (ECSNode.inRange(hash)) {
                 hashes.put(hash, file.getName());
             }
         }

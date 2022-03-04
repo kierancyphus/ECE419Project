@@ -29,7 +29,7 @@ public class Entrypoint {
             new LogSetup("logs/ecs.log", Level.ALL);
             if (args.length != 3) {
                 System.out.println("Error! Invalid number of arguments!");
-                System.out.println("Usage: ecs <config_file> <cacheSize> <stategy>!");
+                System.out.println("Usage: ecs <config_file> <stategy> <cacheSize>!");
             } else {
                 String config_file = args[0];
                 String cacheStrategy = args[1];

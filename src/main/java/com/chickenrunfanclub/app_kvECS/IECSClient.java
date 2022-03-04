@@ -4,6 +4,7 @@ import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.ecs.IECSNode;
 import org.apache.zookeeper.KeeperException;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
@@ -39,7 +40,7 @@ public interface IECSClient {
      *
      * @return name of new server
      */
-    public IECSNode addNode(String cacheStrategy, int cacheSize) throws InterruptedException, KeeperException;
+    public IECSNode addNode(String cacheStrategy, int cacheSize) throws InterruptedException, KeeperException, IOException;
 
     /**
      * Randomly choose <numberOfNodes> servers from the available machines and start the KVServer by issuing an SSH call to the respective machine.
@@ -49,7 +50,7 @@ public interface IECSClient {
      *
      * @return set of strings containing the names of the nodes
      */
-    public Collection<ECSNode> addNodes(int count, String cacheStrategy, int cacheSize) throws InterruptedException;
+    public Collection<IECSNode> addNodes(int count, String cacheStrategy, int cacheSize) throws InterruptedException, KeeperException;
 
     /**
      * Sets up `count` servers with the ECS (in this case Zookeeper)

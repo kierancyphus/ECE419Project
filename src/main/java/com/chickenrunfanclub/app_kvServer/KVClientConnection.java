@@ -1,6 +1,6 @@
 package com.chickenrunfanclub.app_kvServer;
 
-import com.chickenrunfanclub.shared.ServerMetadata;
+import com.chickenrunfanclub.ecs.ECSNode;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -86,14 +86,14 @@ public class KVClientConnection implements Runnable {
                         }
                         case SERVER_MOVE_DATA: {
                             // I'm storing the json of the metadata in the key field of the KVMessage lmao
-                            ServerMetadata metadata = new Gson().fromJson(message.getKey(), ServerMetadata.class);
+                            ECSNode metadata = new Gson().fromJson(message.getKey(), ECSNode.class);
                             server.moveData(metadata);
                             response = new KVMessage("", "", IKVMessage.StatusType.SERVER_MOVE_DATA);
                             break;
                         }
                         case SERVER_UPDATE_METADATA: {
                             // metadata also stored in the key
-                            ServerMetadata metadata = new Gson().fromJson(message.getKey(), ServerMetadata.class);
+                            ECSNode metadata = new Gson().fromJson(message.getKey(), ECSNode.class);
                             server.updateMetadata(metadata);
                             response = new KVMessage("", "", IKVMessage.StatusType.SERVER_UPDATE_METADATA);
                             break;

@@ -1,6 +1,6 @@
 package com.chickenrunfanclub.app_kvServer;
 
-import com.chickenrunfanclub.shared.ServerMetadata;
+import com.chickenrunfanclub.ecs.ECSNode;
 
 public interface IKVServer {
     public enum CacheStrategy {
@@ -112,11 +112,11 @@ public interface IKVServer {
      * Transfer a subset (range) of the KVServer’s data to another KVServer (reallocation before removing this server or adding a new KVServer to the ring);
      * send a notification to the ECS, if data transfer is completed. Doesn't update the current metadata (assumed to already happen in another operation)
      */
-    public boolean moveData(ServerMetadata metaData);
+    public boolean moveData(ECSNode metaData);
 
     /**
      * Update the metadata repository of this server
      */
-    public void updateMetadata(ServerMetadata serverMetadata);
+    public void updateMetadata(ECSNode ECSNode);
 
 }

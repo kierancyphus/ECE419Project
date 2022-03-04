@@ -1,7 +1,7 @@
 package com.chickenrunfanclub.client;
 
 import com.chickenrunfanclub.shared.Messenger;
-import com.chickenrunfanclub.shared.ServerMetadata;
+import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
 import com.chickenrunfanclub.shared.messages.TextMessage;
@@ -134,8 +134,8 @@ public class KVStore implements KVCommInterface {
     }
 
     @Override
-    public IKVMessage moveData(ServerMetadata metadata) throws Exception {
-        String metadataString = new Gson().toJson(metadata, ServerMetadata.class);
+    public IKVMessage moveData(ECSNode metadata) throws Exception {
+        String metadataString = new Gson().toJson(metadata, ECSNode.class);
         KVMessage message = new KVMessage(metadataString, null, IKVMessage.StatusType.SERVER_MOVE_DATA);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
@@ -144,8 +144,8 @@ public class KVStore implements KVCommInterface {
     }
 
     @Override
-    public IKVMessage updateMetadata(ServerMetadata metadata) throws Exception {
-        String metadataString = new Gson().toJson(metadata, ServerMetadata.class);
+    public IKVMessage updateMetadata(ECSNode metadata) throws Exception {
+        String metadataString = new Gson().toJson(metadata, ECSNode.class);
         KVMessage message = new KVMessage(metadataString, null, IKVMessage.StatusType.SERVER_UPDATE_METADATA);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);

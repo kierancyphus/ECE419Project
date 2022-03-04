@@ -37,8 +37,9 @@ public class ECSClientUI {
         this.cacheStrategy = strategy;
         try {
             ecsClient = new ECSClient(this.config_file, this.cacheStrategy, this.cacheSize);
-            ecsClient.start();
+//            ecsClient.start();
         } catch(Exception e){
+            e.printStackTrace();
             logger.error("Error! Could not initialize ECS");
         }
     }
@@ -175,7 +176,6 @@ public class ECSClientUI {
         try {
             if (ecsClient != null) {
                 ecsClient.addNode(cacheStrategy, cacheSize);
-                logger.info("Node Added");
                 System.out.println(PROMPT + "Node added successfully");
             }
         } catch (Exception e) {

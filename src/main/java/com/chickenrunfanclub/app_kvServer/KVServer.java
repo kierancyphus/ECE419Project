@@ -1,7 +1,7 @@
 package com.chickenrunfanclub.app_kvServer;
 
 import com.chickenrunfanclub.client.KVStore;
-import com.chickenrunfanclub.shared.ServerMetadata;
+import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,7 +20,7 @@ public class KVServer extends Thread implements IKVServer {
     private int cacheSize;
     private IKVServer.CacheStrategy strategy;
     private KVRepo repo;
-    private ServerMetadata serverMetadata;
+    private ECSNode ECSNode;
 
     private static final Logger logger = LogManager.getLogger(KVServer.class);
     private ServerSocket serverSocket;
@@ -59,8 +59,8 @@ public class KVServer extends Thread implements IKVServer {
             logger.error("Error! Unknown cache strategy");
             return;
         }
-        serverMetadata = new ServerMetadata();
-        repo = new KVRepo(cacheSize, this.strategy, storePath, serverMetadata);
+        ECSNode = new ECSNode();
+        repo = new KVRepo(cacheSize, this.strategy, storePath, ECSNode);
     }
 
 
@@ -72,7 +72,7 @@ public class KVServer extends Thread implements IKVServer {
 
     @Override
     public String getHostname() {
-        return serverMetadata.getHost();
+        return ECSNode.getHost();
     }
 
     @Override
@@ -163,26 +163,26 @@ public class KVServer extends Thread implements IKVServer {
 
     @Override
     public void lockWrite() {
-        serverMetadata.setWriteLock(true);
+        ECSNode.setWriteLock(true);
     }
 
     @Override
     public void unLockWrite() {
-        serverMetadata.setWriteLock(false);
+        ECSNode.setWriteLock(false);
     }
 
     @Override
-    public boolean moveData(ServerMetadata serverMetadata) {
-        KVStore kvClient = new KVStore(serverMetadata.getHost(), serverMetadata.getPort());
+    public boolean moveData(ECSNode ECSNode) {
+        KVStore kvClient = new KVStore(ECSNode.getHost(), ECSNode.getPort());
         try {
             kvClient.connect();
         } catch (IOException e) {
-            logger.error("Could not connect to server: " + serverMetadata.getHost() + ":" + serverMetadata.getPort());
+            logger.error("Could not connect to server: " + ECSNode.getHost() + ":" + ECSNode.getPort());
         }
 
         List<Map.Entry<String, String>> failed = new ArrayList<>();
 
-        this.repo.getEntriesInHashRange(serverMetadata)
+        this.repo.getEntriesInHashRange(ECSNode)
                 .forEach(entry -> {
                     try {
                         kvClient.put(entry.getKey(), entry.getValue());
@@ -199,12 +199,12 @@ public class KVServer extends Thread implements IKVServer {
      * KVRepo's copy of metadata doesn't update.
      */
     @Override
-    public void updateMetadata(ServerMetadata serverMetadata) {
-        this.serverMetadata.updateMetadata(serverMetadata);
+    public void updateMetadata(ECSNode ECSNode) {
+        this.ECSNode.updateMetadata(ECSNode);
     }
 
     public void updateServerStopped(boolean stopped) {
-        serverMetadata.setServerLock(stopped);
+        ECSNode.setServerLock(stopped);
     }
 
     private boolean isRunning() {

@@ -3,7 +3,7 @@ package com.chickenrunfanclub.unitTests;
 import com.chickenrunfanclub.TestUtils;
 import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
-import com.chickenrunfanclub.shared.ServerMetadata;
+import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import org.junit.jupiter.api.Test;
 
@@ -69,15 +69,15 @@ public class KVServerTest {
         // initialize original server
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
         server.clearStorage();
-        server.updateMetadata(new ServerMetadata("localhost", port, "0".repeat(32), "F".repeat(32), false, false));
+        server.updateMetadata(new ECSNode("localhost", port, "0".repeat(32), "F".repeat(32), false, false));
         server.start();
 
         // initialize server to be transferred to
         KVServer otherServer = new KVServer(otherPort, 10, "FIFO", "./testStore/KVServer/otherServer");
         otherServer.clearStorage();
         // otherServer is only responsible for a subset of hashes
-        ServerMetadata otherServerServerMetadata = new ServerMetadata("localhost", otherPort, "0".repeat(32), "9".repeat(32), false, false);
-        otherServer.updateMetadata(otherServerServerMetadata);
+        ECSNode otherServerECSNode = new ECSNode("localhost", otherPort, "0".repeat(32), "9".repeat(32), false, false);
+        otherServer.updateMetadata(otherServerECSNode);
         otherServer.start();
         utils.stall(5);
 
@@ -94,7 +94,7 @@ public class KVServerTest {
         }
 
         // transfer data
-        server.moveData(otherServerServerMetadata);
+        server.moveData(otherServerECSNode);
         Set<String> transferredKeys = otherServer.listKeys();
         // these values were computed to be in the range. If the hash function is changed these will change too.
         Set<String> correctKeys = new HashSet<>(Arrays.asList("6", "7", "9"));
@@ -195,7 +195,7 @@ public class KVServerTest {
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
         server.clearStorage();
         server.start();
-        server.updateMetadata(new ServerMetadata("localhost", port, "A".repeat(32), "F".repeat(32), false, false));
+        server.updateMetadata(new ECSNode("localhost", port, "A".repeat(32), "F".repeat(32), false, false));
         utils.stall(1);
 
         KVStore kvClient = new KVStore("localhost", port);
@@ -219,7 +219,7 @@ public class KVServerTest {
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
         server.clearStorage();
         server.start();
-        server.updateMetadata(new ServerMetadata("localhost", port, "A".repeat(32), "F".repeat(32), false, false));
+        server.updateMetadata(new ECSNode("localhost", port, "A".repeat(32), "F".repeat(32), false, false));
         utils.stall(1);
 
         KVStore kvClient = new KVStore("localhost", port);
