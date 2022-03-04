@@ -1,5 +1,6 @@
 package com.chickenrunfanclub.app_kvECS;
 
+import com.chickenrunfanclub.app_kvServer.IKVServer;
 import com.chickenrunfanclub.logger.LogSetup;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -27,21 +28,19 @@ public class ECSClientUI {
     private String cacheStrategy;
     private int cacheSize;
 
-    public void main(String[] args) {
-        config_file = args[0];
-        cacheStrategy = args[1];
+    public ECSClientUI(String config_file, int cacheSize, String strategy) {
+        this.config_file = config_file;
+        this.cacheSize = cacheSize;
         try {
-            cacheSize = Integer.parseInt(args[2]);
-        } catch (Exception e) {
-            printError("Cache Size must be an integer");
+            IKVServer.CacheStrategy.valueOf(strategy);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error! Unknown cache strategy");
+            return;
         }
-        try {
-            start(args[0], args[1], cacheSize);
-        } catch (Exception e) {
-            stop = true;
-            printError("Issue with config file, servers could not be initialized ");
-        }
+        this.cacheStrategy = strategy;
+    }
 
+    public void run() {
         while (!stop) {
             stdin = new BufferedReader(new InputStreamReader(System.in));
             System.out.print(PROMPT);
