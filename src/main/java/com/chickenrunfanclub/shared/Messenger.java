@@ -1,10 +1,12 @@
 package com.chickenrunfanclub.shared;
 
+import com.chickenrunfanclub.shared.messages.TextMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.chickenrunfanclub.shared.messages.TextMessage;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 

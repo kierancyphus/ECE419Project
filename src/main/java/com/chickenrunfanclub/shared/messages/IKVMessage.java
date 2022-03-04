@@ -1,7 +1,7 @@
 package com.chickenrunfanclub.shared.messages;
 
 public interface IKVMessage {
-	
+
 	public enum StatusType {
 		GET, 			/* Get - request */
 		GET_ERROR, 		/* requested tuple (i.e. value) not found */

@@ -7,29 +7,29 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.util.Random;
+
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class PerformanceTest {
+public class PerformanceTestLFU {
     private static final double NANO_MILLI = 1e6;
     private static final double NANO_SEC = 1e9;
     private static final Random rand = new Random();
     final static TestUtils utils = new TestUtils();
-
-    final static int port = 50020;
+    final static int port = 50023;
 
     @BeforeAll
     static void setup() {
-        KVServer server = new KVServer(port, 10, "None", "./testStore/Performance");
+        KVServer server = new KVServer(port, 10, "LFU", "./testStore/Performance");
         server.clearStorage();
         server.start();
         server.updateServerStopped(false);
         utils.stall(1);
     }
     
-//    @Disabled
+    @Disabled
     @Test
     public void test8020() {
         KVStore kvClient = new KVStore("localhost", port);
@@ -47,7 +47,7 @@ public class PerformanceTest {
         assertNull(ex);
     }
 
-//    @Disabled
+    @Disabled
     @Test
     public void test6535() {
         KVStore kvClient = new KVStore("localhost", port);
@@ -65,7 +65,7 @@ public class PerformanceTest {
         assertNull(ex);
     }
 
-//    @Disabled
+    @Disabled
     @Test
     public void test5050() {
         KVStore kvClient = new KVStore("localhost", port);
@@ -83,7 +83,7 @@ public class PerformanceTest {
         assertNull(ex);
     }
 
-//    @Disabled
+    @Disabled
     @Test
     public void test3565() {
         KVStore kvClient = new KVStore("localhost", port);
@@ -101,7 +101,7 @@ public class PerformanceTest {
         assertNull(ex);
     }
 
-//    @Disabled
+    @Disabled
     @Test
     public void test2080() {
         KVStore kvClient = new KVStore("localhost", port);
@@ -169,13 +169,13 @@ public class PerformanceTest {
                 }
             }
             long totalTime = getTime + putTime;
-            // Calculate the per request latency, and print values out.
+            // Calcualte the per request latency, and print values out.
             long totalAverage = totalTime / numRequests;
             long putAverage = putTime / putCounter;
             long getAverage = getTime / getCounter;
             long throughput = (long) (numRequests / (totalTime / NANO_SEC));
             try {
-                File file = new File("perf_none.csv");
+                File file = new File("perf_LFU.csv");
                 FileWriter fr = new FileWriter(file, true);
                 fr.write(percentPuts+ "," +  throughput + "," + totalAverage / NANO_MILLI + "," +
                         putAverage / NANO_MILLI + "," + putMin / NANO_MILLI + "," + putMax / NANO_MILLI + "," +
@@ -184,7 +184,6 @@ public class PerformanceTest {
             } catch (FileNotFoundException e) {
                 System.out.println(e.getMessage());
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }

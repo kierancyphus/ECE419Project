@@ -103,8 +103,8 @@ public class KVClientConnection implements Runnable {
 
                     messenger.sendMessage(new TextMessage(response));
 
-                /* connection either terminated by the client or lost due to
-                 * network problems*/
+                    /* connection either terminated by the client or lost due to
+                     * network problems*/
                 } catch (IOException ioe) {
                     logger.info("Error! Connection lost or client closed connection!", ioe);
                     isOpen = false;

@@ -2,22 +2,25 @@ package com.chickenrunfanclub.app_kvServer;
 
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.shared.ServerMetadata;
+import com.chickenrunfanclub.shared.messages.IKVMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.chickenrunfanclub.shared.messages.IKVMessage;
 
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class KVServer extends Thread implements IKVServer {
     private int port;
-    int cacheSize;
-    IKVServer.CacheStrategy strategy;
-    KVRepo repo;
-    ServerMetadata serverMetadata;
+    private int cacheSize;
+    private IKVServer.CacheStrategy strategy;
+    private KVRepo repo;
+    private ServerMetadata serverMetadata;
 
     private static final Logger logger = LogManager.getLogger(KVServer.class);
     private ServerSocket serverSocket;
@@ -40,7 +43,8 @@ public class KVServer extends Thread implements IKVServer {
         try {
             this.strategy = CacheStrategy.valueOf(strategy);
         } catch (IllegalArgumentException e) {
-            this.strategy = CacheStrategy.LRU;
+            logger.error("Error! Unknown cache strategy");
+            return;
         }
         this.repo = new KVRepo(cacheSize, this.strategy);
 
@@ -52,7 +56,8 @@ public class KVServer extends Thread implements IKVServer {
         try {
             this.strategy = CacheStrategy.valueOf(strategy);
         } catch (IllegalArgumentException e) {
-            this.strategy = CacheStrategy.LRU;
+            logger.error("Error! Unknown cache strategy");
+            return;
         }
         serverMetadata = new ServerMetadata();
         repo = new KVRepo(cacheSize, this.strategy, storePath, serverMetadata);
@@ -87,8 +92,7 @@ public class KVServer extends Thread implements IKVServer {
 
     @Override
     public boolean inCache(String key) {
-        // TODO Auto-generated method stub
-        return false;
+        return this.repo.inCache(key);
     }
 
     @Override
@@ -104,11 +108,12 @@ public class KVServer extends Thread implements IKVServer {
 
     @Override
     public void clearCache() {
-        // TODO Auto-generated method stub
+        this.repo.clearCache();
     }
 
     @Override
     public void clearStorage() {
+        clearCache();
         this.repo.nukeStore();
     }
 
@@ -192,7 +197,7 @@ public class KVServer extends Thread implements IKVServer {
     /**
      * Copies over field values from param: metadata to this.metadata. We can't directly assign it because then
      * KVRepo's copy of metadata doesn't update.
-     * */
+     */
     @Override
     public void updateMetadata(ServerMetadata serverMetadata) {
         this.serverMetadata.updateMetadata(serverMetadata);
