@@ -172,7 +172,7 @@ public class ECSClientUI {
     private void addNode(){
         try {
             if (ecsClient != null) {
-                ecsClient.addNode();
+                ecsClient.addNode(cacheStrategy, cacheSize);
                 logger.info("Node Added");
                 System.out.println(PROMPT + "Node added successfully");
             }
@@ -184,7 +184,7 @@ public class ECSClientUI {
     private void addNodes(int num_nodes){
         try {
             if (ecsClient != null) {
-                ecsClient.addNodes(num_nodes);
+                ecsClient.addNodes(num_nodes, cacheStrategy, cacheSize);
                 logger.info("Nodes Added");
                 System.out.println(PROMPT + "Nodes added successfully");
             }

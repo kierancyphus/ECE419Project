@@ -4,6 +4,7 @@ import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag;
 import com.chickenrunfanclub.ecs.IECSNode;
 
+import com.chickenrunfanclub.shared.Hasher;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,7 +57,7 @@ public class ECSClient implements IECSClient {
             for (String node : nodes) {
                 if (!node.equals("metadata")) {
                     serverStatus.put(node, ECSNodeFlag.IN_USE);
-                    metaData.put(node, hash(node));
+                    metaData.put(node, Hasher.hash(node));
                 }
             }
             running = true;
@@ -97,7 +98,7 @@ public class ECSClient implements IECSClient {
     }
 
     @Override
-    public IECSNode addNode() throws InterruptedException, KeeperException {
+    public IECSNode addNode(String cacheStrategy, int cacheSize) throws InterruptedException, KeeperException {
         try{
             // check for available node first
             if (metaData.size() >= nodeList.size()){
@@ -139,7 +140,7 @@ public class ECSClient implements IECSClient {
     }
 
     @Override
-    public ArrayList<ECSNode> addNodes(int count) throws InterruptedException {
+    public ArrayList<ECSNode> addNodes(int count, String cacheStrategy, int cacheSize) throws InterruptedException {
         try{
             ArrayList<ECSNode> newNodes = setupNodes(count, cacheStrategy, cacheSize);
             Runtime run=Runtime.getRuntime();
@@ -270,7 +271,7 @@ public class ECSClient implements IECSClient {
 
     @Override
     public IECSNode getNodeByKey(String Key) throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        String hashedKey = hash(Key);
+        String hashedKey = Hasher.hash(Key);
         ArrayList<IECSNode> nodes = (ArrayList<IECSNode>) getNodes().values();
         if (nodes.size() == 1){
             return nodes.get(0);
@@ -305,17 +306,6 @@ public class ECSClient implements IECSClient {
         return running;
     }
 
-    // MD5 hashing
-    public String hash(String key) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        byte [] hashed = md.digest(key.getBytes("UTF-8"));
-        StringBuilder sb = new StringBuilder();
-        for (byte b : hashed) {
-            sb.append(String.format("%02X ", b));
-        }
-        return sb.toString();
-    }
-
     private void readFile(String file){
         File f = new File(file);
         String name, host, key, port, hashVal;
@@ -328,7 +318,7 @@ public class ECSClient implements IECSClient {
                 host = line[1];
                 port = line[2];
                 key = host + ":" + port;
-                hashVal = hash(key);
+                hashVal = Hasher.hash(key);
                 node = new ECSNode(name, host, Integer.parseInt(port), hashVal);
                 nodeList.add(node);
                 hashToName.put(hashVal, name);
@@ -337,7 +327,7 @@ public class ECSClient implements IECSClient {
             System.out.println("Configuration file not found");
             e.printStackTrace();
             System.exit(1);
-        } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
