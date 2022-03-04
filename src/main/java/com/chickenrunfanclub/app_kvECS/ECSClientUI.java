@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.log4j.BasicConfigurator;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,6 +27,7 @@ public class ECSClientUI {
     private int cacheSize;
 
     public ECSClientUI(String config_file, int cacheSize, String strategy) {
+        BasicConfigurator.configure();
         this.config_file = config_file;
         this.cacheSize = cacheSize;
         try {
