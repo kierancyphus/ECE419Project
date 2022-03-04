@@ -126,7 +126,7 @@ public class KVServer extends Thread implements IKVServer {
             while (isRunning()) {
                 try {
                     Socket client = serverSocket.accept();
-                    KVClientConnection connection = new KVClientConnection(client, repo);
+                    KVClientConnection connection = new KVClientConnection(client, repo, this);
                     new Thread(connection).start();
                     logger.info("Connected to "
                             + client.getInetAddress().getHostName()

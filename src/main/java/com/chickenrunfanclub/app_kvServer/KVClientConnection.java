@@ -1,11 +1,13 @@
 package com.chickenrunfanclub.app_kvServer;
 
+import com.chickenrunfanclub.shared.ServerMetadata;
+import com.google.gson.Gson;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import com.chickenrunfanclub.shared.messages.TextMessage;
 import com.chickenrunfanclub.shared.Messenger;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
-import com.chickenrunfanclub.shared.messages.TextMessage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -22,6 +24,7 @@ public class KVClientConnection implements Runnable {
     private static final Logger logger = LogManager.getLogger(KVClientConnection.class);
     private final Messenger messenger;
     private final KVRepo repo;
+    private final KVServer server;
     private boolean isOpen;
 
     /**
@@ -29,11 +32,12 @@ public class KVClientConnection implements Runnable {
      *
      * @param clientSocket the Socket object for the client connection.
      */
-    public KVClientConnection(Socket clientSocket, KVRepo repo) {
+    public KVClientConnection(Socket clientSocket, KVRepo repo, KVServer server) {
         logger.info("Initializing the Client connection with " + clientSocket.getPort());
         this.isOpen = true;
         this.messenger = new Messenger(clientSocket);
         this.repo = repo;
+        this.server = server;
     }
 
     /**
@@ -56,13 +60,47 @@ public class KVClientConnection implements Runnable {
 
                     message = new KVMessage(latestMsg);
 
-                    if (message.getStatus() == IKVMessage.StatusType.GET) {
-                        response = repo.get(message.getKey());
-                    } else if (message.getStatus() == IKVMessage.StatusType.PUT) {
-                        response = repo.put(message.getKey(), message.getValue());
-                    } else {
-                        response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
+                    switch (message.getStatus()) {
+                        case GET: {response = repo.get(message.getKey()); break;}
+                        case PUT: {response = repo.put(message.getKey(), message.getValue()); break;}
+                        case SERVER_START: {
+                            server.updateServerStopped(false);
+                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_START);
+                            break;
+                        }
+                        case SERVER_STOP: {
+                            server.updateServerStopped(false);
+                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_STOPPED);
+                            break;
+                        }
+                        case SERVER_WRITE_LOCK: {
+                            server.lockWrite();
+                            // TODO: convert these into success and failure message (although idk how it could fail)
+                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_WRITE_LOCK);
+                            break;
+                        }
+                        case SERVER_WRITE_UNLOCKED: {
+                            server.unLockWrite();
+                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_WRITE_LOCK);
+                            break;
+                        }
+                        case SERVER_MOVE_DATA: {
+                            // I'm storing the json of the metadata in the key field of the KVMessage lmao
+                            ServerMetadata metadata = new Gson().fromJson(message.getKey(), ServerMetadata.class);
+                            server.moveData(metadata);
+                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_MOVE_DATA);
+                            break;
+                        }
+                        case SERVER_UPDATE_METADATA: {
+                            // metadata also stored in the key
+                            ServerMetadata metadata = new Gson().fromJson(message.getKey(), ServerMetadata.class);
+                            server.updateMetadata(metadata);
+                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_UPDATE_METADATA);
+                            break;
+                        }
+                        default: response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
                     }
+
                     messenger.sendMessage(new TextMessage(response));
 
                     /* connection either terminated by the client or lost due to

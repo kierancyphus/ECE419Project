@@ -1,9 +1,11 @@
 package com.chickenrunfanclub.client;
 
 import com.chickenrunfanclub.shared.Messenger;
+import com.chickenrunfanclub.shared.ServerMetadata;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
 import com.chickenrunfanclub.shared.messages.TextMessage;
+import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -80,6 +82,14 @@ public class KVStore implements KVCommInterface {
         }
     }
 
+    public IKVMessage sendAndReceiveMessage(IKVMessage.StatusType status) throws Exception {
+        KVMessage message = new KVMessage(null, null, status);
+        TextMessage textMessage = new TextMessage(message);
+        messenger.sendMessage(textMessage);
+        TextMessage response = messenger.receiveMessage();
+        return new KVMessage(response);
+    }
+
     @Override
     public IKVMessage put(String key, String value) throws Exception {
         KVMessage message = new KVMessage(key, value, IKVMessage.StatusType.PUT);
@@ -92,6 +102,51 @@ public class KVStore implements KVCommInterface {
     @Override
     public IKVMessage get(String key) throws Exception {
         KVMessage message = new KVMessage(key, null, IKVMessage.StatusType.GET);
+        TextMessage textMessage = new TextMessage(message);
+        messenger.sendMessage(textMessage);
+        TextMessage response = messenger.receiveMessage();
+        return new KVMessage(response);
+    }
+
+    @Override
+    public IKVMessage start() throws Exception {
+        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_START);
+    }
+
+    @Override
+    public IKVMessage stop() throws Exception {
+        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_STOP);
+    }
+
+    @Override
+    public IKVMessage shutDown() throws Exception {
+        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_STOP);
+    }
+
+    @Override
+    public IKVMessage lockWrite() throws Exception {
+        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_WRITE_LOCK);
+    }
+
+    @Override
+    public IKVMessage unlockWrite() throws Exception {
+        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_WRITE_UNLOCKED);
+    }
+
+    @Override
+    public IKVMessage moveData(ServerMetadata metadata) throws Exception {
+        String metadataString = new Gson().toJson(metadata, ServerMetadata.class);
+        KVMessage message = new KVMessage(metadataString, null, IKVMessage.StatusType.SERVER_MOVE_DATA);
+        TextMessage textMessage = new TextMessage(message);
+        messenger.sendMessage(textMessage);
+        TextMessage response = messenger.receiveMessage();
+        return new KVMessage(response);
+    }
+
+    @Override
+    public IKVMessage updateMetadata(ServerMetadata metadata) throws Exception {
+        String metadataString = new Gson().toJson(metadata, ServerMetadata.class);
+        KVMessage message = new KVMessage(metadataString, null, IKVMessage.StatusType.SERVER_UPDATE_METADATA);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();

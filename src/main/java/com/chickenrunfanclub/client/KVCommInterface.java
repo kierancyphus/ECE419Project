@@ -1,5 +1,6 @@
 package com.chickenrunfanclub.client;
 
+import com.chickenrunfanclub.shared.ServerMetadata;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 
 public interface KVCommInterface {
@@ -27,13 +28,24 @@ public interface KVCommInterface {
      */
     public IKVMessage put(String key, String value) throws Exception;
 
-    /**
-     * Retrieves the value for a given key from the KVServer.
-     *
-     * @param key the key that identifies the value.
-     * @return the value, which is indexed by the given key.
-     * @throws Exception if put command cannot be executed (e.g. not connected to any
-     *                   KV server).
-     */
-    public IKVMessage get(String key) throws Exception;
+	/**
+	 * Retrieves the value for a given key from the KVServer.
+	 *
+	 * @param key
+	 *            the key that identifies the value.
+	 * @return the value, which is indexed by the given key.
+	 * @throws Exception
+	 *             if put command cannot be executed (e.g. not connected to any
+	 *             KV server).
+	 */
+	public IKVMessage get(String key) throws Exception;
+
+	public IKVMessage start() throws Exception;
+	public IKVMessage stop() throws Exception;
+	public IKVMessage shutDown() throws Exception;
+	public IKVMessage lockWrite() throws Exception;
+	public IKVMessage unlockWrite() throws Exception;
+	public IKVMessage moveData(ServerMetadata metadata) throws Exception;
+	public IKVMessage updateMetadata(ServerMetadata metadata) throws Exception;
+
 }
