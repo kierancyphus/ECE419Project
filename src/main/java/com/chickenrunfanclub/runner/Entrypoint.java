@@ -1,6 +1,7 @@
 package com.chickenrunfanclub.runner;
 
 import com.chickenrunfanclub.app_kvClient.KVClient;
+import com.chickenrunfanclub.app_kvECS.ECSClientUI;
 import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.logger.LogSetup;
 import org.apache.logging.log4j.Level;
@@ -19,6 +20,29 @@ public class Entrypoint {
         } catch (IOException e) {
             System.out.println("Error! Unable to initialize logger!");
             e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    public static void runECS(String[] args) {
+        try {
+            new LogSetup("logs/ecs.log", Level.ALL);
+            if (args.length != 3) {
+                System.out.println("Error! Invalid number of arguments!");
+                System.out.println("Usage: ecs <config_file> <cacheSize> <stategy>!");
+            } else {
+                String config_file = args[0];
+                String cacheStrategy = args[1];
+                int cacheSize = Integer.parseInt(args[2]);
+                ECSClientUI ecs = new ECSClientUI(config_file, cacheSize, cacheStrategy);
+                ecs.run();
+            }
+        } catch (IOException e) {
+            System.out.println("Error! Unable to initialize logger!");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (NumberFormatException nfe) {
+            System.out.println("Error! Cache Size must be an integer");
             System.exit(1);
         }
     }
@@ -59,6 +83,8 @@ public class Entrypoint {
             runServer(Arrays.copyOfRange(args, 1, args.length));
         } else if (Objects.equals(args[0], "client")) {
             runClient();
+        } else if (Objects.equals(args[0], "ecs")){
+            runECS(Arrays.copyOfRange(args, 1, args.length));
         } else {
             System.out.println("Error! Not specified if server or client");
             System.out.println("Usage: \"./gradlew run --args=\"server\" \" or \"./gradlew run --args=\"client\" --console=plain\"");

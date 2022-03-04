@@ -1,12 +1,11 @@
 package com.chickenrunfanclub.app_kvECS;
 
+import com.chickenrunfanclub.app_kvServer.IKVServer;
 import com.chickenrunfanclub.logger.LogSetup;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
-
-import com.chickenrunfanclub.app_kvECS.ECSClient;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,7 +13,6 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.net.UnknownHostException;
 
 public class ECSClientUI {
 
@@ -27,21 +25,25 @@ public class ECSClientUI {
     private String cacheStrategy;
     private int cacheSize;
 
-    public void main(String[] args) {
-        config_file = args[0];
-        cacheStrategy = args[1];
+    public ECSClientUI(String config_file, int cacheSize, String strategy) {
+        this.config_file = config_file;
+        this.cacheSize = cacheSize;
         try {
-            cacheSize = Integer.parseInt(args[2]);
-        } catch (Exception e) {
-            printError("Cache Size must be an integer");
+            IKVServer.CacheStrategy.valueOf(strategy);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error! Unknown cache strategy");
+            return;
         }
+        this.cacheStrategy = strategy;
         try {
-            start(args[0], args[1], cacheSize);
-        } catch (Exception e) {
-            stop = true;
-            printError("Issue with config file, servers could not be initialized ");
+            ecsClient = new ECSClient(this.config_file, this.cacheStrategy, this.cacheSize);
+            ecsClient.start();
+        } catch(Exception e){
+            logger.error("Error! Could not initialize ECS");
         }
+    }
 
+    public void run() {
         while (!stop) {
             stdin = new BufferedReader(new InputStreamReader(System.in));
             System.out.print(PROMPT);
