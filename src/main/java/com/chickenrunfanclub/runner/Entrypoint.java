@@ -1,15 +1,12 @@
 package com.chickenrunfanclub.runner;
 
 import com.chickenrunfanclub.app_kvClient.KVClient;
-import com.chickenrunfanclub.app_kvECS.ECSClient;
-import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.app_kvECS.ECSClientUI;
+import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.logger.LogSetup;
 import org.apache.logging.log4j.Level;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -37,7 +34,8 @@ public class Entrypoint {
                 String config_file = args[0];
                 String cacheStrategy = args[1];
                 int cacheSize = Integer.parseInt(args[2]);
-                new ECSClientUI(config_file, cacheSize, cacheStrategy).run();
+                ECSClientUI ecs = new ECSClientUI(config_file, cacheSize, cacheStrategy);
+                ecs.run();
             }
         } catch (IOException e) {
             System.out.println("Error! Unable to initialize logger!");

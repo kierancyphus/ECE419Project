@@ -7,15 +7,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 
-import com.chickenrunfanclub.app_kvECS.ECSClient;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.net.UnknownHostException;
 
 public class ECSClientUI {
 
@@ -38,6 +35,12 @@ public class ECSClientUI {
             return;
         }
         this.cacheStrategy = strategy;
+        try {
+            ecsClient = new ECSClient(this.config_file, this.cacheStrategy, this.cacheSize);
+            ecsClient.start();
+        } catch(Exception e){
+            logger.error("Error! Could not initialize ECS");
+        }
     }
 
     public void run() {
