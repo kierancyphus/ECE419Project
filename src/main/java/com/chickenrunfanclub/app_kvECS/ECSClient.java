@@ -297,6 +297,21 @@ public class ECSClient implements IECSClient {
         }
     }
 
+    public boolean removeNode(int nodeIdx) throws Exception {
+        try {
+            String node = nodeList.get(nodeIdx).getName();
+            serverNameToStatus.put(node, ECSNodeFlag.SHUT_DOWN);
+            metaData.remove(node);
+            zk.setData("/ecs/" + node, null, -1);
+            zk.delete("/ecs/" + node, -1);
+            writeMetaData();
+            return true;
+        } catch (KeeperException | InterruptedException | NoSuchAlgorithmException e) {
+            logger.error(e);
+            return false;
+        }
+    }
+
     @Override
     public Map<String, IECSNode> getNodes() {
         HashMap<String, IECSNode> map = new HashMap<String, IECSNode>();

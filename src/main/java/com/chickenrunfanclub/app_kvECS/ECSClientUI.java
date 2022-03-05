@@ -112,20 +112,31 @@ public class ECSClientUI {
             }
 
         } else if (tokens[0].equals("remove")) {
-            if (tokens.length > 1) {
+            if (tokens.length == 2) {
                 try {
                     int node_idx = Integer.parseInt(tokens[1]);
                     if (ecsClient != null && ecsClient.isRunning()) {
-                        List<String> nodes = Arrays.asList(Arrays.copyOfRange(tokens, 1, tokens.length));
-                        removeNodes(nodes);
+                        removeNode(node_idx);
                     } else {
                         printError("ECSClient is not running");
                     }
                 } catch (Exception e) {
-                    printError("Incorrect nodes given, please give existing nodes.");
+                    printError("Incorrect node index given.");
                 }
+//            if (tokens.length > 1) {
+//                try {
+//                    int node_idx = Integer.parseInt(tokens[1]);
+//                    if (ecsClient != null && ecsClient.isRunning()) {
+//                        List<String> nodes = Arrays.asList(Arrays.copyOfRange(tokens, 1, tokens.length));
+//                        removeNodes(nodes);
+//                    } else {
+//                        printError("ECSClient is not running");
+//                    }
+//                } catch (Exception e) {
+//                    printError("Incorrect nodes given, please give existing nodes.");
+//                }
             } else {
-                printError("Incorrect number of arguments, no nodes given");
+                printError("Incorrect number of arguments, no node given");
             }
 
         } else if (tokens[0].equals("logLevel")) {
@@ -207,6 +218,18 @@ public class ECSClientUI {
         }
     }
 
+    private void removeNode(int nodeIdx){
+        try {
+            if (ecsClient != null) {
+                ecsClient.removeNode(nodeIdx);
+                logger.info("Node Removed");
+                System.out.println(PROMPT + "Node removed successfully");
+            }
+        } catch (Exception e) {
+            printError("Node removal unsuccessful");
+        }
+    }
+
     private void printHelp() {
         StringBuilder sb = new StringBuilder();
         sb.append(PROMPT).append("ECS CLIENT HELP (Usage):\n");
@@ -221,8 +244,8 @@ public class ECSClientUI {
         sb.append("\t\t Restart all servers\n");
         sb.append(PROMPT).append("add <num_nodes>");
         sb.append("\t\t\t Adds given number of nodes. If no number is specified adds 1 \n");
-        sb.append(PROMPT).append("remove <nodes>");
-        sb.append("\t\t\t Removes given nodes, any number of nodes can be given \n");
+        sb.append(PROMPT).append("remove <node index>");
+        sb.append("\t\t\t Removes the node at the given index \n");
         sb.append(PROMPT).append("logLevel");
         sb.append("\t\t\t changes the logLevel \n");
         sb.append(PROMPT).append("\t\t\t\t ");
