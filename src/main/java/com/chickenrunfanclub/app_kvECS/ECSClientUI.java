@@ -244,8 +244,8 @@ public class ECSClientUI {
         sb.append("\t\t Restart all servers\n");
         sb.append(PROMPT).append("add <num_nodes>");
         sb.append("\t\t\t Adds given number of nodes. If no number is specified adds 1 \n");
-        sb.append(PROMPT).append("remove <nodes>");
-        sb.append("\t\t\t Removes given nodes, any number of nodes can be given \n");
+        sb.append(PROMPT).append("remove <node index>");
+        sb.append("\t\t\t Removes the node at the given index \n");
         sb.append(PROMPT).append("logLevel");
         sb.append("\t\t\t changes the logLevel \n");
         sb.append(PROMPT).append("\t\t\t\t ");
