@@ -1,5 +1,6 @@
 package com.chickenrunfanclub.app_kvServer;
 
+import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
@@ -20,7 +21,8 @@ public class KVServer extends Thread implements IKVServer {
     private int cacheSize;
     private IKVServer.CacheStrategy strategy;
     private KVRepo repo;
-    private ECSNode ECSNode;
+    private ECSNode metadata;
+    private AllServerMetadata allServerMetadata;
 
     private static final Logger logger = LogManager.getLogger(KVServer.class);
     private ServerSocket serverSocket;
@@ -47,6 +49,7 @@ public class KVServer extends Thread implements IKVServer {
             return;
         }
         this.repo = new KVRepo(cacheSize, this.strategy);
+        allServerMetadata = null;
 
     }
 
@@ -59,8 +62,9 @@ public class KVServer extends Thread implements IKVServer {
             logger.error("Error! Unknown cache strategy");
             return;
         }
-        ECSNode = new ECSNode();
-        repo = new KVRepo(cacheSize, this.strategy, storePath, ECSNode);
+        metadata = new ECSNode();
+        repo = new KVRepo(cacheSize, this.strategy, storePath, metadata);
+        allServerMetadata = null;
     }
 
 
@@ -72,7 +76,7 @@ public class KVServer extends Thread implements IKVServer {
 
     @Override
     public String getHostname() {
-        return ECSNode.getHost();
+        return metadata.getHost();
     }
 
     @Override
@@ -163,12 +167,12 @@ public class KVServer extends Thread implements IKVServer {
 
     @Override
     public void lockWrite() {
-        ECSNode.setWriteLock(true);
+        metadata.setWriteLock(true);
     }
 
     @Override
     public void unLockWrite() {
-        ECSNode.setWriteLock(false);
+        metadata.setWriteLock(false);
     }
 
     @Override
@@ -200,12 +204,18 @@ public class KVServer extends Thread implements IKVServer {
      */
     @Override
     public void updateMetadata(ECSNode ECSNode) {
-        this.ECSNode.updateMetadata(ECSNode);
+        this.metadata.updateMetadata(ECSNode);
     }
 
     public void updateServerStopped(boolean stopped) {
-        ECSNode.setServerLock(stopped);
+        metadata.setServerLock(stopped);
     }
+
+    public void replaceAllServerMetadata(AllServerMetadata replacer) {
+        allServerMetadata = replacer;
+    }
+
+    public ECSNode getMetadata() { return metadata; }
 
     private boolean isRunning() {
         return running;
@@ -213,6 +223,10 @@ public class KVServer extends Thread implements IKVServer {
 
     public Set<String> listKeys() {
         return repo.listKeys();
+    }
+
+    public AllServerMetadata getAllMetadata() {
+        return allServerMetadata;
     }
 
     private boolean initializeServer() {

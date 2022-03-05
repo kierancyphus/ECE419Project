@@ -30,7 +30,7 @@ public class KVRepo {
     private IKVCache cache;
 
     // Server Metadata
-    private ECSNode ECSNode;
+    private ECSNode serverMetadata;
     private boolean writeLock = false;
     private boolean repoLocked = true;
 
@@ -51,22 +51,22 @@ public class KVRepo {
     public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy, String storePath, ECSNode ECSNode) {
         createStore(storePath);
         createCache(cacheSize, strategy);
-        this.ECSNode = ECSNode;
+        this.serverMetadata = ECSNode;
         initializeHash();
     }
 
     public IKVMessage put(String key, String value) {
-        if (ECSNode.notResponsibleFor(key)) {
+        if (serverMetadata.notResponsibleFor(key)) {
             logger.info("Repo not responsible. Put<" + key + ", " + value + "> failed");
             return new KVMessage(key, value, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
         }
 
-        if (ECSNode.serverLocked()) {
+        if (serverMetadata.serverLocked()) {
             logger.info("Repo is locked. Put<" + key + ", " + value + "> failed");
             return new KVMessage(key, value, IKVMessage.StatusType.SERVER_STOPPED);
         }
 
-        if (ECSNode.writeLocked()) {
+        if (serverMetadata.writeLocked()) {
             logger.info("Repo is write locked. Put<" + key + ", " + value + "> failed");
             return new KVMessage(key, value, IKVMessage.StatusType.SERVER_WRITE_LOCK);
         }
@@ -94,11 +94,11 @@ public class KVRepo {
     }
 
     public IKVMessage get(String key) {
-        if (ECSNode.notResponsibleFor(key)) {
+        if (serverMetadata.notResponsibleFor(key)) {
             return new KVMessage(key, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
         }
 
-        if (ECSNode.serverLocked()) {
+        if (serverMetadata.serverLocked()) {
             return new KVMessage(key, null, IKVMessage.StatusType.SERVER_STOPPED);
         }
 
@@ -208,7 +208,7 @@ public class KVRepo {
 
         for (File file : Objects.requireNonNull(storePathFile.listFiles())) {
             String hash = Hasher.hash(file.getName());
-            if (ECSNode.inRange(hash)) {
+            if (serverMetadata.inRange(hash)) {
                 hashes.put(hash, file.getName());
             }
         }

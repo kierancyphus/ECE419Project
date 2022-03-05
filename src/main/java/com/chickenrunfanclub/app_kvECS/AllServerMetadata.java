@@ -6,10 +6,7 @@ import com.chickenrunfanclub.shared.Hasher;
 import javax.print.DocFlavor;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag.IDLE;
@@ -17,6 +14,11 @@ import static com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag.STOP;
 
 public class AllServerMetadata {
     private final HashMap<String, ECSNode> nodeHashesToServerInfo;
+
+    public AllServerMetadata(HashMap<String, ECSNode> nodeHashesToServerInfo) {
+        // this is used for passing metadata around
+        this.nodeHashesToServerInfo = nodeHashesToServerInfo;
+    }
 
     public AllServerMetadata(String pathToConfigFile) {
         nodeHashesToServerInfo = new HashMap<>();
@@ -67,6 +69,10 @@ public class AllServerMetadata {
         nodeHashesToServerInfo.get(hashes.get(hashes.size() - 1)).setRangeEnd(hashes.get(0));
 
 //        nodeHashesToServerInfo.forEach((key, node) -> System.out.println(node.getRangeStart() + " " + node.getRangeEnd()));
+    }
+
+    public Map<String, ECSNode> getHashToServer() {
+        return nodeHashesToServerInfo;
     }
 
     public ECSNode findServerResponsible(String key) {

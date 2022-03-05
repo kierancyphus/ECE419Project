@@ -1,13 +1,16 @@
 package com.chickenrunfanclub.unitTests;
 
 import com.chickenrunfanclub.TestUtils;
+import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
+import com.google.gson.Gson;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -188,7 +191,7 @@ public class KVServerTest {
     // TODO: When cluster metadata has been created, the below needs to be updated to return the new metadata.
 
     @Test
-    public void serverReturnsNotResponsibleWhenPut() {
+    public void serverReturnsNotResponsibleWithMetadataWhenPut() {
         int port = 50012;
 
         // initialize original server
@@ -196,6 +199,8 @@ public class KVServerTest {
         server.clearStorage();
         server.start();
         server.updateMetadata(new ECSNode("localhost", port, "A".repeat(32), "F".repeat(32), false, false));
+        AllServerMetadata someMetadata = new AllServerMetadata(new HashMap<>());
+        server.replaceAllServerMetadata(someMetadata);
         utils.stall(1);
 
         KVStore kvClient = new KVStore("localhost", port);
@@ -209,10 +214,11 @@ public class KVServerTest {
         }
         assertNull(ex);
         assertSame(IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE, response.getStatus());
+        assertEquals(response.getKey(), new Gson().toJson(someMetadata, AllServerMetadata.class));
     }
 
     @Test
-    public void serverReturnsNotResponsibleWhenGet() {
+    public void serverReturnsNotResponsibleWithMetadataWhenGet() {
         int port = 50013;
 
         // initialize original server
@@ -220,6 +226,8 @@ public class KVServerTest {
         server.clearStorage();
         server.start();
         server.updateMetadata(new ECSNode("localhost", port, "A".repeat(32), "F".repeat(32), false, false));
+        AllServerMetadata someMetadata = new AllServerMetadata(new HashMap<>());
+        server.replaceAllServerMetadata(someMetadata);
         utils.stall(1);
 
         KVStore kvClient = new KVStore("localhost", port);
@@ -233,5 +241,6 @@ public class KVServerTest {
         }
         assertNull(ex);
         assertSame(IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE, response.getStatus());
+        assertEquals(response.getKey(), new Gson().toJson(someMetadata, AllServerMetadata.class));
     }
 }

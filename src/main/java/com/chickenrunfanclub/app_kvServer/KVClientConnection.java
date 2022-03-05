@@ -1,5 +1,6 @@
 package com.chickenrunfanclub.app_kvServer;
 
+import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
@@ -61,8 +62,27 @@ public class KVClientConnection implements Runnable {
                     message = new KVMessage(latestMsg);
 
                     switch (message.getStatus()) {
-                        case GET: {response = repo.get(message.getKey()); break;}
-                        case PUT: {response = repo.put(message.getKey(), message.getValue()); break;}
+                        case GET: {
+                            if (server.getMetadata().notResponsibleFor(message.getKey())) {
+                                // handle here
+                                String allServerMetadata = new Gson().toJson(server.getAllMetadata(), AllServerMetadata.class) ;
+                                response = new KVMessage(allServerMetadata, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
+                            } else {
+                                response = repo.get(message.getKey());
+                            }
+                            break;
+                        }
+                        case PUT: {
+                            if (server.getMetadata().notResponsibleFor(message.getKey())) {
+                                // handle here
+                                String allServerMetadata = new Gson().toJson(server.getAllMetadata(), AllServerMetadata.class) ;
+                                response = new KVMessage(allServerMetadata, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
+                            } else {
+                                response = repo.put(message.getKey(), message.getValue());
+                            }
+                            break;
+
+                        }
                         case SERVER_START: {
                             server.updateServerStopped(false);
                             response = new KVMessage("", "", IKVMessage.StatusType.SERVER_START);
