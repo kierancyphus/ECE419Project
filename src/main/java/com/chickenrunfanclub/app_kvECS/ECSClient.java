@@ -51,13 +51,13 @@ public class ECSClient implements IECSClient {
         // load all ECS nodes from config file
 //        readFile(configFileName);
         allServerMetadata = new AllServerMetadata(configFileName);
-        running = true;
+        running = false;
     }
 
     @Override
     public boolean start() throws Exception {
         // this only starts the servers that are idle. Need to add servers before to have active ones when the service is running
-
+        running = true;
         List<ECSNode> idleNodes = allServerMetadata.getAllNodesByStatus(ECSNodeFlag.IDLE);
         for (ECSNode node : idleNodes) {
             // start each of the servers
@@ -151,9 +151,30 @@ public class ECSClient implements IECSClient {
         }
         logger.info("About to run: " + script);
         try {
+            System.out.println("Hello?");
             Process proc = run.exec(script);
-            int terminted = proc.waitFor();
-            logger.info("starting new server terminated with signal: " + terminted);
+
+//            BufferedReader stdInput = new BufferedReader(new
+//                    InputStreamReader(proc.getInputStream()));
+//
+//            BufferedReader stdError = new BufferedReader(new
+//                    InputStreamReader(proc.getErrorStream()));
+//
+//// Read the output from the command
+//            System.out.println("Here is the standard output of the command:\n");
+//            String s = null;
+//            while ((s = stdInput.readLine()) != null) {
+//                System.out.println(s);
+//            }
+//
+//// Read any errors from the attempted command
+//            System.out.println("Here is the standard error of the command (if any):\n");
+//            while ((s = stdError.readLine()) != null) {
+//                System.out.println(s);
+//            }
+//
+//
+            logger.info("starting new server");
         } catch (Exception e) {
             logger.error("can not add nodes " + e);
         }

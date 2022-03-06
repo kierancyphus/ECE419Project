@@ -37,7 +37,6 @@ public class ECSClientUI {
         this.cacheStrategy = strategy;
         try {
             ecsClient = new ECSClient(this.config_file, this.cacheStrategy, this.cacheSize);
-//            ecsClient.start();
         } catch(Exception e){
             e.printStackTrace();
             logger.error("Error! Could not initialize ECS");
@@ -59,9 +58,8 @@ public class ECSClientUI {
         }
     }
 
-    private void start(String config_file, String cacheStrategy, int cacheSize) {
+    private void start() {
         try {
-            ecsClient = new ECSClient(config_file, cacheStrategy, cacheSize);
             ecsClient.start();
         } catch (Exception e) {
             logger.info("Error! Could not initialize ECS");
@@ -88,7 +86,7 @@ public class ECSClientUI {
             if (tokens.length >= 2) {
                 try {
                     int num_nodes = Integer.parseInt(tokens[1]);
-                    if (ecsClient != null && ecsClient.isRunning()) {
+                    if (ecsClient != null) {
                         addNodes(num_nodes);
                     } else {
                         printError("ECSClient is not running");
@@ -97,7 +95,7 @@ public class ECSClientUI {
                     printError("Number of nodes must be an integer");
                 }
             } else {
-                if (ecsClient != null && ecsClient.isRunning()) {
+                if (ecsClient != null) {
                     addNode();
                 } else {
                     printError("ECSClient is not running");
@@ -108,7 +106,7 @@ public class ECSClientUI {
             if (ecsClient.isRunning()) {
                 printError("ECSClient is already running");
             } else {
-                start(config_file, cacheStrategy, cacheSize);
+                start();
             }
 
         } else if (tokens[0].equals("remove")) {
