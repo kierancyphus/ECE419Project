@@ -57,10 +57,10 @@ public class ECSClient implements IECSClient {
     @Override
     public boolean start() throws Exception {
         // this only starts the servers that are idle. Need to add servers before to have active ones when the service is running
+
         List<ECSNode> idleNodes = allServerMetadata.getAllNodesByStatus(ECSNodeFlag.IDLE);
         for (ECSNode node : idleNodes) {
             // start each of the servers
-            ;
             KVStore client = new KVStore(node.getHost(), node.getPort());
             client.connect();
             client.start();
