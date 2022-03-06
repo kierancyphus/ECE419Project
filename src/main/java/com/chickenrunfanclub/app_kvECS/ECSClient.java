@@ -9,9 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -26,8 +24,7 @@ public class ECSClient implements IECSClient {
     private HashMap<String, ECSNodeFlag> serverNameToStatus = new HashMap<String, ECSNodeFlag>();     // node status
     private CountDownLatch connectedSignal;
     // this command is not working for some reason
-    private static final String SCRIPT_TEXT = "ssh -n %s nohup \"java -jar ~/ece419/testing/M1/build/libs/ece419-1.3-SNAPSHOT-all.jar server %s %s %s\"";
-//    private static final String SCRIPT_TEXT = "ssh -n %s nohup java -jar ./m2-server.jar %s %s %s &";
+    private static final String SCRIPT_TEXT = "java -jar /Users/rui/Documents/School/ECE419/ECE419Project/build/libs/ece419-1.3-SNAPSHOT-all.jar server %s %s %s";
     private final int TIMEOUT = 15000;
     private int numServers = 0;
     private String cacheStrategy;
@@ -148,7 +145,10 @@ public class ECSClient implements IECSClient {
         allServerMetadata.updateNodeStatus(serverToAdd, ECSNodeFlag.IDLE);
 
         Runtime run = Runtime.getRuntime();
-        String script = String.format(SCRIPT_TEXT, serverToAdd.getHost(), serverToAdd.getPort(), serverToAdd.getCacheSize(), serverToAdd.getCacheStrategy());
+        String script = String.format(SCRIPT_TEXT, serverToAdd.getPort(), serverToAdd.getCacheSize(), serverToAdd.getCacheStrategy());
+        if (!(Objects.equals(serverToAdd.getHost(), "127.0.0.1") || Objects.equals(serverToAdd.getHost(), "localhost"))){
+            script = "ssh -n " + serverToAdd.getHost() + " nohup " + script + " &";
+        }
         logger.info("About to run: " + script);
         try {
             Process proc = run.exec(script);
