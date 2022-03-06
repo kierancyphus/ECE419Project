@@ -48,6 +48,7 @@ public class KVServer extends Thread implements IKVServer {
             logger.error("Error! Unknown cache strategy");
             return;
         }
+        metadata = new ECSNode();
         this.repo = new KVRepo(cacheSize, this.strategy);
         allServerMetadata = null;
 

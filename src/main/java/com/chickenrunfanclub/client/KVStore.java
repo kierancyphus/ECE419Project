@@ -68,6 +68,7 @@ public class KVStore implements KVCommInterface {
 
     @Override
     public void connect() throws IOException, UnknownHostException {
+        System.out.println(address + port);
         clientSocket = new Socket(address, port);
         messenger = new Messenger(clientSocket);
         setRunning(true);
