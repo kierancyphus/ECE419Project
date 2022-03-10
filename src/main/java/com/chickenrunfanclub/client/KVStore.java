@@ -4,6 +4,8 @@ import com.chickenrunfanclub.shared.Messenger;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
+import com.chickenrunfanclub.shared.messages.IServerMessage;
+import com.chickenrunfanclub.shared.messages.ServerMessage;
 import com.chickenrunfanclub.shared.messages.TextMessage;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
@@ -90,6 +92,14 @@ public class KVStore implements KVCommInterface {
         return new KVMessage(response);
     }
 
+    public IServerMessage sendAndReceiveServerMessage(IServerMessage.StatusType status) throws Exception {
+        ServerMessage message = new ServerMessage(null, null, status);
+        TextMessage textMessage = new TextMessage(message);
+        messenger.sendMessage(textMessage);
+        TextMessage response = messenger.receiveMessage();
+        return new ServerMessage(response);
+    }
+
     @Override
     public IKVMessage put(String key, String value) throws Exception {
         KVMessage message = new KVMessage(key, value, IKVMessage.StatusType.PUT);
@@ -109,47 +119,47 @@ public class KVStore implements KVCommInterface {
     }
 
     @Override
-    public IKVMessage start() throws Exception {
-        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_START);
+    public IServerMessage start() throws Exception {
+        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_START);
     }
 
     @Override
-    public IKVMessage stop() throws Exception {
-        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_STOP);
+    public IServerMessage stop() throws Exception {
+        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_STOP);
     }
 
     @Override
-    public IKVMessage shutDown() throws Exception {
-        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_STOP);
+    public IServerMessage shutDown() throws Exception {
+        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_STOP);
     }
 
     @Override
-    public IKVMessage lockWrite() throws Exception {
-        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_WRITE_LOCK);
+    public IServerMessage lockWrite() throws Exception {
+        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_LOCK_WRITE);
     }
 
     @Override
-    public IKVMessage unlockWrite() throws Exception {
-        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_WRITE_UNLOCKED);
+    public IServerMessage unlockWrite() throws Exception {
+        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_UNLOCK_WRITE);
     }
 
     @Override
-    public IKVMessage moveData(ECSNode metadata) throws Exception {
+    public IServerMessage moveData(ECSNode metadata) throws Exception {
         String metadataString = new Gson().toJson(metadata, ECSNode.class);
-        KVMessage message = new KVMessage(metadataString, null, IKVMessage.StatusType.SERVER_MOVE_DATA);
+        ServerMessage message = new ServerMessage(metadataString, null, IServerMessage.StatusType.SERVER_MOVE_DATA);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();
-        return new KVMessage(response);
+        return new ServerMessage(response);
     }
 
     @Override
-    public IKVMessage updateMetadata(ECSNode metadata) throws Exception {
+    public IServerMessage updateMetadata(ECSNode metadata) throws Exception {
         String metadataString = new Gson().toJson(metadata, ECSNode.class);
-        KVMessage message = new KVMessage(metadataString, null, IKVMessage.StatusType.SERVER_UPDATE_METADATA);
+        ServerMessage message = new ServerMessage(metadataString, null, IServerMessage.StatusType.SERVER_UPDATE_METADATA);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();
-        return new KVMessage(response);
+        return new ServerMessage(response);
     }
 }

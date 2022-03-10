@@ -7,7 +7,10 @@ public interface IServerMessage {
         SERVER_STOP,				/* Stop server, no requests are processed */
         SERVER_WRITE_UNLOCKED,		/* Unlock Write, write requests are processed */
         SERVER_MOVE_DATA,			/* Move data between servers based on host and port */
-        SERVER_UPDATE_METADATA		/* Server metadata is updated */
+        SERVER_UPDATE_METADATA,		/* Server metadata is updated */
+        SERVER_LOCK_WRITE,		    /* Lock writes to the server */
+        SERVER_UNLOCK_WRITE,		    /* Unlock writes to the server */
+        FAILED                      /* Operation failed */
     }
 
     /**
