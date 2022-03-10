@@ -54,6 +54,36 @@ public class TextMessage implements Serializable {
         this.msgBytes = toByteArray(msg.toString());
     }
 
+    /**
+     * Constructs a TextMessage object with a given IKVMessage that
+     * forms the message.
+     *
+     * @param msg the String that forms the message.
+     */
+    public TextMessage(IServerMessage msg) {
+        if (msg == null) {
+            logger.info("Received null message");
+        }
+        this.msg = msg.toString();
+        this.msgBytes = toByteArray(msg.toString());
+    }
+
+    /**
+     * Constructs a TextMessage object with a given IKVMessage that
+     * forms the message.
+     *
+     * @param msg the String that forms the message.
+     */
+    public TextMessage(IECSMessage msg) {
+        if (msg == null) {
+            logger.info("Received null message");
+        }
+        this.msg = msg.toString();
+        this.msgBytes = toByteArray(msg.toString());
+    }
+
+
+
 
     /**
      * Returns the content of this TextMessage as a String.
