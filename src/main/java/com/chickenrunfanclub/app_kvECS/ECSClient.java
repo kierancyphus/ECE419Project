@@ -9,9 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -26,8 +24,7 @@ public class ECSClient implements IECSClient {
     private HashMap<String, ECSNodeFlag> serverNameToStatus = new HashMap<String, ECSNodeFlag>();     // node status
     private CountDownLatch connectedSignal;
     // this command is not working for some reason
-    private static final String SCRIPT_TEXT = "ssh -n %s nohup \"java -jar ~/ece419/testing/M1/build/libs/ece419-1.3-SNAPSHOT-all.jar server %s %s %s\"";
-//    private static final String SCRIPT_TEXT = "ssh -n %s nohup java -jar ./m2-server.jar %s %s %s &";
+    private static final String SCRIPT_TEXT = "java -jar /Users/rui/Documents/School/ECE419/ECE419Project/build/libs/ece419-1.3-SNAPSHOT-all.jar server %s %s %s";
     private final int TIMEOUT = 15000;
     private int numServers = 0;
     private String cacheStrategy;
@@ -54,13 +51,13 @@ public class ECSClient implements IECSClient {
         // load all ECS nodes from config file
 //        readFile(configFileName);
         allServerMetadata = new AllServerMetadata(configFileName);
-        running = true;
+        running = false;
     }
 
     @Override
     public boolean start() throws Exception {
         // this only starts the servers that are idle. Need to add servers before to have active ones when the service is running
-
+        running = true;
         List<ECSNode> idleNodes = allServerMetadata.getAllNodesByStatus(ECSNodeFlag.IDLE);
         for (ECSNode node : idleNodes) {
             // start each of the servers
@@ -148,12 +145,36 @@ public class ECSClient implements IECSClient {
         allServerMetadata.updateNodeStatus(serverToAdd, ECSNodeFlag.IDLE);
 
         Runtime run = Runtime.getRuntime();
-        String script = String.format(SCRIPT_TEXT, serverToAdd.getHost(), serverToAdd.getPort(), serverToAdd.getCacheSize(), serverToAdd.getCacheStrategy());
+        String script = String.format(SCRIPT_TEXT, serverToAdd.getPort(), serverToAdd.getCacheSize(), serverToAdd.getCacheStrategy());
+        if (!(Objects.equals(serverToAdd.getHost(), "127.0.0.1") || Objects.equals(serverToAdd.getHost(), "localhost"))){
+            script = "ssh -n " + serverToAdd.getHost() + " nohup " + script + " &";
+        }
         logger.info("About to run: " + script);
         try {
+            System.out.println("Hello?");
             Process proc = run.exec(script);
-            int terminted = proc.waitFor();
-            logger.info("starting new server terminated with signal: " + terminted);
+
+//            BufferedReader stdInput = new BufferedReader(new
+//                    InputStreamReader(proc.getInputStream()));
+//
+//            BufferedReader stdError = new BufferedReader(new
+//                    InputStreamReader(proc.getErrorStream()));
+//
+//// Read the output from the command
+//            System.out.println("Here is the standard output of the command:\n");
+//            String s = null;
+//            while ((s = stdInput.readLine()) != null) {
+//                System.out.println(s);
+//            }
+//
+//// Read any errors from the attempted command
+//            System.out.println("Here is the standard error of the command (if any):\n");
+//            while ((s = stdError.readLine()) != null) {
+//                System.out.println(s);
+//            }
+//
+//
+            logger.info("starting new server");
         } catch (Exception e) {
             logger.error("can not add nodes " + e);
         }
