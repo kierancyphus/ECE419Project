@@ -130,7 +130,7 @@ public class KVStore implements KVCommInterface {
 
     @Override
     public IServerMessage shutDown() throws Exception {
-        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_STOP);
+        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_SHUTDOWN);
     }
 
     @Override
