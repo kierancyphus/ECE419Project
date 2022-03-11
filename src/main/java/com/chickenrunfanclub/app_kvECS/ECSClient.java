@@ -4,6 +4,7 @@ import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag;
 import com.chickenrunfanclub.ecs.IECSNode;
+import com.chickenrunfanclub.shared.Hasher;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.*;
@@ -38,17 +39,18 @@ public class ECSClient implements IECSClient {
         connectedSignal = new CountDownLatch(1);
         cacheStrategy = cacheStrat;
         cacheSize = cacheSiz;
-//        zk = new ZooKeeper("127.0.0.1", 5000, new Watcher() {
-//            public void process(WatchedEvent we) {
-//                if (we.getState() == KeeperState.SyncConnected) {
-//                    connectedSignal.countDown();
-//                }
-//            }
-//        });
-//
-//        zk.create("/ecs", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        zk = new ZooKeeper("localhost", 5000, new Watcher() {
+            public void process(WatchedEvent we) {
+                if (we.getState() == KeeperState.SyncConnected) {
+                    connectedSignal.countDown();
+                }
+            }
+        });
+        connectedSignal.await();
+
+        zk.create("/ecs", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 //        zk.create("/ecs/metadata", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        // load all ECS nodes from config file
+//        load all ECS nodes from config file
 //        readFile(configFileName);
         allServerMetadata = new AllServerMetadata(configFileName);
         running = false;
@@ -138,16 +140,20 @@ public class ECSClient implements IECSClient {
     }
 
     @Override
-    public IECSNode addNode(String cacheStrategy, int cacheSize) throws InterruptedException, KeeperException {
+    public IECSNode addNode(String cacheStrategy, int cacheSize) throws InterruptedException, KeeperException, IOException {
         // sets the first stopped node to IDLE so that it can be started by start
         numServers++;
         ECSNode serverToAdd = allServerMetadata.getFirstByStatus(ECSNodeFlag.STOP);
         allServerMetadata.updateNodeStatus(serverToAdd, ECSNodeFlag.IDLE);
 
+        String path = "/" + serverToAdd.getName();
+        zk.create(path, nodeToByte(serverToAdd), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+
         Runtime run = Runtime.getRuntime();
         String script = String.format(SCRIPT_TEXT, serverToAdd.getPort(), serverToAdd.getCacheSize(), serverToAdd.getCacheStrategy());
         if (!(Objects.equals(serverToAdd.getHost(), "127.0.0.1") || Objects.equals(serverToAdd.getHost(), "localhost"))){
             script = "ssh -n " + serverToAdd.getHost() + " nohup " + script + " &";
+            // script = "ssh -n " + serverToAdd.getHost()" nohup java -jar " $DIR "/m2-server.jar "serverToAdd" "$thishost" "$port" &;
         }
         logger.info("About to run: " + script);
         try {
@@ -221,11 +227,12 @@ public class ECSClient implements IECSClient {
     }
 
     @Override
-    public List<IECSNode> addNodes(int count, String cacheStrategy, int cacheSize) throws InterruptedException, KeeperException {
+    public List<IECSNode> addNodes(int count, String cacheStrategy, int cacheSize) throws Exception {
         List<IECSNode> nodeList = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             nodeList.add(addNode(cacheStrategy, cacheSize));
         }
+        awaitNodes(count, 10000);
         return nodeList;
 //
 //        try {
@@ -293,7 +300,7 @@ public class ECSClient implements IECSClient {
 
         while (System.currentTimeMillis() - startTime < timeout) {
             List<String> list = zk.getChildren("/ecs", true);
-            if (numServers + 1 == list.size()) {
+            if (numServers == list.size()) {
                 return true;
             }
         }
@@ -304,15 +311,22 @@ public class ECSClient implements IECSClient {
     @Override
     public boolean removeNodes(Collection<String> nodeNames) throws Exception {
         try {
-            for (String node : nodeNames) {
-                serverNameToStatus.put(node, ECSNodeFlag.SHUT_DOWN);
-                metaData.remove(node);
-                zk.setData("/ecs/" + node, null, -1);
-                zk.delete("/ecs/" + node, -1);
+            int n = nodeNames.size();
+            List<ECSNode> usedNodes =  allServerMetadata.getAllNodesByStatus(ECSNodeFlag.START);
+            for (ECSNode node : usedNodes) {
+                if (nodeNames.contains(node.getName())) {
+                    // stop the node
+                    allServerMetadata.updateNodeStatus(node, ECSNodeFlag.STOP);
+                    // delete from zookeeper
+                    zk.setData("/ecs/" + node.getName(), null, -1);
+                    zk.delete("/ecs/" + node, -1);
+                    n--;
+                }
             }
-            writeMetaData();
-            return true;
-        } catch (KeeperException | InterruptedException | NoSuchAlgorithmException e) {
+            if (n == 0)
+                return true;
+            return false;
+        } catch (KeeperException | InterruptedException e) {
             logger.error(e);
             return false;
         }
@@ -320,12 +334,9 @@ public class ECSClient implements IECSClient {
 
     public boolean removeNode(int nodeIdx) throws Exception {
         try {
-            String node = nodeList.get(nodeIdx).getName();
-            serverNameToStatus.put(node, ECSNodeFlag.SHUT_DOWN);
-            metaData.remove(node);
-            zk.setData("/ecs/" + node, null, -1);
-            zk.delete("/ecs/" + node, -1);
-            writeMetaData();
+            ECSNode node = allServerMetadata.getAllNodesByStatus(ECSNodeFlag.START).get(nodeIdx);
+            List<String> nodeName = Arrays.asList(node.getName());
+            removeNodes(nodeName);
             return true;
         } catch (KeeperException | InterruptedException | NoSuchAlgorithmException e) {
             logger.error(e);
@@ -335,7 +346,11 @@ public class ECSClient implements IECSClient {
 
     @Override
     public Map<String, IECSNode> getNodes() {
+        List<ECSNode> nodes = (List<ECSNode>) allServerMetadata.getHashToServer().values();
         HashMap<String, IECSNode> map = new HashMap<String, IECSNode>();
+        for (ECSNode node : nodes) {
+            map.put(node.getName(), node);
+        }
 //        for (String key : nameToNode.keySet()) {
 //            if (serverStatus.get(key) == ECSNodeFlag.IN_USE) {
 //                map.put(key, nameToNode.get(key));
@@ -404,14 +419,21 @@ public class ECSClient implements IECSClient {
 //        }
 //    }
 
-    private byte[] HashMapToByte(HashMap<String, String> map) throws IOException {
+    private byte[] nodeToByte(ECSNode node) throws IOException {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(byteOut);
-        out.writeObject(map);
+        out.writeObject(node);
         return byteOut.toByteArray();
     }
 
+<<<<<<< Updated upstream
     private void writeMetaData() throws Exception {
         zk.setData("/servers/metadata", HashMapToByte(metaData), -1);
     }
 }
+=======
+//    private void writeMetaData() throws Exception {
+//        zk.setData("/servers/metadata", HashMapToByte(metaData), -1);
+//    }
+}
+>>>>>>> Stashed changes
