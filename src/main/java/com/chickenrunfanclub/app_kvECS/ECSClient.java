@@ -426,14 +426,7 @@ public class ECSClient implements IECSClient {
         return byteOut.toByteArray();
     }
 
-<<<<<<< Updated upstream
-    private void writeMetaData() throws Exception {
-        zk.setData("/servers/metadata", HashMapToByte(metaData), -1);
-    }
-}
-=======
 //    private void writeMetaData() throws Exception {
 //        zk.setData("/servers/metadata", HashMapToByte(metaData), -1);
 //    }
 }
->>>>>>> Stashed changes
