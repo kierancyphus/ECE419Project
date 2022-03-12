@@ -12,8 +12,6 @@ public interface IECSMessage {
         FAILED,			/* General failure message - could not tell if put or get */
 
         ECS_STOPPED,			/* ECS is stopped, no requests are processed */
-        SERVER_WRITE_LOCK,		/* Server locked for write, only get possible */
-        SERVER_NOT_RESPONSIBLE,	/* Request not successful, server not responsible for key */
 
         ECS_START,				/* Start ECS, */
         ECS_STOP,				/* Stop ECS */
