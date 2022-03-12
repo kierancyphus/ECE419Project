@@ -88,5 +88,3 @@ public class ECSClientConnection implements Runnable {
         }
     }
 }
-
-}
