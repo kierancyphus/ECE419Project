@@ -66,7 +66,7 @@ public class ECSClientConnection implements Runnable {
                         }
                         case ECS_SHUTDOWN: {
                             try {
-                                ecs.stop();
+                                ecs.shutdown();
                                 response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ECS_SHUTDOWN);
                             } catch (Exception e) {
                                 response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
