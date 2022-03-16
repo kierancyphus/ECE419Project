@@ -2,6 +2,8 @@ package com.chickenrunfanclub.ecs;
 
 import com.chickenrunfanclub.shared.Hasher;
 
+import java.util.Objects;
+
 public class ECSNode implements IECSNode {
     public enum ECSNodeFlag {
         STOP,
@@ -23,6 +25,7 @@ public class ECSNode implements IECSNode {
     private int cacheSize;
     private String name;
     private ECSNodeFlag status;
+    private final int chainLength = 2;
 
     public ECSNodeFlag getStatus() {
         return status;
@@ -38,6 +41,19 @@ public class ECSNode implements IECSNode {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ECSNode ecsNode = (ECSNode) o;
+        return Objects.equals(rangeStart, ecsNode.rangeStart) && Objects.equals(rangeEnd, ecsNode.rangeEnd) && Objects.equals(host, ecsNode.host) && Objects.equals(port, ecsNode.port) && Objects.equals(name, ecsNode.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(rangeStart, rangeEnd, host, port, name);
     }
 
     public ECSNode(String host, Integer port, String start, String end, Boolean serverLock, Boolean writeLock, String cacheStrategy, int cacheSize, String name, ECSNodeFlag status) {
@@ -116,6 +132,10 @@ public class ECSNode implements IECSNode {
     public boolean notResponsibleFor(String key) {
         return !inRange(Hasher.hash(key));
     }
+
+//    public boolean notResponsibleFor(String key, int messageIndex) {
+        // the key could not be in the hash range
+//    }
 
     public boolean responsibleFor(String key) {
         return inRange(Hasher.hash(key));

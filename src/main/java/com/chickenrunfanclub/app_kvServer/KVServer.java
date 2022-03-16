@@ -11,10 +11,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class KVServer extends Thread implements IKVServer {
     private int port;
@@ -49,8 +46,12 @@ public class KVServer extends Thread implements IKVServer {
             return;
         }
         metadata = new ECSNode();
+        HashMap<String, ECSNode> serverMetadatas = new HashMap<>();
+        serverMetadatas.put(metadata.getRangeStart(), metadata);
+        allServerMetadata = new AllServerMetadata(serverMetadatas);
+
         this.repo = new KVRepo(cacheSize, this.strategy);
-        allServerMetadata = null;
+
 
     }
 
@@ -64,8 +65,11 @@ public class KVServer extends Thread implements IKVServer {
             return;
         }
         metadata = new ECSNode();
+        HashMap<String, ECSNode> serverMetadatas = new HashMap<>();
+        serverMetadatas.put(metadata.getRangeStart(), metadata);
+        allServerMetadata = new AllServerMetadata(serverMetadatas);
+
         repo = new KVRepo(cacheSize, this.strategy, storePath, metadata);
-        allServerMetadata = null;
     }
 
 

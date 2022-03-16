@@ -74,8 +74,8 @@ public class AdditionalTest {
         } catch (Exception e) {
             ex = e;
         }
-
-        assertTrue(ex == null && response.getValue().equals(value));
+        assertNull(ex);
+        assertEquals(response.getValue(), value);
     }
 
     @Test

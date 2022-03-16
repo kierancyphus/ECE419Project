@@ -3,26 +3,31 @@ package com.chickenrunfanclub.app_kvECS;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.Hasher;
 
-import javax.print.DocFlavor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag.IDLE;
 import static com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag.STOP;
 
 public class AllServerMetadata {
     private final HashMap<String, ECSNode> nodeHashesToServerInfo;
+    private final List<ECSNode> nodesSortedByHash;
+    private final static int chainLength = 2;  // number of additional servers -> this is a chain of three
 
     public AllServerMetadata(HashMap<String, ECSNode> nodeHashesToServerInfo) {
         // this is used for passing metadata around
         this.nodeHashesToServerInfo = nodeHashesToServerInfo;
+        nodesSortedByHash = new ArrayList<>(nodeHashesToServerInfo.values());
+        nodesSortedByHash.sort(Comparator.comparing(ECSNode::getRangeStart));
     }
 
     public AllServerMetadata(String pathToConfigFile) {
         nodeHashesToServerInfo = new HashMap<>();
         initServerMetadata(pathToConfigFile);
+        // make sure the list is sorted
+        nodesSortedByHash = new ArrayList<>(nodeHashesToServerInfo.values());
+        nodesSortedByHash.sort(Comparator.comparing(ECSNode::getRangeStart));
     }
 
     private void initServerMetadata(String file) {
@@ -65,7 +70,6 @@ public class AllServerMetadata {
             node.setRangeEnd(hashes.get(i + 1));
         }
         // need to set the last hash to have the first hash as its end
-        String firstNodeHash = nodeHashesToServerInfo.get(hashes.get(0)).getRangeStart();
         nodeHashesToServerInfo.get(hashes.get(hashes.size() - 1)).setRangeEnd(hashes.get(0));
 
 //        nodeHashesToServerInfo.forEach((key, node) -> System.out.println(node.getRangeStart() + " " + node.getRangeEnd()));
@@ -75,7 +79,19 @@ public class AllServerMetadata {
         return nodeHashesToServerInfo;
     }
 
-    public ECSNode findServerResponsible(String key) {
+    public ECSNode findServerAheadInHashRing(ECSNode node, int ahead) {
+        int index = nodesSortedByHash.indexOf(node);
+        index = (index + ahead) % nodesSortedByHash.size();
+        return nodesSortedByHash.get(index);
+    }
+
+    public ECSNode findServerResponsible(String key, boolean get) {
+        // need to add a boolean get param that if true, returns the server at the tail
+        if (get) {
+            ECSNode headNode = findServerResponsible(key, false);
+            return findServerAheadInHashRing(headNode, chainLength);
+        }
+
         return nodeHashesToServerInfo
                 .values()
                 .stream()

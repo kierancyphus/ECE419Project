@@ -2,6 +2,7 @@ package com.chickenrunfanclub;
 
 import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
+import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.IKVMessage.StatusType;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,17 +17,16 @@ public class InteractionTest {
     private KVStore kvClient;
 
     final static int port = 50002;
-
-    @BeforeAll
-    static void setup() {
-        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/Interaction");
-        server.clearStorage();
-        server.start();
-        server.updateServerStopped(false);
-    }
+    private static final TestUtils utils = new TestUtils();
 
     @BeforeEach
     public void setUp() {
+        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/Interaction");
+        server.clearStorage();
+        server.updateMetadata(new ECSNode("localhost", port, "0".repeat(32), "F".repeat(32), false, false));
+        server.start();
+        utils.stall(2);
+
         kvClient = new KVStore("localhost", port);
         try {
             kvClient.connect();

@@ -92,7 +92,15 @@ public class KVStore implements KVCommInterface {
 
     @Override
     public IKVMessage put(String key, String value) throws Exception {
-        KVMessage message = new KVMessage(key, value, IKVMessage.StatusType.PUT);
+        KVMessage message = new KVMessage(key, value, IKVMessage.StatusType.PUT, 0);
+        TextMessage textMessage = new TextMessage(message);
+        messenger.sendMessage(textMessage);
+        TextMessage response = messenger.receiveMessage();
+        return new KVMessage(response);
+    }
+
+    public IKVMessage put(String key, String value, int index) throws Exception {
+        KVMessage message = new KVMessage(key, value, IKVMessage.StatusType.PUT, index);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();

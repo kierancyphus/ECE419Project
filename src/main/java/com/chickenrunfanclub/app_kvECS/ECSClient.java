@@ -371,7 +371,8 @@ public class ECSClient implements IECSClient {
 
     @Override
     public IECSNode getNodeByKey(String key) {
-        return allServerMetadata.findServerResponsible(key);
+        // we want this to return the server directly responsible, not the replication chain
+        return allServerMetadata.findServerResponsible(key, false);
     }
 
     public boolean isRunning() {

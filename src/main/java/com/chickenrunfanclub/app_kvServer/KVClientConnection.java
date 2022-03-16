@@ -1,6 +1,7 @@
 package com.chickenrunfanclub.app_kvServer;
 
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
+import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
@@ -48,7 +49,7 @@ public class KVClientConnection implements Runnable {
     public void run() {
         try {
 
-            IKVMessage message;
+            KVMessage message;
             IKVMessage response;
 
             while (isOpen) {
@@ -73,11 +74,36 @@ public class KVClientConnection implements Runnable {
                             break;
                         }
                         case PUT: {
-                            if (server.getMetadata().notResponsibleFor(message.getKey())) {
-                                // handle here
+                            // the first message was sent to the wrong head in the chain
+                            if (server.getMetadata().notResponsibleFor(message.getKey()) && message.getIndex() == 0) {
+                                logger.info("Not responsible for first message");
                                 String allServerMetadata = new Gson().toJson(server.getAllMetadata(), AllServerMetadata.class) ;
                                 response = new KVMessage(allServerMetadata, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
-                            } else {
+                            }
+                            // either index is 0 and responsible or passing along => persist to disk and then pass message along
+                            else if (message.getIndex() >= 0 && message.getIndex() < 2) {
+                                logger.info("persisting and passing message along");
+                                // flush to memory -> this is also the response we send to the client
+                                response = repo.put(message.getKey(), message.getValue());
+                                // find next server in hash ring
+                                ECSNode nextServer = server.getAllMetadata().findServerAheadInHashRing(server.getMetadata(), 1);
+
+                                // edge case here -> if we have a ring size of 1 this will be a deadlock because we are
+                                // trying to talk to ourselves. However, since this is also now the tail, we do nothing.
+                                if (!nextServer.equals(server.getMetadata())) {
+                                    // pass message along and increment index
+                                    KVStore kvClient = new KVStore(nextServer.getHost(), nextServer.getPort());
+                                    try {
+                                        kvClient.connect();
+                                        kvClient.put(message.getKey(), message.getValue(), message.getIndex() + 1);
+                                    } catch (Exception e) {
+                                        logger.info("Could not pass along message :(");
+                                    }
+                                }
+                            }
+                            // reached the end of the chain, so just persist to disk
+                            else {
+                                logger.info("Reached tail. Persisting.");
                                 response = repo.put(message.getKey(), message.getValue());
                             }
                             break;
