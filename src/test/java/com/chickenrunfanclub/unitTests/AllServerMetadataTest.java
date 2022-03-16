@@ -16,6 +16,7 @@ public class AllServerMetadataTest {
         AllServerMetadata metadata = new AllServerMetadata(filepath);
         Map<String, ECSNode> map = metadata.getHashToServer();
         Set<String> configs = new HashSet<>(Arrays.asList("localhost 50000", "localhost 50001", "localhost 50002"));
+//        System.out.println(map);
         map.forEach((key, node) -> assertTrue(configs.contains(node.getHost() + " " + node.getPort())));
     }
 

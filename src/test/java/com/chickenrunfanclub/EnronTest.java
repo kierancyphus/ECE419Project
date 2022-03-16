@@ -6,6 +6,7 @@ import com.chickenrunfanclub.shared.ClientThreadUtil;
 import junit.framework.TestCase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -24,7 +25,7 @@ public class EnronTest extends TestCase {
 
     private ECSClient ecsClient;
 
-    @BeforeAll
+//    @BeforeAll
     public void setUp() {
         try {
             ecsClient = new ECSClient("ecs.config", CACHE_STRATEGY, CACHE_SIZE);
@@ -35,7 +36,7 @@ public class EnronTest extends TestCase {
         }
     }
 
-    @AfterAll
+//    @AfterAll
     public void tearDown() {
         try{
             ecsClient.shutdown();
@@ -45,6 +46,7 @@ public class EnronTest extends TestCase {
 
     }
 
+    @Disabled
     @Test
     public void test_none() {
         try {
