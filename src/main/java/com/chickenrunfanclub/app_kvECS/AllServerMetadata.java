@@ -92,6 +92,10 @@ public class AllServerMetadata {
                 .collect(Collectors.toList());
     }
 
+    public List<ECSNode> getAllNodes() {
+        return new ArrayList<ECSNode>(nodeHashesToServerInfo.values());
+    }
+
     public void updateStatus(ECSNode.ECSNodeFlag originalStatus, ECSNode.ECSNodeFlag targetStatus) {
         List<ECSNode> nodesToUpdate = getAllNodesByStatus(originalStatus);
         List<String> hashes = nodesToUpdate.stream().map(ECSNode::getRangeStart).collect(Collectors.toList());

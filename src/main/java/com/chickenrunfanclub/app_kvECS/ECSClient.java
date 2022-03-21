@@ -5,10 +5,15 @@ import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag;
 import com.chickenrunfanclub.ecs.IECSNode;
 import com.chickenrunfanclub.shared.Hasher;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
+import com.chickenrunfanclub.logger.LogSetup;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
@@ -36,6 +41,12 @@ public class ECSClient implements IECSClient {
 
     public ECSClient(String configFileName, String cacheStrat, int cacheSiz) throws IOException, InterruptedException, KeeperException {
         // start zookeeper connection
+        ProcessBuilder zookeeperProcessBuilder =
+                new ProcessBuilder("apache-zookeeper-3.6.3-bin/bin/zkServer.sh", "start", "apache-zookeeper-3.6.3-bin/conf/zoo.cfg")
+                        .inheritIO();
+        Process zookeeperProcess = zookeeperProcessBuilder.inheritIO().start();
+        zookeeperProcess.waitFor();
+
         connectedSignal = new CountDownLatch(1);
         cacheStrategy = cacheStrat;
         cacheSize = cacheSiz;
@@ -47,11 +58,14 @@ public class ECSClient implements IECSClient {
             }
         });
         connectedSignal.await();
+        try {
+            zk.create("/ecs", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        }
+        catch (KeeperException.NodeExistsException e){
+            zk.delete("/ecs", -1);
+            zk.create("/ecs", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        }
 
-        zk.create("/ecs", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-//        zk.create("/ecs/metadata", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-//        load all ECS nodes from config file
-//        readFile(configFileName);
         allServerMetadata = new AllServerMetadata(configFileName);
         running = false;
     }
@@ -319,7 +333,7 @@ public class ECSClient implements IECSClient {
                     allServerMetadata.updateNodeStatus(node, ECSNodeFlag.STOP);
                     // delete from zookeeper
                     zk.setData("/ecs/" + node.getName(), null, -1);
-                    zk.delete("/ecs/" + node, -1);
+                    zk.delete("/ecs/" + node.getName(), -1);
                     n--;
                 }
             }
@@ -344,9 +358,28 @@ public class ECSClient implements IECSClient {
         }
     }
 
+    public boolean removeAllNodes() throws Exception {
+        try {
+            List<ECSNode> nodes =  allServerMetadata.getAllNodes();
+            for (ECSNode node : nodes) {
+                if (zk.exists("/"+node.getName(), false) != null) {
+                    // stop the node
+                    allServerMetadata.updateNodeStatus(node, ECSNodeFlag.STOP);
+                    // delete from zookeeper
+                    zk.setData("/" + node.getName(), null, -1);
+                    zk.delete("/" + node.getName(), -1);
+                }
+            }
+            return true;
+        } catch (KeeperException | InterruptedException e) {
+            logger.error(e);
+            return false;
+        }
+    }
+
     @Override
     public Map<String, IECSNode> getNodes() {
-        List<ECSNode> nodes = (List<ECSNode>) allServerMetadata.getHashToServer().values();
+        List<ECSNode> nodes = new ArrayList<ECSNode>(allServerMetadata.getHashToServer().values());
         HashMap<String, IECSNode> map = new HashMap<String, IECSNode>();
         for (ECSNode node : nodes) {
             map.put(node.getName(), node);
@@ -420,10 +453,19 @@ public class ECSClient implements IECSClient {
 //    }
 
     private byte[] nodeToByte(ECSNode node) throws IOException {
-        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(byteOut);
-        out.writeObject(node);
-        return byteOut.toByteArray();
+        byte[] bytes = null;
+        try {
+            ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(byteOut);
+            out.writeObject(node);
+            out.flush();
+            bytes = byteOut.toByteArray();
+        }
+        catch (Exception e) {
+            logger.error(e);
+        }
+        return bytes;
+
     }
 
 //    private void writeMetaData() throws Exception {

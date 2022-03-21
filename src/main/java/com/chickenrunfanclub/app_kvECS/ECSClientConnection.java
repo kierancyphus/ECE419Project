@@ -43,10 +43,10 @@ public class ECSClientConnection implements Runnable {
 
                     switch (message.getStatus()) {
                         case ADD: {
-                            response = ecs.addNodes(Integer.parseInt(message.getKey()));
+                            // response = (IECSMessage) ecs.addNodes(Integer.parseInt(message.getKey()));
                         }
                         case REMOVE: {
-                            response = ecs.removeNode(Integer.parseInt(message.getKey()));
+                            // response = ecs.removeNode(Integer.parseInt(message.getKey()));
                         }
                         case ECS_START: {
                             try {
