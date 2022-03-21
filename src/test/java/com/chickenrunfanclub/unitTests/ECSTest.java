@@ -3,7 +3,9 @@ package com.chickenrunfanclub.unitTests;
 import com.chickenrunfanclub.TestUtils;
 import com.chickenrunfanclub.app_kvECS.ECSClient;
 import org.apache.zookeeper.KeeperException;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -15,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ECSTest {
     private static final TestUtils utils = new TestUtils();
     static ECSClient ecs;
+    static int numServer;
 
     static {
         try {
@@ -29,7 +32,8 @@ public class ECSTest {
 
     @BeforeAll
     static void init() throws Exception {
-        ecs.removeAllNodes();
+        // ecs.removeAllNodes();
+        // numServer = ecs.getNumServers();
     }
 
     @Test
@@ -38,9 +42,33 @@ public class ECSTest {
     }
 
     @Test
+    public void addNode() throws Exception {
+        numServer = ecs.getNumServers();
+        assertSame(numServer, ecs.zookeeperNodes());
+        ecs.addNode("LRU", 5000);
+        assertSame(1, ecs.getNumServers() - numServer);
+        assertSame(1, ecs.zookeeperNodes() - numServer);
+    }
+
+    @Test
     public void addNodes() throws Exception {
-        ecs.addNodes(3, "LRU", 5000);
-        System.out.println("hello22222");
-        System.out.println(ecs.getNodes().size());
+        numServer = ecs.getNumServers();
+        assertSame(numServer, ecs.zookeeperNodes());
+        ecs.addNodes(2, "LRU", 5000);
+        assertSame(2, ecs.getNumServers() - numServer);
+        assertSame(2, ecs.zookeeperNodes() - numServer);
+    }
+
+    @Test
+    public void removeNodes() throws Exception {
+        numServer = ecs.getNumServers();
+        ecs.removeNode(0);
+        assertSame(1, numServer - ecs.getNumServers());
+        assertSame(1, numServer - ecs.zookeeperNodes());
+    }
+
+    @AfterAll
+    static void shutdown() throws Exception {
+        ecs.shutdown();
     }
 }
