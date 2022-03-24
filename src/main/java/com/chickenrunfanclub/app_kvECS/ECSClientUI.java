@@ -2,6 +2,8 @@ package com.chickenrunfanclub.app_kvECS;
 
 import com.chickenrunfanclub.app_kvServer.IKVServer;
 import com.chickenrunfanclub.logger.LogSetup;
+import com.chickenrunfanclub.shared.Messenger;
+import com.chickenrunfanclub.shared.messages.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,39 +12,24 @@ import org.apache.logging.log4j.core.config.Configurator;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 public class ECSClientUI {
+    private String address;
+    private int port;
 
     private static Logger logger = LogManager.getLogger(ECSClientUI.class);
     private static final String PROMPT = "ECSClient> ";
     private BufferedReader stdin;
-    private ECSClient ecsClient = null;
+    private boolean running = false;
+    private boolean connected = false;
     private boolean stop = false;
-    private String config_file = null;
-    private String cacheStrategy;
-    private int cacheSize;
-
-    public ECSClientUI(String config_file, int cacheSize, String strategy) {
-        this.config_file = config_file;
-        this.cacheSize = cacheSize;
-        try {
-            IKVServer.CacheStrategy.valueOf(strategy);
-        } catch (IllegalArgumentException e) {
-            logger.error("Error! Unknown cache strategy");
-            return;
-        }
-        this.cacheStrategy = strategy;
-        try {
-            ecsClient = new ECSClient(this.config_file, this.cacheStrategy, this.cacheSize);
-//            ecsClient.start();
-        } catch(Exception e){
-            e.printStackTrace();
-            logger.error("Error! Could not initialize ECS");
-        }
-    }
+    private Socket clientSocket;
+    private Messenger messenger;
 
     public void run() {
         while (!stop) {
@@ -59,13 +46,35 @@ public class ECSClientUI {
         }
     }
 
-    private void start(String config_file, String cacheStrategy, int cacheSize) {
-        try {
-            ecsClient = new ECSClient(config_file, cacheStrategy, cacheSize);
-            ecsClient.start();
-        } catch (Exception e) {
-            logger.info("Error! Could not initialize ECS");
+    public IECSMessage sendAndReceiveECSMessage(IECSMessage.StatusType status) throws Exception {
+        ECSMessage message = new ECSMessage(null, null, status);
+        TextMessage textMessage = new TextMessage(message);
+        messenger.sendMessage(textMessage);
+        TextMessage response = messenger.receiveMessage();
+        return new ECSMessage(response);
+    }
+
+    public IECSMessage start() throws Exception {
+        return sendAndReceiveECSMessage(IECSMessage.StatusType.ECS_START);
+    }
+
+    public void connect(String address, int port) throws IOException, UnknownHostException {
+        clientSocket = new Socket(address, port);
+        messenger = new Messenger(clientSocket);
+        connected = true;
+        logger.info("Connection established");
+    }
+
+    public void disconnect() {
+        if (clientSocket != null) {
+            messenger.closeConnections();
+            clientSocket = null;
         }
+        connected = false;
+    }
+
+    public void setRunning(boolean run) {
+        running = run;
     }
 
     private void handleCommand(String cmdLine) {
@@ -77,48 +86,84 @@ public class ECSClientUI {
 
         if (tokens[0].equals("shutdown")) {
             stop = true;
-            shutdown();
+            try {
+                shutdown();
+            } catch (Exception e) {
+                printError("Could not shutdown ECS");
+            }
             System.out.println(PROMPT + "Application exit!");
 
         } else if (tokens[0].equals("stop")) {
-            stop();
+            try {
+                stop();
+            } catch (Exception e) {
+                printError("Could not stop ECS");
+            }
             System.out.println(PROMPT + "Application stopped!");
+
+        } else if (tokens[0].equals("connect")) {
+                if (tokens.length == 3) {
+                    try {
+                        address = tokens[1];
+                        port = Integer.parseInt(tokens[2]);
+                        connect(address, port);
+                        logger.info("Created new connection at " + address + ":" + port);
+                    } catch (NumberFormatException nfe) {
+                        printError("No valid address. Port must be a number!");
+                        logger.info("Unable to parse argument <port>", nfe);
+                    } catch (UnknownHostException e) {
+                        printError("Unknown Host!");
+                        logger.info("Unknown Host!", e);
+                    } catch (IOException e) {
+                        printError("Could not establish connection!");
+                        logger.warn("Could not establish connection!", e);
+                    }
+                } else {
+                    printError("Invalid number of parameters!");
+                }
+        } else if (tokens[0].equals("disconnect")) {
+            disconnect();
+            System.out.println(PROMPT + "Application exit!");
 
         } else if (tokens[0].equals("add")) {
             if (tokens.length >= 2) {
                 try {
                     int num_nodes = Integer.parseInt(tokens[1]);
-                    if (ecsClient != null && ecsClient.isRunning()) {
+                    if (running && connected) {
                         addNodes(num_nodes);
                     } else {
-                        printError("ECSClient is not running");
+                        printError("ECSClient is not running or not connected");
                     }
                 } catch (Exception e) {
                     printError("Number of nodes must be an integer");
                 }
             } else {
-                if (ecsClient != null && ecsClient.isRunning()) {
+                if (running && connected) {
                     addNode();
                 } else {
-                    printError("ECSClient is not running");
+                    printError("ECSClient is not running or not connected");
                 }
             }
 
         } else if (tokens[0].equals("start")) {
-            if (ecsClient.isRunning()) {
+            if (running) {
                 printError("ECSClient is already running");
             } else {
-                start(config_file, cacheStrategy, cacheSize);
+                try {
+                    start();
+                } catch (Exception e) {
+                    printError("Could not start ECS");
+                }
             }
 
         } else if (tokens[0].equals("remove")) {
             if (tokens.length == 2) {
                 try {
                     int node_idx = Integer.parseInt(tokens[1]);
-                    if (ecsClient != null && ecsClient.isRunning()) {
+                    if (running && connected) {
                         removeNode(node_idx);
                     } else {
-                        printError("ECSClient is not running");
+                        printError("ECSClient is not running or not connected");
                     }
                 } catch (Exception e) {
                     printError("Incorrect node index given.");
@@ -162,71 +207,83 @@ public class ECSClientUI {
     }
 
 
-    private void shutdown() {
-        try {
-            if (ecsClient != null) {
-                ecsClient.shutdown();
-                ecsClient = null;
-            }
-        } catch (Exception e) {
-            printError("Could not shutdown");
-        }
+    private IECSMessage shutdown() throws Exception{
+        running = false;
+        return sendAndReceiveECSMessage(IECSMessage.StatusType.ECS_SHUTDOWN);
     }
 
-    private void stop() {
-        try {
-            if (ecsClient != null) {
-                ecsClient.stop();
-            }
-        } catch (Exception e) {
-            printError("Could not stop application");
-        }
-    }
-
-    private void addNode(){
-        try {
-            if (ecsClient != null) {
-                ecsClient.addNode(cacheStrategy, cacheSize);
-                System.out.println(PROMPT + "Node added successfully");
-            }
-        } catch (Exception e) {
-            printError("Node addition unsuccessful");
-        }
+    private IECSMessage stop() throws Exception{
+        running = false;
+        return sendAndReceiveECSMessage(IECSMessage.StatusType.ECS_STOP);
     }
 
     private void addNodes(int num_nodes){
         try {
-            if (ecsClient != null) {
-                ecsClient.addNodes(num_nodes, cacheStrategy, cacheSize);
-                logger.info("Nodes Added");
-                System.out.println(PROMPT + "Nodes added successfully");
+            if (running && connected) {
+                ECSMessage message = new ECSMessage(Integer.toString(num_nodes), null, IECSMessage.StatusType.ADD);
+                TextMessage textMessage = new TextMessage(message);
+                messenger.sendMessage(textMessage);
+                TextMessage textResponse = messenger.receiveMessage();
+                ECSMessage response = new ECSMessage(textResponse);
+                logger.info("Add completed");
+
+                IECSMessage.StatusType status  = response.getStatus();
+                if (status == IECSMessage.StatusType.ADD_SUCCESS) {
+                    System.out.println(PROMPT + "Node addition successful");
+                } else if (status == IECSMessage.StatusType.ADD_ERROR) {
+                    printError("Node addition Unsuccessful!");
+                } else {
+                    printError("Unable to execute command!");
+                    disconnect();
+                }
             }
+
         } catch (Exception e) {
-            printError("Node additions unsuccessful");
+            printError("Unable to execute command");
+            disconnect();
         }
     }
 
-    private void removeNodes(Collection<String> nodes){
-        try {
-            if (ecsClient != null) {
-                ecsClient.removeNodes(nodes);
-                logger.info("Node Removed");
-                System.out.println(PROMPT + "Node removed successfully");
-            }
-        } catch (Exception e) {
-            printError("Node removal unsuccessful");
-        }
+    private void addNode(){
+        addNodes(1);
     }
+
+//    private void removeNodes(Collection<String> nodes){
+//        try {
+//            if (ecsClient != null) {
+//                ecsClient.removeNodes(nodes);
+//                logger.info("Node Removed");
+//                System.out.println(PROMPT + "Node removed successfully");
+//            }
+//        } catch (Exception e) {
+//            printError("Node removal unsuccessful");
+//        }
+//    }
 
     private void removeNode(int nodeIdx){
         try {
-            if (ecsClient != null) {
-                ecsClient.removeNode(nodeIdx);
-                logger.info("Node Removed");
-                System.out.println(PROMPT + "Node removed successfully");
+            if (running && connected) {
+                ECSMessage message = new ECSMessage(Integer.toString(nodeIdx), null, IECSMessage.StatusType.REMOVE);
+                TextMessage textMessage = new TextMessage(message);
+                messenger.sendMessage(textMessage);
+                TextMessage textResponse = messenger.receiveMessage();
+                ECSMessage response = new ECSMessage(textResponse);
+                logger.info("Removal completed");
+
+                IECSMessage.StatusType status  = response.getStatus();
+                if (status == IECSMessage.StatusType.REMOVE_SUCCESS) {
+                    System.out.println(PROMPT + "Node removal successful");
+                } else if (status == IECSMessage.StatusType.REMOVE_ERROR) {
+                    printError("Node removal Unsuccessful!");
+                } else {
+                    printError("Unable to execute command!");
+                    disconnect();
+                }
             }
+
         } catch (Exception e) {
-            printError("Node removal unsuccessful");
+            printError("Unable to execute command");
+            disconnect();
         }
     }
 
@@ -236,6 +293,10 @@ public class ECSClientUI {
         sb.append(PROMPT);
         sb.append("::::::::::::::::::::::::::::::::");
         sb.append("::::::::::::::::::::::::::::::::\n");
+        sb.append(PROMPT).append("connect <host> <port>");
+        sb.append("\t establishes a connection to a server\n");
+        sb.append(PROMPT).append("disconnect");
+        sb.append("\t\t\t disconnects from the server \n");
         sb.append(PROMPT).append("shutdown");
         sb.append("\t Shutsdown all servers and exits the application\n");
         sb.append(PROMPT).append("stop");

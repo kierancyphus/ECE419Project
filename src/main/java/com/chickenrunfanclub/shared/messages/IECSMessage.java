@@ -4,11 +4,11 @@ public interface IECSMessage {
 
     public enum StatusType {
         ADD, 			/* Add - request */
-        ADD_ERROR, 		/* Nodes added */
-        ADD_SUCCESS, 	/* Nodes could not be added */
+        ADD_ERROR, 		/* Nodes could not be added */
+        ADD_SUCCESS, 	/* Nodes added */
         REMOVE, 			/* Remove - request */
         REMOVE_SUCCESS, 	/* Node removal successful */
-        REMOVE_UPDATE, 	/* Node removal failed */
+        REMOVE_ERROR, 	/* Node removal failed */
         FAILED,			/* General failure message - could not tell if put or get */
 
         ECS_STOPPED,			/* ECS is stopped, no requests are processed */

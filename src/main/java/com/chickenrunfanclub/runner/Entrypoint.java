@@ -34,7 +34,7 @@ public class Entrypoint {
                 String config_file = args[0];
                 String cacheStrategy = args[1];
                 int cacheSize = Integer.parseInt(args[2]);
-                ECSClientUI ecs = new ECSClientUI(config_file, cacheSize, cacheStrategy);
+                ECSClientUI ecs = new ECSClient(config_file, cacheSize, cacheStrategy);
                 ecs.run();
             }
         } catch (IOException e) {
