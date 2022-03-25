@@ -53,6 +53,22 @@ public class Entrypoint {
         }
     }
 
+    public static void runECSUI(String[] args) {
+        try {
+            new LogSetup("logs/ecs.log", Level.ALL);
+            if (args.length != 0) {
+                System.out.println("Error! Invalid number of arguments!");
+            } else {
+                ECSClientUI ecsUI = new ECSClientUI();
+                // ecs.run();
+            }
+        } catch (IOException e) {
+            System.out.println("Error! Unable to initialize logger!");
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
     private static void runServer(String[] args) {
         try {
             new LogSetup("logs/server.log", Level.ALL);
@@ -91,6 +107,8 @@ public class Entrypoint {
             runClient();
         } else if (Objects.equals(args[0], "ecs")){
             runECS(Arrays.copyOfRange(args, 1, args.length));
+        } else if (Objects.equals(args[0], "ecsUI")){
+            runECSUI(Arrays.copyOfRange(args, 1, args.length));
         } else {
             System.out.println("Error! Not specified if server or client");
             System.out.println("Usage: \"./gradlew run --args=\"server\" \" or \"./gradlew run --args=\"client\" --console=plain\"");
