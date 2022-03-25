@@ -38,7 +38,7 @@ public class Entrypoint {
                 int cacheSize = Integer.parseInt(args[2]);
                 int port = Integer.parseInt(args[3]);
                 ECSClient ecs = new ECSClient(config_file, cacheStrategy, cacheSize, port);
-                // ecs.run();
+                ecs.run();
             }
         } catch (IOException e) {
             System.out.println("Error! Unable to initialize logger!");
