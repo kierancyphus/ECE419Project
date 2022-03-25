@@ -61,7 +61,7 @@ public class Entrypoint {
                 System.out.println("Error! Invalid number of arguments!");
             } else {
                 ECSClientUI ecsUI = new ECSClientUI();
-                // ecs.run();
+                ecsUI.run();
             }
         } catch (IOException e) {
             System.out.println("Error! Unable to initialize logger!");
