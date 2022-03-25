@@ -43,31 +43,51 @@ public class ECSClientConnection implements Runnable {
 
                     switch (message.getStatus()) {
                         case ADD: {
-                            // response = (IECSMessage) ecs.addNodes(Integer.parseInt(message.getKey()));
+                            try {
+                                // TODO: may need to return the nodelist in the message
+                                String[] splited = message.getKey().split("\\s+");
+                                if (ecs.addNodes(Integer.parseInt(splited[0]), splited[1], Integer.parseInt(splited[2])).size() == Integer.parseInt(splited[0])) {
+                                    response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ADD_SUCCESS);
+                                }
+                                // response = (IECSMessage) ecs.addNodes(Integer.parseInt(message.getKey()));
+                            } catch (Exception e) {
+                                response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
+                            }
                         }
                         case REMOVE: {
+                            try{
+                                if (ecs.removeNode(Integer.parseInt(message.getKey()))){
+                                    response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.REMOVE_SUCCESS);
+                                }
+                            } catch (Exception e) {
+                                response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
+                            }
+
                             // response = ecs.removeNode(Integer.parseInt(message.getKey()));
                         }
                         case ECS_START: {
                             try {
-                                ecs.start();
-                                response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ECS_START);
+                                if (ecs.start()) {
+                                    response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ECS_START);
+                                }
                             } catch (Exception e) {
                                 response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
                             }
                         }
                         case ECS_STOP: {
                             try {
-                                ecs.stop();
-                                response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ECS_STOPPED);
+                                if (ecs.stop()) {
+                                    response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ECS_STOPPED);
+                                }
                             } catch (Exception e) {
                                 response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
                             }
                         }
                         case ECS_SHUTDOWN: {
                             try {
-                                ecs.shutdown();
-                                response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ECS_SHUTDOWN);
+                                if (ecs.shutdown()) {
+                                    response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ECS_SHUTDOWN);
+                                }
                             } catch (Exception e) {
                                 response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
                             }

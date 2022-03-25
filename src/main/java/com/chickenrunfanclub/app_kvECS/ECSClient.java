@@ -43,9 +43,10 @@ public class ECSClient implements IECSClient {
     private boolean running = false;
     private AllServerMetadata allServerMetadata;
     private ServerSocket serverSocket;
+    private int port;
 
 
-    public ECSClient(String configFileName, String cacheStrat, int cacheSiz) throws IOException, InterruptedException, KeeperException {
+    public ECSClient(String configFileName, String cacheStrat, int cacheSiz, int port) throws IOException, InterruptedException, KeeperException {
         // start zookeeper connection
         ProcessBuilder zookeeperProcessBuilder =
                 new ProcessBuilder("apache-zookeeper-3.6.3-bin/bin/zkServer.sh", "start", "apache-zookeeper-3.6.3-bin/conf/zoo.cfg")
@@ -56,6 +57,7 @@ public class ECSClient implements IECSClient {
         connectedSignal = new CountDownLatch(1);
         cacheStrategy = cacheStrat;
         cacheSize = cacheSiz;
+        this.port = port;
         zk = new ZooKeeper("localhost", 5000, new Watcher() {
             public void process(WatchedEvent we) {
                 if (we.getState() == KeeperState.SyncConnected) {
@@ -302,6 +304,44 @@ public class ECSClient implements IECSClient {
 
     public int zookeeperNodes() throws InterruptedException, KeeperException {
         return zk.getChildren("/ecs", false).size();
+    }
+
+    public void run() {
+        running = initializeServer();
+
+        if (serverSocket != null) {
+            while (isRunning()) {
+                try {
+                    Socket client = serverSocket.accept();
+                    ECSClientConnection connection = new ECSClientConnection(client, this);
+                    new Thread(connection).start();
+                    logger.info("ECS connected to "
+                            + client.getInetAddress().getHostName()
+                            + " on port " + client.getPort());
+                } catch (IOException e) {
+                    logger.error("Error! " +
+                            "Unable to establish connection. \n", e);
+                }
+            }
+        }
+        logger.info("Server stopped.");
+    }
+
+    private boolean initializeServer() {
+        logger.info("Initialize ECS ...");
+        try {
+            serverSocket = new ServerSocket(port);
+            logger.info("ECS listening on port: "
+                    + serverSocket.getLocalPort());
+            return true;
+
+        } catch (IOException e) {
+            logger.error("Error! Cannot open server socket:");
+            if (e instanceof BindException) {
+                logger.error("Port " + port + " is already bound!");
+            }
+            return false;
+        }
     }
 
 //    private void writeMetaData() throws Exception {
