@@ -1,21 +1,13 @@
 package com.chickenrunfanclub.app_kvECS;
 
-import com.chickenrunfanclub.app_kvServer.KVClientConnection;
-import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag;
 import com.chickenrunfanclub.ecs.IECSNode;
-import com.chickenrunfanclub.shared.Hasher;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
-import com.chickenrunfanclub.logger.LogSetup;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.net.BindException;
@@ -162,7 +154,7 @@ public class ECSClient implements IECSClient {
     }
 
     @Override
-    public List<IECSNode> addNodes(int count, String cacheStrategy, int cacheSize) throws Exception {
+    public List<IECSNode> addNodes(int count) throws Exception {
         List<IECSNode> nodeList = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             //System.out.println(i);

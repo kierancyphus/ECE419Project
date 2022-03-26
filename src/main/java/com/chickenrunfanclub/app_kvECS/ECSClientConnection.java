@@ -44,9 +44,7 @@ public class ECSClientConnection implements Runnable {
                     switch (message.getStatus()) {
                         case ADD: {
                             try {
-                                // TODO: may need to return the nodelist in the message
-                                String[] splited = message.getKey().split("\\s+");
-                                if (ecs.addNodes(Integer.parseInt(splited[0]), splited[1], Integer.parseInt(splited[2])).size() == Integer.parseInt(splited[0])) {
+                                if (ecs.addNodes(Integer.parseInt(message.getKey())).size() == Integer.parseInt(message.getKey())){
                                     response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ADD_SUCCESS);
                                 }
                                 // response = (IECSMessage) ecs.addNodes(Integer.parseInt(message.getKey()));

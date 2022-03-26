@@ -24,10 +24,10 @@ public class ECSTest {
 
     @BeforeAll
     static void init() throws Exception {
-        ecs = new ECSClient("src/test/java/com/chickenrunfanclub/unitTests/ecs.config.txt", "LRU", 5000);
+        ecs = new ECSClient("src/test/java/com/chickenrunfanclub/unitTests/ecs.config.txt", "LRU", 5000, 50000);
         ecs.removeAllNodes();
         // ecs.shutdownServers();
-        ecs = new ECSClient("src/test/java/com/chickenrunfanclub/unitTests/ecs.config.txt", "LRU", 5000);
+        ecs = new ECSClient("src/test/java/com/chickenrunfanclub/unitTests/ecs.config.txt", "LRU", 5000, 50000);
         // numServer = ecs.getNumServers();
     }
 
@@ -50,7 +50,7 @@ public class ECSTest {
     public void addNodes() throws Exception {
         numServer = ecs.getNumServers();
         assertSame(numServer, ecs.zookeeperNodes());
-        ecs.addNodes(2, "LRU", 100);
+        ecs.addNodes(2);
         ecs.start();
         assertSame(2, ecs.getNumServers() - numServer);
         assertSame(2, ecs.zookeeperNodes() - numServer);
