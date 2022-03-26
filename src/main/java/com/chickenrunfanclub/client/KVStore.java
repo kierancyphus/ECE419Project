@@ -1,13 +1,18 @@
 package com.chickenrunfanclub.client;
 
+import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
+import com.chickenrunfanclub.app_kvServer.IKVServer;
+import com.chickenrunfanclub.shared.Hasher;
 import com.chickenrunfanclub.shared.Messenger;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
 import com.chickenrunfanclub.shared.messages.TextMessage;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -19,7 +24,7 @@ public class KVStore implements KVCommInterface {
 
     private Messenger messenger;
     private Logger logger = LogManager.getLogger(KVStore.class);
-
+    private AllServerMetadata meta;
     private boolean running;
 
     private Socket clientSocket;
@@ -34,6 +39,7 @@ public class KVStore implements KVCommInterface {
      * @param port    the port of the KVServer
      */
     public KVStore(String address, int port) {
+        this.meta = null;
         this.address = address;
         this.port = port;
     }
@@ -92,20 +98,69 @@ public class KVStore implements KVCommInterface {
 
     @Override
     public IKVMessage put(String key, String value) throws Exception {
-        KVMessage message = new KVMessage(key, value, IKVMessage.StatusType.PUT);
-        TextMessage textMessage = new TextMessage(message);
-        messenger.sendMessage(textMessage);
-        TextMessage response = messenger.receiveMessage();
-        return new KVMessage(response);
+        IKVMessage.StatusType returnStatus = IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE;
+        KVMessage kvresponse = null;
+        while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
+            if (this.meta != null){
+                String keyHash = Hasher.hash(key);
+                ECSNode node_responsible = this.meta.findServerResponsible(keyHash);
+                disconnect();
+                this.address = node_responsible.getHost();
+                this.port = node_responsible.getPort();
+                connect();
+            }
+
+            KVMessage message = new KVMessage(key, value, IKVMessage.StatusType.PUT);
+            TextMessage textMessage = new TextMessage(message);
+            messenger.sendMessage(textMessage);
+            TextMessage response = messenger.receiveMessage();
+            kvresponse = new KVMessage(response);
+            returnStatus = kvresponse.getStatus();
+
+            if (kvresponse.getStatus() == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
+                try{
+                    this.meta = new Gson().fromJson(kvresponse.getValue(), AllServerMetadata.class);
+                } catch(JsonParseException e){
+                    e.printStackTrace();
+                }
+
+            }
+        }
+
+        return kvresponse;
     }
 
     @Override
     public IKVMessage get(String key) throws Exception {
-        KVMessage message = new KVMessage(key, null, IKVMessage.StatusType.GET);
-        TextMessage textMessage = new TextMessage(message);
-        messenger.sendMessage(textMessage);
-        TextMessage response = messenger.receiveMessage();
-        return new KVMessage(response);
+        IKVMessage.StatusType returnStatus = IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE;
+        KVMessage kvresponse = null;
+        while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
+            if (this.meta != null){
+                String keyHash = Hasher.hash(key);
+                ECSNode node_responsible = this.meta.findServerResponsible(keyHash);
+                disconnect();
+                this.address = node_responsible.getHost();
+                this.port = node_responsible.getPort();
+                connect();
+            }
+
+            KVMessage message = new KVMessage(key, null, IKVMessage.StatusType.GET);
+            TextMessage textMessage = new TextMessage(message);
+            messenger.sendMessage(textMessage);
+            TextMessage response = messenger.receiveMessage();
+            kvresponse = new KVMessage(response);
+            returnStatus = kvresponse.getStatus();
+
+            if (kvresponse.getStatus() == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
+                try{
+                    this.meta = new Gson().fromJson(kvresponse.getValue(), AllServerMetadata.class);
+                } catch(JsonParseException e){
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return kvresponse;
     }
 
     @Override
