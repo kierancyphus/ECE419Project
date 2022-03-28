@@ -180,7 +180,7 @@ public class KVServer extends Thread implements IKVServer {
     public boolean moveData(ECSNode ECSNode) {
         KVStore kvClient = new KVStore(ECSNode.getHost(), ECSNode.getPort());
         try {
-            kvClient.connect();
+            kvClient.connect(ECSNode.getHost(), ECSNode.getPort());
         } catch (IOException e) {
             logger.error("Could not connect to server: " + ECSNode.getHost() + ":" + ECSNode.getPort());
         }

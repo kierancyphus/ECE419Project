@@ -53,6 +53,7 @@ public class InteractionTest {
         try {
             response = kvClient.put(key, value);
         } catch (Exception e) {
+            e.printStackTrace();
             ex = e;
         }
 

@@ -62,7 +62,7 @@ public class ECSClient implements IECSClient {
         for (ECSNode node : idleNodes) {
             // start each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
-            client.connect();
+            client.connect(node.getHost(), node.getPort());
             client.start();
         }
 
@@ -92,7 +92,7 @@ public class ECSClient implements IECSClient {
         for (ECSNode node : idleNodes) {
             // start each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
-            client.connect();
+            client.connect(node.getHost(), node.getPort());
             client.stop();
         }
 
@@ -116,7 +116,7 @@ public class ECSClient implements IECSClient {
         for (ECSNode node : idleNodes) {
             // start each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
-            client.connect();
+            client.connect(node.getHost(), node.getPort());
             client.shutDown();
         }
 
