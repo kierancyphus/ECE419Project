@@ -25,6 +25,8 @@ public class AllServerMetadata {
         initServerMetadata(pathToConfigFile);
     }
 
+
+
     private void initServerMetadata(String file) {
         File f = new File(file);
         String name, host, port;
@@ -76,6 +78,7 @@ public class AllServerMetadata {
     }
 
     public ECSNode findServerResponsible(String key) {
+        System.out.println("butthole" + nodeHashesToServerInfo.size());
         return nodeHashesToServerInfo
                 .values()
                 .stream()

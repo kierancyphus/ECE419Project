@@ -51,6 +51,7 @@ public class KVStore implements KVCommInterface {
     public KVStore(String config_file) {
         this.meta = new AllServerMetadata(config_file);
         this.config_file = config_file;
+        this.allServers = new ArrayList<String>();
         processConfig(config_file);
     }
 

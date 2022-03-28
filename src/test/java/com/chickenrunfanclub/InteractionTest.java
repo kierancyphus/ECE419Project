@@ -27,7 +27,7 @@ public class InteractionTest {
 
     @BeforeEach
     public void setUp() {
-        kvClient = new KVStore("localhost", port);
+        kvClient = new KVStore("./src/test/resources/servers_interaction.cfg");
         try {
             kvClient.connect("localhost", port);
         } catch (Exception e) {
