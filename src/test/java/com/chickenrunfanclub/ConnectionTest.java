@@ -3,6 +3,7 @@ package com.chickenrunfanclub;
 import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
@@ -21,7 +22,7 @@ public class ConnectionTest {
         server.start();
     }
     
-    
+    @Disabled
     @Test
     public void testConnectionSuccess() {
 
@@ -37,6 +38,7 @@ public class ConnectionTest {
         assertNull(ex);
     }
 
+    @Disabled
     @Test
     public void testUnknownHost() {
         Exception ex = null;
@@ -51,6 +53,7 @@ public class ConnectionTest {
         assertTrue(ex instanceof UnknownHostException);
     }
 
+    @Disabled
     @Test
     public void testIllegalPort() {
         Exception ex = null;

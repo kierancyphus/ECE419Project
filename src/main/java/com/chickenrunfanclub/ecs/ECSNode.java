@@ -2,6 +2,8 @@ package com.chickenrunfanclub.ecs;
 
 import com.chickenrunfanclub.shared.Hasher;
 
+import java.util.Objects;
+
 public class ECSNode implements IECSNode {
     public enum ECSNodeFlag {
         STOP,
@@ -106,7 +108,7 @@ public class ECSNode implements IECSNode {
      */
     public boolean inRange(String hash) {
         // if startRange > endRange it means it wraps around and should be an or
-        if (rangeStart.compareTo(rangeEnd) > 0) {
+        if (rangeStart.compareTo(rangeEnd) >= 0) {
             return hash.compareTo(rangeStart) >= 0 || hash.compareTo(rangeEnd) < 0;
         }
 

@@ -4,10 +4,7 @@ import com.chickenrunfanclub.app_kvECS.ECSClient;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.shared.ClientThreadUtil;
 import junit.framework.TestCase;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,7 +42,7 @@ public class EnronTest extends TestCase {
 //        }
 //
 //    }
-
+    @Disabled
     @Test
     public void test_none() {
         try {
