@@ -62,6 +62,7 @@ public class ECSClientUI {
         clientSocket = new Socket(address, port);
         messenger = new Messenger(clientSocket);
         connected = true;
+        setRunning(true);
         logger.info("Connection established");
     }
 
@@ -123,6 +124,7 @@ public class ECSClientUI {
                 }
         } else if (tokens[0].equals("disconnect")) {
             disconnect();
+            setRunning(false);
             System.out.println(PROMPT + "Application exit!");
 
         } else if (tokens[0].equals("add")) {
