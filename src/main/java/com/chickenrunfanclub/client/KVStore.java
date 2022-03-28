@@ -1,10 +1,8 @@
 package com.chickenrunfanclub.client;
 
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
-import com.chickenrunfanclub.app_kvServer.IKVServer;
-import com.chickenrunfanclub.shared.Hasher;
-import com.chickenrunfanclub.shared.Messenger;
 import com.chickenrunfanclub.ecs.ECSNode;
+import com.chickenrunfanclub.shared.Messenger;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
 import com.chickenrunfanclub.shared.messages.TextMessage;
@@ -12,16 +10,21 @@ import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.w3c.dom.Text;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Scanner;
 
 public class KVStore implements KVCommInterface {
+    private final String config_file;
+    private ArrayList<String> allServers;
     private String address;
     private int port;
-
     private Messenger messenger;
     private Logger logger = LogManager.getLogger(KVStore.class);
     private AllServerMetadata meta;
@@ -42,8 +45,30 @@ public class KVStore implements KVCommInterface {
         this.meta = null;
         this.address = address;
         this.port = port;
+        this.config_file = null;
     }
 
+    public KVStore(String config_file) {
+        this.meta = new AllServerMetadata(config_file);
+        this.config_file = config_file;
+        processConfig(config_file);
+    }
+
+    public void processConfig(String config_file){
+        File f = new File(config_file);
+        try{
+            Scanner scanner = new Scanner(f);
+            while (scanner.hasNextLine()) {
+                allServers.add(scanner.nextLine());
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Configuration file not found");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     public synchronized void closeConnection() {
         logger.info("try to close connection ...");
 
@@ -73,7 +98,7 @@ public class KVStore implements KVCommInterface {
     }
 
     @Override
-    public void connect() throws IOException, UnknownHostException {
+    public void connect(String address, int port) throws IOException, UnknownHostException {
         clientSocket = new Socket(address, port);
         messenger = new Messenger(clientSocket);
         setRunning(true);
@@ -88,104 +113,115 @@ public class KVStore implements KVCommInterface {
         }
     }
 
-    public IKVMessage sendAndReceiveMessage(IKVMessage.StatusType status) throws Exception {
-        KVMessage message = new KVMessage(null, null, status);
+    public IKVMessage sendAndReceiveMessage(String key, String value, IKVMessage.StatusType status) throws Exception {
+        KVMessage message = new KVMessage(key, value, status);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();
         return new KVMessage(response);
     }
 
+    public AllServerMetadata pollAll(){
+        AllServerMetadata newMeta = null;
+        for (String allServer : this.allServers) {
+            try {
+                String[] info = allServer.split(" ");
+                connect(info[1], Integer.parseInt(info[2]));
+                IKVMessage kvresponse = sendAndReceiveMessage("I LOVE ECE419", null, IKVMessage.StatusType.GET);
+                IKVMessage.StatusType returnStatus = kvresponse.getStatus();
+                if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
+                    try {
+                        newMeta = new Gson().fromJson(kvresponse.getValue(), AllServerMetadata.class);
+                    } catch (JsonParseException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (Exception e) {
+            }
+        }
+        if (newMeta == null){
+            logger.error("Critical servers are down so no requests can be processed right now. Please try again once shit is figured out");
+        }
+        return newMeta;
+    }
+
     @Override
     public IKVMessage put(String key, String value) throws Exception {
         IKVMessage.StatusType returnStatus = IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE;
-        KVMessage kvresponse = null;
+        IKVMessage kvresponse = null;
         while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
-            if (this.meta != null){
-                String keyHash = Hasher.hash(key);
-                ECSNode node_responsible = this.meta.findServerResponsible(keyHash);
-                disconnect();
-                this.address = node_responsible.getHost();
-                this.port = node_responsible.getPort();
-                connect();
-            }
+            try {
+                ECSNode node_responsible = this.meta.findServerResponsible(key);
+                connect(node_responsible.getHost(), node_responsible.getPort());
 
-            KVMessage message = new KVMessage(key, value, IKVMessage.StatusType.PUT);
-            TextMessage textMessage = new TextMessage(message);
-            messenger.sendMessage(textMessage);
-            TextMessage response = messenger.receiveMessage();
-            kvresponse = new KVMessage(response);
-            returnStatus = kvresponse.getStatus();
+                kvresponse = sendAndReceiveMessage(key, value, IKVMessage.StatusType.PUT);
+                returnStatus = kvresponse.getStatus();
 
-            if (kvresponse.getStatus() == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
-                try{
-                    this.meta = new Gson().fromJson(kvresponse.getValue(), AllServerMetadata.class);
-                } catch(JsonParseException e){
-                    e.printStackTrace();
+                if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
+                    try {
+                        this.meta = new Gson().fromJson(kvresponse.getValue(), AllServerMetadata.class);
+                    } catch (JsonParseException e) {
+                        e.printStackTrace();
+                    }
                 }
-
+                disconnect();
+            } catch (SocketTimeoutException e){
+                this.meta = pollAll();
             }
         }
-
         return kvresponse;
     }
 
     @Override
     public IKVMessage get(String key) throws Exception {
         IKVMessage.StatusType returnStatus = IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE;
-        KVMessage kvresponse = null;
-        while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
-            if (this.meta != null){
-                String keyHash = Hasher.hash(key);
-                ECSNode node_responsible = this.meta.findServerResponsible(keyHash);
-                disconnect();
-                this.address = node_responsible.getHost();
-                this.port = node_responsible.getPort();
-                connect();
-            }
+        IKVMessage kvresponse = null;
+        while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
+            try {
+                ECSNode node_responsible = this.meta.findServerResponsible(key);
+                connect(node_responsible.getHost(), node_responsible.getPort());
 
-            KVMessage message = new KVMessage(key, null, IKVMessage.StatusType.GET);
-            TextMessage textMessage = new TextMessage(message);
-            messenger.sendMessage(textMessage);
-            TextMessage response = messenger.receiveMessage();
-            kvresponse = new KVMessage(response);
-            returnStatus = kvresponse.getStatus();
+                kvresponse = sendAndReceiveMessage(key, null, IKVMessage.StatusType.GET);
+                returnStatus = kvresponse.getStatus();
 
-            if (kvresponse.getStatus() == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
-                try{
-                    this.meta = new Gson().fromJson(kvresponse.getValue(), AllServerMetadata.class);
-                } catch(JsonParseException e){
-                    e.printStackTrace();
+                if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
+                    try {
+                        this.meta = new Gson().fromJson(kvresponse.getValue(), AllServerMetadata.class);
+                    } catch (JsonParseException e) {
+                        e.printStackTrace();
+                    }
                 }
+                disconnect();
+            } catch (SocketTimeoutException e) {
+                this.meta = pollAll();
             }
         }
-
         return kvresponse;
     }
 
     @Override
     public IKVMessage start() throws Exception {
-        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_START);
+        return sendAndReceiveMessage(null, null, IKVMessage.StatusType.SERVER_START);
     }
 
     @Override
     public IKVMessage stop() throws Exception {
-        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_STOP);
+        return sendAndReceiveMessage(null, null,IKVMessage.StatusType.SERVER_STOP);
     }
 
     @Override
     public IKVMessage shutDown() throws Exception {
-        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_STOP);
+        return sendAndReceiveMessage(null, null,IKVMessage.StatusType.SERVER_STOP);
     }
 
     @Override
     public IKVMessage lockWrite() throws Exception {
-        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_WRITE_LOCK);
+        return sendAndReceiveMessage(null, null,IKVMessage.StatusType.SERVER_WRITE_LOCK);
     }
 
     @Override
     public IKVMessage unlockWrite() throws Exception {
-        return sendAndReceiveMessage(IKVMessage.StatusType.SERVER_WRITE_UNLOCKED);
+        return sendAndReceiveMessage(null, null,IKVMessage.StatusType.SERVER_WRITE_UNLOCKED);
     }
 
     @Override

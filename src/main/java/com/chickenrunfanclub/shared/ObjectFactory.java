@@ -10,7 +10,7 @@ public final class ObjectFactory {
      * Creates a KVClient object for auto-testing purposes
      */
     public static IKVClient createKVClientObject() {
-        return new KVClient();
+        return new KVClient("./src/test/resources/servers.cfg");
     }
 
     /*

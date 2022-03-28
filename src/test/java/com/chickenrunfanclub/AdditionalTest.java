@@ -38,7 +38,7 @@ public class AdditionalTest {
 
         KVStore kvClient = new KVStore("localhost", port);
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             putResponse = kvClient.put(key, value);
         } catch (Exception e) {
             ex = e;
@@ -48,7 +48,7 @@ public class AdditionalTest {
         // get
         kvClient = new KVStore("localhost", port);
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             getResponse = kvClient.get(key);
         } catch (Exception e) {
             ex = e;
@@ -68,7 +68,7 @@ public class AdditionalTest {
         KVStore kvClient = new KVStore("localhost", port);
 
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             kvClient.put(key, value);
             response = kvClient.get(key);
         } catch (Exception e) {
@@ -89,8 +89,8 @@ public class AdditionalTest {
         KVStore kvClient1 = new KVStore("localhost", port);
         KVStore kvClient2 = new KVStore("localhost", port);
         try {
-            kvClient1.connect();
-            kvClient2.connect();
+            kvClient1.connect("localhost", port);
+            kvClient2.connect("localhost", port);
         } catch (Exception e) {
             ex = e;
         }
@@ -134,7 +134,7 @@ public class AdditionalTest {
 
         KVStore kvClient = new KVStore("localhost", port);
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
         } catch (Exception e) {
             ex = e;
         }
@@ -188,7 +188,7 @@ public class AdditionalTest {
         try {
             for (int i = 0; i < n; i++) {
                 kvClient[i] = new KVStore("localhost", port);
-                kvClient[i].connect();
+                kvClient[i].connect("localhost", port);
             }
         } catch (Exception e) {
             ex = e;
@@ -249,7 +249,7 @@ public class AdditionalTest {
         try {
             for (int i = 0; i < n; i++) {
                 kvClient[i] = new KVStore("localhost", port);
-                kvClient[i].connect();
+                kvClient[i].connect("localhost", port);
             }
         } catch (Exception e) {
             ex = e;
@@ -310,7 +310,7 @@ public class AdditionalTest {
         try {
             for (int i = 0; i < n; i++) {
                 kvClient[i] = new KVStore("localhost", port);
-                kvClient[i].connect();
+                kvClient[i].connect("localhost", port);
                 kvClient[i].put(String.valueOf(i), String.valueOf(i));
             }
         } catch (Exception e) {
@@ -349,7 +349,7 @@ public class AdditionalTest {
         KVStore kvClient = new KVStore("localhost", port);
 
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             // special characters
             kvClient.put("test1", "~`!@#$%^&*()_+-={}[]|\\:;\"\'<>,.?/");
             // multiple spaces
@@ -389,7 +389,7 @@ public class AdditionalTest {
         KVStore kvClient = new KVStore("localhost", port);
 
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             kvClient.put("test", "test");
             assertEquals(kvClient.get("test").getValue(), "test");
             kvClient.disconnect();
@@ -407,7 +407,7 @@ public class AdditionalTest {
         ex = null;
 
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             // value should not be changed
             assertEquals(kvClient.get("test").getValue(), "test");
         } catch (Exception e) {

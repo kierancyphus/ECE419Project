@@ -29,7 +29,7 @@ public class ConnectionTest {
 
         KVStore kvClient = new KVStore("localhost", port);
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
         } catch (Exception e) {
             ex = e;
         }
@@ -43,7 +43,7 @@ public class ConnectionTest {
         KVStore kvClient = new KVStore("unknown", port);
 
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
         } catch (Exception e) {
             ex = e;
         }
@@ -57,7 +57,7 @@ public class ConnectionTest {
         KVStore kvClient = new KVStore("localhost", 123456789);
 
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
         } catch (Exception e) {
             ex = e;
         }

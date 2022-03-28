@@ -35,7 +35,7 @@ public class PerformanceTestFIFO {
         KVStore kvClient = new KVStore("localhost", port);
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
         } catch (Exception e) {
             ex = e;
         }
@@ -53,7 +53,7 @@ public class PerformanceTestFIFO {
         KVStore kvClient = new KVStore("localhost", port);
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
         } catch (Exception e) {
             ex = e;
         }
@@ -71,7 +71,7 @@ public class PerformanceTestFIFO {
         KVStore kvClient = new KVStore("localhost", port);
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
         } catch (Exception e) {
             ex = e;
         }
@@ -89,7 +89,7 @@ public class PerformanceTestFIFO {
         KVStore kvClient = new KVStore("localhost", port);
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
         } catch (Exception e) {
             ex = e;
         }
@@ -107,7 +107,7 @@ public class PerformanceTestFIFO {
         KVStore kvClient = new KVStore("localhost", port);
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
         } catch (Exception e) {
             ex = e;
         }

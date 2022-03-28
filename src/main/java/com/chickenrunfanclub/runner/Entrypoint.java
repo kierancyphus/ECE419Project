@@ -12,11 +12,18 @@ import java.util.Objects;
 
 public class Entrypoint {
 
-    private static void runClient() {
+    private static void runClient(String[] args) {
         try {
             new LogSetup("logs/client.log", Level.OFF);
-            KVClient cli = new KVClient();
-            cli.run();
+            if (args.length != 1) {
+                System.out.println("Error! Invalid number of arguments!");
+                System.out.println("Usage: client <config_file>!");
+            } else {
+                String config_file = args[0];
+                KVClient cli = new KVClient(config_file);
+                cli.run();
+            }
+
         } catch (IOException e) {
             System.out.println("Error! Unable to initialize logger!");
             e.printStackTrace();
@@ -82,7 +89,7 @@ public class Entrypoint {
         } else if (Objects.equals(args[0], "server")) {
             runServer(Arrays.copyOfRange(args, 1, args.length));
         } else if (Objects.equals(args[0], "client")) {
-            runClient();
+            runClient(Arrays.copyOfRange(args, 1, args.length ));
         } else if (Objects.equals(args[0], "ecs")){
             runECS(Arrays.copyOfRange(args, 1, args.length));
         } else {

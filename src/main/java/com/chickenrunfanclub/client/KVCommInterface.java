@@ -10,7 +10,7 @@ public interface KVCommInterface {
      *
      * @throws Exception if connection could not be established.
      */
-    public void connect() throws Exception;
+    public void connect(String address, int port) throws Exception;
 
     /**
      * disconnects the client from the currently connected server.

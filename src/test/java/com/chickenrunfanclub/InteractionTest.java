@@ -29,7 +29,7 @@ public class InteractionTest {
     public void setUp() {
         kvClient = new KVStore("localhost", port);
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
         } catch (Exception e) {
         }
     }

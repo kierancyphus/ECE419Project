@@ -31,7 +31,7 @@ public class KVServerTest {
         IKVMessage response = null;
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             response = kvClient.get("something");
         } catch (Exception e) {
             ex = e;
@@ -54,7 +54,7 @@ public class KVServerTest {
         IKVMessage response = null;
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             response = kvClient.get("something");
         } catch (Exception e) {
             ex = e;
@@ -88,7 +88,7 @@ public class KVServerTest {
         KVStore kvClient = new KVStore("localhost", port);
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             for (int i = 0; i < 10; i++) {
                 kvClient.put(String.valueOf(i), String.valueOf(i));
             }
@@ -122,7 +122,7 @@ public class KVServerTest {
         IKVMessage response = null;
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             response = kvClient.put("key", "value");
         } catch (Exception e) {
             ex = e;
@@ -146,7 +146,7 @@ public class KVServerTest {
         IKVMessage response = null;
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             kvClient.put("key", "value");
 
             // have to lock here so we can make sure the key is in the server
@@ -174,7 +174,7 @@ public class KVServerTest {
         IKVMessage response = null;
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             kvClient.put("key", null);
 
             // have to lock and unlock here so we can delete value first
@@ -207,7 +207,7 @@ public class KVServerTest {
         IKVMessage response = null;
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             response = kvClient.put("6", "value");
         } catch (Exception e) {
             ex = e;
@@ -234,7 +234,7 @@ public class KVServerTest {
         IKVMessage response = null;
         Exception ex = null;
         try {
-            kvClient.connect();
+            kvClient.connect("localhost", port);
             response = kvClient.get("6");
         } catch (Exception e) {
             ex = e;

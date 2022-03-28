@@ -64,7 +64,7 @@ public class EnronTest extends TestCase {
                 CountDownLatch latch = new CountDownLatch(KVClients.size());
                 for (int i = 0; i < c_num; i++) {
                     client = new KVStore("localhost", 50012);
-                    client.connect();
+                    client.connect("localhost", 50012);
                     KVClients.add(client);
                 }
                 long start = System.currentTimeMillis();
