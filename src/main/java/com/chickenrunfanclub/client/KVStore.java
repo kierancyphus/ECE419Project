@@ -53,6 +53,7 @@ public class KVStore implements KVCommInterface {
         this.config_file = config_file;
         this.allServers = new ArrayList<String>();
         processConfig(config_file);
+        System.out.println(this.meta);
     }
 
     public void processConfig(String config_file){
@@ -132,7 +133,7 @@ public class KVStore implements KVCommInterface {
                 IKVMessage.StatusType returnStatus = kvresponse.getStatus();
                 if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
                     try {
-                        newMeta = new Gson().fromJson(kvresponse.getValue(), AllServerMetadata.class);
+                        newMeta = new Gson().fromJson(kvresponse.getKey(), AllServerMetadata.class);
                     } catch (JsonParseException e) {
                         e.printStackTrace();
                     }
@@ -160,7 +161,7 @@ public class KVStore implements KVCommInterface {
 
                 if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
                     try {
-                        this.meta = new Gson().fromJson(kvresponse.getValue(), AllServerMetadata.class);
+                        this.meta = new Gson().fromJson(kvresponse.getKey(), AllServerMetadata.class);
                     } catch (JsonParseException e) {
                         e.printStackTrace();
                     }
@@ -175,10 +176,13 @@ public class KVStore implements KVCommInterface {
 
     @Override
     public IKVMessage get(String key) throws Exception {
+        System.out.println(this.meta);
         IKVMessage.StatusType returnStatus = IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE;
         IKVMessage kvresponse = null;
         while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
             try {
+                System.out.println(this.meta);
+
                 ECSNode node_responsible = this.meta.findServerResponsible(key);
                 connect(node_responsible.getHost(), node_responsible.getPort());
 
@@ -187,13 +191,15 @@ public class KVStore implements KVCommInterface {
 
                 if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
                     try {
-                        this.meta = new Gson().fromJson(kvresponse.getValue(), AllServerMetadata.class);
+                        System.out.println("is this what's happening");
+                        this.meta = new Gson().fromJson(kvresponse.getKey(), AllServerMetadata.class);
                     } catch (JsonParseException e) {
                         e.printStackTrace();
                     }
                 }
                 disconnect();
             } catch (SocketTimeoutException e) {
+                System.out.println("hello????????????");
                 this.meta = pollAll();
             }
         }

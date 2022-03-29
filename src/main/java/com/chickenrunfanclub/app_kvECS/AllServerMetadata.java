@@ -78,7 +78,6 @@ public class AllServerMetadata {
     }
 
     public ECSNode findServerResponsible(String key) {
-        System.out.println("butthole" + nodeHashesToServerInfo.size());
         return nodeHashesToServerInfo
                 .values()
                 .stream()

@@ -4,6 +4,7 @@ import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -36,21 +37,18 @@ public class AdditionalTest {
         IKVMessage putResponse = null, getResponse = null;
         Exception ex = null;
 
-        KVStore kvClient = new KVStore("localhost", port);
+        KVStore kvClient = new KVStore("./src/test/resources/servers_additional.cfg");
         try {
-            kvClient.connect("localhost", port);
             putResponse = kvClient.put(key, value);
         } catch (Exception e) {
+            e.printStackTrace();
             ex = e;
         }
-        // disconnect
-        kvClient.disconnect();
-        // get
-        kvClient = new KVStore("localhost", port);
+        kvClient = new KVStore("./src/test/resources/servers_additional.cfg");
         try {
-            kvClient.connect("localhost", port);
             getResponse = kvClient.get(key);
         } catch (Exception e) {
+            e.printStackTrace();
             ex = e;
         }
         assertNull(ex);
@@ -65,10 +63,9 @@ public class AdditionalTest {
         String value = "thank u next";
         IKVMessage response = null;
         Exception ex = null;
-        KVStore kvClient = new KVStore("localhost", port);
+        KVStore kvClient = new KVStore("./src/test/resources/servers_additional.cfg");
 
         try {
-            kvClient.connect("localhost", port);
             kvClient.put(key, value);
             response = kvClient.get(key);
         } catch (Exception e) {
@@ -86,14 +83,9 @@ public class AdditionalTest {
         IKVMessage putResponse = null, updateResponse = null, getResponse = null;
         Exception ex = null;
 
-        KVStore kvClient1 = new KVStore("localhost", port);
-        KVStore kvClient2 = new KVStore("localhost", port);
-        try {
-            kvClient1.connect("localhost", port);
-            kvClient2.connect("localhost", port);
-        } catch (Exception e) {
-            ex = e;
-        }
+        KVStore kvClient1 = new KVStore("./src/test/resources/servers_additional.cfg");
+        KVStore kvClient2 = new KVStore("./src/test/resources/servers_additional.cfg");
+        
         // delete the key value pair in case already exist
         try {
             kvClient1.put(key, null);
@@ -132,12 +124,7 @@ public class AdditionalTest {
         IKVMessage putResponse = null, getResponse = null;
         Exception ex = null;
 
-        KVStore kvClient = new KVStore("localhost", port);
-        try {
-            kvClient.connect("localhost", port);
-        } catch (Exception e) {
-            ex = e;
-        }
+        KVStore kvClient = new KVStore("./src/test/resources/servers_additional.cfg");
 
         // put 10000 pairs
         try {
@@ -187,8 +174,7 @@ public class AdditionalTest {
 
         try {
             for (int i = 0; i < n; i++) {
-                kvClient[i] = new KVStore("localhost", port);
-                kvClient[i].connect("localhost", port);
+                kvClient[i] = new KVStore("./src/test/resources/servers_additional.cfg");
             }
         } catch (Exception e) {
             ex = e;
@@ -248,8 +234,7 @@ public class AdditionalTest {
 
         try {
             for (int i = 0; i < n; i++) {
-                kvClient[i] = new KVStore("localhost", port);
-                kvClient[i].connect("localhost", port);
+                kvClient[i] = new KVStore("./src/test/resources/servers_additional.cfg");
             }
         } catch (Exception e) {
             ex = e;
@@ -309,8 +294,7 @@ public class AdditionalTest {
 
         try {
             for (int i = 0; i < n; i++) {
-                kvClient[i] = new KVStore("localhost", port);
-                kvClient[i].connect("localhost", port);
+                kvClient[i] = new KVStore("./src/test/resources/servers_additional.cfg");
                 kvClient[i].put(String.valueOf(i), String.valueOf(i));
             }
         } catch (Exception e) {
@@ -346,10 +330,9 @@ public class AdditionalTest {
     public void testEdgeCaseValues() {
         // test some edge cases for messenger
         Exception ex = null;
-        KVStore kvClient = new KVStore("localhost", port);
+        KVStore kvClient = new KVStore("./src/test/resources/servers_additional.cfg");
 
         try {
-            kvClient.connect("localhost", port);
             // special characters
             kvClient.put("test1", "~`!@#$%^&*()_+-={}[]|\\:;\"\'<>,.?/");
             // multiple spaces
@@ -382,6 +365,7 @@ public class AdditionalTest {
         assertNull(ex);
     }
 
+    @Disabled
     @Test
     public void testDisconnect() {
         // test some edge cases for messenger
