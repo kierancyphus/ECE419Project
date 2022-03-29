@@ -132,6 +132,7 @@ public class ECSClientUI {
                 try {
                     int num_nodes = Integer.parseInt(tokens[1]);
                     if (running && connected) {
+
                         addNodes(num_nodes);
                     } else {
                         printError("ECSClient is not running or not connected");
@@ -141,6 +142,7 @@ public class ECSClientUI {
                 }
             } else {
                 if (running && connected) {
+
                     addNode();
                 } else {
                     printError("ECSClient is not running or not connected");
@@ -150,7 +152,7 @@ public class ECSClientUI {
         } else if (tokens[0].equals("start")) {
             if (!connected) {
                 printError("ECSClient is not connected");
-            } else {
+            } else 
                 try {
                     start();
                 } catch (Exception e) {

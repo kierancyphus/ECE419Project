@@ -25,6 +25,8 @@ public class AllServerMetadata {
         initServerMetadata(pathToConfigFile);
     }
 
+
+
     private void initServerMetadata(String file) {
         File f = new File(file);
         String name, host, port;

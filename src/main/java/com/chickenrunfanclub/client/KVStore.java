@@ -1,27 +1,35 @@
 package com.chickenrunfanclub.client;
 
-import com.chickenrunfanclub.shared.Messenger;
+import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.ecs.ECSNode;
+import com.chickenrunfanclub.shared.Messenger;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
 import com.chickenrunfanclub.shared.messages.IServerMessage;
 import com.chickenrunfanclub.shared.messages.ServerMessage;
 import com.chickenrunfanclub.shared.messages.TextMessage;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Scanner;
 
 public class KVStore implements KVCommInterface {
+    private final String config_file;
+    private ArrayList<String> allServers;
     private String address;
     private int port;
-
     private Messenger messenger;
     private Logger logger = LogManager.getLogger(KVStore.class);
-
+    private AllServerMetadata meta;
     private boolean running;
 
     private Socket clientSocket;
@@ -36,10 +44,35 @@ public class KVStore implements KVCommInterface {
      * @param port    the port of the KVServer
      */
     public KVStore(String address, int port) {
+        this.meta = null;
         this.address = address;
         this.port = port;
+        this.config_file = null;
     }
 
+    public KVStore(String config_file) {
+        this.meta = new AllServerMetadata(config_file);
+        this.config_file = config_file;
+        this.allServers = new ArrayList<String>();
+        processConfig(config_file);
+        System.out.println(this.meta);
+    }
+
+    public void processConfig(String config_file){
+        File f = new File(config_file);
+        try{
+            Scanner scanner = new Scanner(f);
+            while (scanner.hasNextLine()) {
+                allServers.add(scanner.nextLine());
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Configuration file not found");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     public synchronized void closeConnection() {
         logger.info("try to close connection ...");
 
@@ -69,7 +102,7 @@ public class KVStore implements KVCommInterface {
     }
 
     @Override
-    public void connect() throws IOException, UnknownHostException {
+    public void connect(String address, int port) throws IOException, UnknownHostException {
         clientSocket = new Socket(address, port);
         messenger = new Messenger(clientSocket);
         setRunning(true);
@@ -84,13 +117,14 @@ public class KVStore implements KVCommInterface {
         }
     }
 
-    public IKVMessage sendAndReceiveMessage(IKVMessage.StatusType status) throws Exception {
-        KVMessage message = new KVMessage(null, null, status);
+    public IKVMessage sendAndReceiveMessage(String key, String value, IKVMessage.StatusType status) throws Exception {
+        KVMessage message = new KVMessage(key, value, status);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();
         return new KVMessage(response);
     }
+
 
     public IServerMessage sendAndReceiveServerMessage(IServerMessage.StatusType status) throws Exception {
         ServerMessage message = new ServerMessage(null, null, status);
@@ -98,27 +132,92 @@ public class KVStore implements KVCommInterface {
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();
         return new ServerMessage(response);
+
+    public AllServerMetadata pollAll(){
+        AllServerMetadata newMeta = null;
+        for (String allServer : this.allServers) {
+            try {
+                String[] info = allServer.split(" ");
+                connect(info[1], Integer.parseInt(info[2]));
+                IKVMessage kvresponse = sendAndReceiveMessage("I LOVE ECE419", null, IKVMessage.StatusType.GET);
+                IKVMessage.StatusType returnStatus = kvresponse.getStatus();
+                if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
+                    try {
+                        newMeta = new Gson().fromJson(kvresponse.getKey(), AllServerMetadata.class);
+                    } catch (JsonParseException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (Exception e) {
+            }
+        }
+        if (newMeta == null){
+            logger.error("Critical servers are down so no requests can be processed right now. Please try again once shit is figured out");
+        }
+        return newMeta;
     }
 
     @Override
     public IKVMessage put(String key, String value) throws Exception {
-        KVMessage message = new KVMessage(key, value, IKVMessage.StatusType.PUT);
-        TextMessage textMessage = new TextMessage(message);
-        messenger.sendMessage(textMessage);
-        TextMessage response = messenger.receiveMessage();
-        return new KVMessage(response);
+        IKVMessage.StatusType returnStatus = IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE;
+        IKVMessage kvresponse = null;
+        while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
+            try {
+                ECSNode node_responsible = this.meta.findServerResponsible(key);
+                connect(node_responsible.getHost(), node_responsible.getPort());
+
+                kvresponse = sendAndReceiveMessage(key, value, IKVMessage.StatusType.PUT);
+                returnStatus = kvresponse.getStatus();
+
+                if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
+                    try {
+                        this.meta = new Gson().fromJson(kvresponse.getKey(), AllServerMetadata.class);
+                    } catch (JsonParseException e) {
+                        e.printStackTrace();
+                    }
+                }
+                disconnect();
+            } catch (SocketTimeoutException e){
+                this.meta = pollAll();
+            }
+        }
+        return kvresponse;
     }
 
     @Override
     public IKVMessage get(String key) throws Exception {
-        KVMessage message = new KVMessage(key, null, IKVMessage.StatusType.GET);
-        TextMessage textMessage = new TextMessage(message);
-        messenger.sendMessage(textMessage);
-        TextMessage response = messenger.receiveMessage();
-        return new KVMessage(response);
+        System.out.println(this.meta);
+        IKVMessage.StatusType returnStatus = IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE;
+        IKVMessage kvresponse = null;
+        while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
+            try {
+                System.out.println(this.meta);
+
+                ECSNode node_responsible = this.meta.findServerResponsible(key);
+                connect(node_responsible.getHost(), node_responsible.getPort());
+
+                kvresponse = sendAndReceiveMessage(key, null, IKVMessage.StatusType.GET);
+                returnStatus = kvresponse.getStatus();
+
+                if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
+                    try {
+                        System.out.println("is this what's happening");
+                        this.meta = new Gson().fromJson(kvresponse.getKey(), AllServerMetadata.class);
+                    } catch (JsonParseException e) {
+                        e.printStackTrace();
+                    }
+                }
+                disconnect();
+            } catch (SocketTimeoutException e) {
+                System.out.println("hello????????????");
+                this.meta = pollAll();
+            }
+        }
+        return kvresponse;
     }
 
     @Override
+
     public IServerMessage start() throws Exception {
         return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_START);
     }
@@ -141,6 +240,7 @@ public class KVStore implements KVCommInterface {
     @Override
     public IServerMessage unlockWrite() throws Exception {
         return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_UNLOCK_WRITE);
+
     }
 
     @Override

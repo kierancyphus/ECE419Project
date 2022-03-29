@@ -4,9 +4,7 @@ import com.chickenrunfanclub.app_kvECS.ECSClient;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.shared.ClientThreadUtil;
 import junit.framework.TestCase;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,7 +14,7 @@ import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 public class EnronTest extends TestCase {
 
-    private final int NUM_SERVERS = 5;
+    private final int NUM_SERVERS = 3;
     private final int NUM_CLIENT = 100;
     private final int CACHE_SIZE = 100;
     private final String CACHE_STRATEGY = "None";
@@ -24,6 +22,7 @@ public class EnronTest extends TestCase {
     private final String DATAPATH = "/Users/rui/Downloads/maildir/wolfe-j/all_documents/";
 
     private ECSClient ecsClient;
+
 
     @BeforeAll
     public void setUp() {
@@ -49,6 +48,13 @@ public class EnronTest extends TestCase {
     @Test
     public void test_none() {
         try {
+            try {
+                ecsClient = new ECSClient("/Users/rui/Documents/School/ECE419/ECE419Project/src/test/resources/servers.cfg", CACHE_STRATEGY, CACHE_SIZE);
+                ecsClient.addNodes(NUM_SERVERS, CACHE_STRATEGY, CACHE_SIZE);
+                ecsClient.start();
+            }catch(Exception e){
+                e.printStackTrace();
+            }
             File file = new File(DATAPATH);
             HashMap<String, String> data = getData(file);
             KVStore client;
@@ -57,7 +63,7 @@ public class EnronTest extends TestCase {
                 CountDownLatch latch = new CountDownLatch(KVClients.size());
                 for (int i = 0; i < c_num; i++) {
                     client = new KVStore("localhost", 50012);
-                    client.connect();
+                    client.connect("localhost", 50012);
                     KVClients.add(client);
                 }
                 long start = System.currentTimeMillis();

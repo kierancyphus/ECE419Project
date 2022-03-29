@@ -13,6 +13,7 @@ import java.io.*;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
+
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -26,8 +27,9 @@ public class ECSClient implements IECSClient {
     private HashMap<String, IECSNode> nameToNode = new HashMap<String, IECSNode>();     // hash to node
     private HashMap<String, ECSNodeFlag> serverNameToStatus = new HashMap<String, ECSNodeFlag>();     // node status
     private CountDownLatch connectedSignal;
-    // this command is not working for some reason
+  
     private static final String SCRIPT_TEXT = "java -jar build/libs/ece419-1.3-SNAPSHOT-all.jar server %s %s %s";
+
     private final int TIMEOUT = 15000;
     private int numServers = 0;
     private String cacheStrategy;
@@ -80,9 +82,9 @@ public class ECSClient implements IECSClient {
         List<ECSNode> idleNodes = allServerMetadata.getAllNodesByStatus(ECSNodeFlag.IDLE);
         for (ECSNode node : idleNodes) {
             // start each of the servers
-//            KVStore client = new KVStore(node.getHost(), node.getPort());
-//            client.connect();
-//            client.start();
+            KVStore client = new KVStore(node.getHost(), node.getPort());
+            client.connect(node.getHost(), node.getPort());
+            client.start();
         }
 
         allServerMetadata.updateStatus(ECSNodeFlag.IDLE, ECSNodeFlag.START);
@@ -93,10 +95,10 @@ public class ECSClient implements IECSClient {
     public boolean stop() throws Exception {
         List<ECSNode> idleNodes = allServerMetadata.getAllNodesByStatus(ECSNodeFlag.START);
         for (ECSNode node : idleNodes) {
-            // start each of the servers
-//            KVStore client = new KVStore(node.getHost(), node.getPort());
-//            client.connect();
-//            client.stop();
+            // stop each of the servers
+            KVStore client = new KVStore(node.getHost(), node.getPort());
+            client.connect(node.getHost(), node.getPort());
+            client.stop();
         }
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.STOP);
@@ -107,10 +109,10 @@ public class ECSClient implements IECSClient {
     public boolean shutdown() throws Exception {
         List<ECSNode> idleNodes = allServerMetadata.getAllNodesByStatus(ECSNodeFlag.START);
         for (ECSNode node : idleNodes) {
-            // start each of the servers
-//            KVStore client = new KVStore(node.getHost(), node.getPort());
-//            client.connect();
-//            client.shutDown();
+            // shutdown each of the servers
+            KVStore client = new KVStore(node.getHost(), node.getPort());
+            client.connect(node.getHost(), node.getPort());
+            client.shutDown();
         }
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.SHUT_DOWN);
@@ -141,10 +143,11 @@ public class ECSClient implements IECSClient {
                 logger.info("starting new server "+ serverToAdd.getName());
                 numServers++;
             }
-            else{
+            else {
                 System.out.println("can not add nodes because ssh command failed");
                 logger.error("can not add nodes because ssh command failed");
             }
+
         } catch (Exception e) {
             System.out.println("can not add nodes " + e);
             logger.error("can not add nodes " + e);

@@ -27,15 +27,7 @@ public class InteractionTest {
 
     @BeforeEach
     public void setUp() {
-        kvClient = new KVStore("localhost", port);
-        try {
-            kvClient.connect();
-        } catch (Exception e) {
-        }
-    }
-
-    public void tearDown() {
-        kvClient.disconnect();
+        kvClient = new KVStore("./src/test/resources/servers_interaction.cfg");
     }
 
     @Test
@@ -53,6 +45,7 @@ public class InteractionTest {
         try {
             response = kvClient.put(key, value);
         } catch (Exception e) {
+            e.printStackTrace();
             ex = e;
         }
 
@@ -60,21 +53,6 @@ public class InteractionTest {
         assertSame(response.getStatus(), StatusType.PUT_SUCCESS);
     }
 
-    @Test
-    public void testPutDisconnected() {
-        kvClient.disconnect();
-        String key = "foo";
-        String value = "bar";
-        Exception ex = null;
-
-        try {
-            kvClient.put(key, value);
-        } catch (Exception e) {
-            ex = e;
-        }
-
-        assertNotNull(ex);
-    }
 
     @Test
     public void testUpdate() {
