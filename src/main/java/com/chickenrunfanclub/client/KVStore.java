@@ -132,6 +132,7 @@ public class KVStore implements KVCommInterface {
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();
         return new ServerMessage(response);
+    }
 
     public AllServerMetadata pollAll(){
         AllServerMetadata newMeta = null;
@@ -217,7 +218,6 @@ public class KVStore implements KVCommInterface {
     }
 
     @Override
-
     public IServerMessage start() throws Exception {
         return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_START);
     }
