@@ -18,12 +18,17 @@ public class KVClient implements IKVClient {
 
     private static Logger logger = LogManager.getLogger(KVClient.class);
     private static final String PROMPT = "KVClient> ";
+    private final String config_file;
     private BufferedReader stdin;
     private KVStore kvStore = null;
     private boolean stop = false;
 
     private String serverAddress;
     private int serverPort;
+
+    public KVClient(String config_file){
+        this.config_file = config_file;
+    }
 
     public void run() {
         while (!stop) {
@@ -197,7 +202,7 @@ public class KVClient implements IKVClient {
     public void newConnection(String hostname, int port) throws IOException, UnknownHostException {
         kvStore = new KVStore(hostname, port);
         try {
-            kvStore.connect();
+            kvStore.connect(hostname, port);
         } catch (Exception e) {
             logger.info("Error! Could not establish connection");
         }
