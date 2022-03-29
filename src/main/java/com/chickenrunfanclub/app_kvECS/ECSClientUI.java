@@ -148,8 +148,8 @@ public class ECSClientUI {
             }
 
         } else if (tokens[0].equals("start")) {
-            if (running) {
-                printError("ECSClient is already running");
+            if (!connected) {
+                printError("ECSClient is not connected");
             } else {
                 try {
                     start();

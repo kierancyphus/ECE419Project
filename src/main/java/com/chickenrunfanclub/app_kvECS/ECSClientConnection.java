@@ -93,6 +93,7 @@ public class ECSClientConnection implements Runnable {
                         default:
                             response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
                     }
+
                     messenger.sendMessage(new TextMessage(response));
                     /* connection either terminated by the client or lost due to
                      * network problems*/
