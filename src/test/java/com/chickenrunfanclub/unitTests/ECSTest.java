@@ -2,50 +2,70 @@ package com.chickenrunfanclub.unitTests;
 
 import com.chickenrunfanclub.TestUtils;
 import com.chickenrunfanclub.app_kvECS.ECSClient;
-import com.chickenrunfanclub.app_kvServer.KVServer;
-import com.chickenrunfanclub.client.KVStore;
-import com.chickenrunfanclub.ecs.ECSNode;
-import com.chickenrunfanclub.shared.messages.IKVMessage;
-import com.google.gson.Gson;
+import org.apache.zookeeper.KeeperException;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ECSTest {
-    private static ECSClient ecs;
-    private KVStore client;
+    private static final TestUtils utils = new TestUtils();
+    static ECSClient ecs;
+    static int numServer;
 
-    @AfterAll
-    public static void shutdown(){
-        try{
-            ecs.shutdown();
-        }catch(Exception e){
-            e.printStackTrace();
-        }
+    public ECSTest() throws IOException, InterruptedException, KeeperException {
+    }
+
+    @BeforeAll
+    static void init() throws Exception {
+        ecs = new ECSClient("src/test/java/com/chickenrunfanclub/unitTests/ecs.config.txt", "LRU", 5000, 50000);
+        ecs.removeAllNodes();
+        // ecs.shutdownServers();
+        ecs = new ECSClient("src/test/java/com/chickenrunfanclub/unitTests/ecs.config.txt", "LRU", 5000, 50000);
+        // numServer = ecs.getNumServers();
     }
 
     @Test
-    public void testECS(){
+    public void zooInit() throws Exception {
+        assertSame(4, ecs.getNodes().size());
+    }
 
-        Runtime run = Runtime.getRuntime();
-        String filepath = "./src/test/resources/servers.cfg";
-        try{
+    @Test
+    public void addNode() throws Exception {
+        numServer = ecs.getNumServers();
+        assertSame(numServer, ecs.zookeeperNodes());
+        ecs.addNode("LRU", 100);
+        ecs.start();
+        assertSame(1, ecs.getNumServers() - numServer);
+        assertSame(1, ecs.zookeeperNodes() - numServer);
+    }
 
-            ecs = new ECSClient(filepath, "FIFO", 50);
-            ecs.addNode("FIFO", 50);
-            ecs.addNode("FIFO", 50);
-            ecs.addNode("FIFO", 50);
-            ecs.start();
+    @Test
+    public void addNodes() throws Exception {
+        numServer = ecs.getNumServers();
+        assertSame(numServer, ecs.zookeeperNodes());
+        ecs.addNodes(2);
+        ecs.start();
+        assertSame(2, ecs.getNumServers() - numServer);
+        assertSame(2, ecs.zookeeperNodes() - numServer);
+    }
 
-        } catch (Exception e){
-            e.printStackTrace();
+    @Test
+    public void removeNodes() throws Exception {
+        numServer = ecs.getNumServers();
+        ecs.removeNode(0);
+        assertSame(1, numServer - ecs.getNumServers());
+        assertSame(1, numServer - ecs.zookeeperNodes());
+    }
 
-        }
-
+    @AfterAll
+    static void shutdown() throws Exception {
+        ecs.shutdown();
     }
 }
-

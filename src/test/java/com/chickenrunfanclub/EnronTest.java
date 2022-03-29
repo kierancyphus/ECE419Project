@@ -18,31 +18,33 @@ public class EnronTest extends TestCase {
     private final int NUM_CLIENT = 100;
     private final int CACHE_SIZE = 100;
     private final String CACHE_STRATEGY = "None";
+    private final int port = 50000;
     private final String DATAPATH = "/Users/rui/Downloads/maildir/wolfe-j/all_documents/";
 
     private ECSClient ecsClient;
 
-//    @BeforeAll
-//    public void setUp() {
-//        try {
-//            ecsClient = new ECSClient("ecs.config", CACHE_STRATEGY, CACHE_SIZE);
-//            ecsClient.addNodes(NUM_SERVERS, CACHE_STRATEGY, CACHE_SIZE);
-//            ecsClient.start();
-//        }catch(Exception e){
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    @AfterAll
-//    public void tearDown() {
-//        try{
-//            ecsClient.shutdown();
-//        }catch(Exception e){
-//            e.printStackTrace();
-//        }
-//
-//    }
-    @Disabled
+
+    @BeforeAll
+    public void setUp() {
+        try {
+            ecsClient = new ECSClient("ecs.config", CACHE_STRATEGY, CACHE_SIZE, 50000);
+            ecsClient.addNodes(NUM_SERVERS);
+            ecsClient.start();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    @AfterAll
+    public void tearDown() {
+        try{
+            ecsClient.shutdown();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
     @Test
     public void test_none() {
         try {

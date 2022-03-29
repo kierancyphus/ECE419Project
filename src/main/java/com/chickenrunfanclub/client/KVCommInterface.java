@@ -2,6 +2,7 @@ package com.chickenrunfanclub.client;
 
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
+import com.chickenrunfanclub.shared.messages.IServerMessage;
 
 public interface KVCommInterface {
 
@@ -40,12 +41,12 @@ public interface KVCommInterface {
 	 */
 	public IKVMessage get(String key) throws Exception;
 
-	public IKVMessage start() throws Exception;
-	public IKVMessage stop() throws Exception;
-	public IKVMessage shutDown() throws Exception;
-	public IKVMessage lockWrite() throws Exception;
-	public IKVMessage unlockWrite() throws Exception;
-	public IKVMessage moveData(ECSNode metadata) throws Exception;
-	public IKVMessage updateMetadata(ECSNode metadata) throws Exception;
+	public IServerMessage start() throws Exception;
+	public IServerMessage stop() throws Exception;
+	public IServerMessage shutDown() throws Exception;
+	public IServerMessage lockWrite() throws Exception;
+	public IServerMessage unlockWrite() throws Exception;
+	public IServerMessage moveData(ECSNode metadata) throws Exception;
+	public IServerMessage updateMetadata(ECSNode metadata) throws Exception;
 
 }

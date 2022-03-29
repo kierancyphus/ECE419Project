@@ -1,10 +1,12 @@
 package com.chickenrunfanclub.runner;
 
 import com.chickenrunfanclub.app_kvClient.KVClient;
+import com.chickenrunfanclub.app_kvECS.ECSClient;
 import com.chickenrunfanclub.app_kvECS.ECSClientUI;
 import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.logger.LogSetup;
 import org.apache.logging.log4j.Level;
+import org.apache.zookeeper.KeeperException;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -34,14 +36,15 @@ public class Entrypoint {
     public static void runECS(String[] args) {
         try {
             new LogSetup("logs/ecs.log", Level.ALL);
-            if (args.length != 3) {
+            if (args.length != 4) {
                 System.out.println("Error! Invalid number of arguments!");
-                System.out.println("Usage: ecs <config_file> <stategy> <cacheSize>!");
+                System.out.println("Usage: ecs <config_file> <stategy> <cacheSize> <port>!");
             } else {
                 String config_file = args[0];
                 String cacheStrategy = args[1];
                 int cacheSize = Integer.parseInt(args[2]);
-                ECSClientUI ecs = new ECSClientUI(config_file, cacheSize, cacheStrategy);
+                int port = Integer.parseInt(args[3]);
+                ECSClient ecs = new ECSClient(config_file, cacheStrategy, cacheSize, port);
                 ecs.run();
             }
         } catch (IOException e) {
@@ -50,6 +53,26 @@ public class Entrypoint {
             System.exit(1);
         } catch (NumberFormatException nfe) {
             System.out.println("Error! Cache Size must be an integer");
+            System.exit(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (KeeperException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void runECSUI(String[] args) {
+        try {
+            new LogSetup("logs/ecs.log", Level.ALL);
+            if (args.length != 0) {
+                System.out.println("Error! Invalid number of arguments!");
+            } else {
+                ECSClientUI ecsUI = new ECSClientUI();
+                ecsUI.run();
+            }
+        } catch (IOException e) {
+            System.out.println("Error! Unable to initialize logger!");
+            e.printStackTrace();
             System.exit(1);
         }
     }
@@ -92,6 +115,8 @@ public class Entrypoint {
             runClient(Arrays.copyOfRange(args, 1, args.length ));
         } else if (Objects.equals(args[0], "ecs")){
             runECS(Arrays.copyOfRange(args, 1, args.length));
+        } else if (Objects.equals(args[0], "ecsUI")){
+            runECSUI(Arrays.copyOfRange(args, 1, args.length));
         } else {
             System.out.println("Error! Not specified if server or client");
             System.out.println("Usage: \"./gradlew run --args=\"server\" \" or \"./gradlew run --args=\"client\" --console=plain\"");

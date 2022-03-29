@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public interface IECSClient {
@@ -50,7 +51,8 @@ public interface IECSClient {
      *
      * @return set of strings containing the names of the nodes
      */
-    public Collection<IECSNode> addNodes(int count, String cacheStrategy, int cacheSize) throws InterruptedException, KeeperException;
+
+    List<IECSNode> addNodes(int count) throws Exception;
 
     /**
      * Sets up `count` servers with the ECS (in this case Zookeeper)

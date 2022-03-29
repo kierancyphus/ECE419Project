@@ -2,13 +2,11 @@ package com.chickenrunfanclub.app_kvServer;
 
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.ecs.ECSNode;
+import com.chickenrunfanclub.shared.messages.*;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.chickenrunfanclub.shared.messages.TextMessage;
 import com.chickenrunfanclub.shared.Messenger;
-import com.chickenrunfanclub.shared.messages.IKVMessage;
-import com.chickenrunfanclub.shared.messages.KVMessage;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -48,8 +46,11 @@ public class KVClientConnection implements Runnable {
     public void run() {
         try {
 
-            IKVMessage message;
-            IKVMessage response;
+            IKVMessage message = null;
+            IKVMessage response = null;
+            IServerMessage servermessage = null;
+            IServerMessage serverresponse = null;
+            boolean KV;
 
             while (isOpen) {
                 try {
@@ -59,70 +60,87 @@ public class KVClientConnection implements Runnable {
                         latestMsg = messenger.receiveMessage();
                     }
 
-                    message = new KVMessage(latestMsg);
-
-                    switch (message.getStatus()) {
-                        case GET: {
-                            if (server.getMetadata().notResponsibleFor(message.getKey())) {
-                                // handle here
-                                String allServerMetadata = new Gson().toJson(server.getAllMetadata(), AllServerMetadata.class) ;
-                                response = new KVMessage(allServerMetadata, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
-                            } else {
-                                response = repo.get(message.getKey());
-                            }
-                            break;
-                        }
-                        case PUT: {
-                            if (server.getMetadata().notResponsibleFor(message.getKey())) {
-                                // handle here
-                                String allServerMetadata = new Gson().toJson(server.getAllMetadata(), AllServerMetadata.class) ;
-                                response = new KVMessage(allServerMetadata, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
-                            } else {
-                                response = repo.put(message.getKey(), message.getValue());
-                            }
-                            break;
-
-                        }
-                        case SERVER_START: {
-                            server.updateServerStopped(false);
-                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_START);
-                            break;
-                        }
-                        case SERVER_STOP: {
-                            server.updateServerStopped(false);
-                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_STOPPED);
-                            break;
-                        }
-                        case SERVER_WRITE_LOCK: {
-                            server.lockWrite();
-                            // TODO: convert these into success and failure message (although idk how it could fail)
-                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_WRITE_LOCK);
-                            break;
-                        }
-                        case SERVER_WRITE_UNLOCKED: {
-                            server.unLockWrite();
-                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_WRITE_LOCK);
-                            break;
-                        }
-                        case SERVER_MOVE_DATA: {
-                            // I'm storing the json of the metadata in the key field of the KVMessage lmao
-                            ECSNode metadata = new Gson().fromJson(message.getKey(), ECSNode.class);
-                            server.moveData(metadata);
-                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_MOVE_DATA);
-                            break;
-                        }
-                        case SERVER_UPDATE_METADATA: {
-                            // metadata also stored in the key
-                            ECSNode metadata = new Gson().fromJson(message.getKey(), ECSNode.class);
-                            server.updateMetadata(metadata);
-                            response = new KVMessage("", "", IKVMessage.StatusType.SERVER_UPDATE_METADATA);
-                            break;
-                        }
-                        default: response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
+                    try {
+                        message = new KVMessage(latestMsg);
+                        KV = true;
+                    } catch (Exception e) {
+                        servermessage = new ServerMessage(latestMsg);
+                        KV = false;
                     }
+                    response = null;
+                    serverresponse = null;
+                    if (KV) {
+                        switch (message.getStatus()) {
+                            case GET: {
+                                if (server.getMetadata().notResponsibleFor(message.getKey())) {
+                                    // handle here
+                                    String allServerMetadata = new Gson().toJson(server.getAllMetadata(), AllServerMetadata.class);
+                                    response = new KVMessage(allServerMetadata, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
+                                } else {
+                                    response = repo.get(message.getKey());
+                                }
+                                break;
+                            }
+                            case PUT: {
+                                if (server.getMetadata().notResponsibleFor(message.getKey())) {
+                                    // handle here
+                                    String allServerMetadata = new Gson().toJson(server.getAllMetadata(), AllServerMetadata.class);
+                                    response = new KVMessage(allServerMetadata, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
+                                } else {
+                                    response = repo.put(message.getKey(), message.getValue());
+                                }
+                                break;
 
-                    messenger.sendMessage(new TextMessage(response));
-
+                            }
+                            default:
+                                response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
+                        }
+                    } else {
+                        switch (servermessage.getStatus()) {
+                            case SERVER_START: {
+                                server.updateServerStopped(false);
+                                serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_START);
+                                break;
+                            }
+                            case SERVER_STOP: {
+                                server.updateServerStopped(false);
+                                response = new KVMessage("", "", IKVMessage.StatusType.SERVER_STOPPED);
+                                break;
+                            }
+                            case SERVER_LOCK_WRITE: {
+                                server.lockWrite();
+                                // TODO: convert these into success and failure message (although idk how it could fail)
+                                response = new KVMessage("", "", IKVMessage.StatusType.SERVER_WRITE_LOCK);
+                                break;
+                            }
+                            case SERVER_UNLOCK_WRITE: {
+                                server.unLockWrite();
+                                serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_WRITE_UNLOCKED);
+                                break;
+                            }
+                            case SERVER_MOVE_DATA: {
+                                // I'm storing the json of the metadata in the key field of the KVMessage lmao
+                                ECSNode metadata = new Gson().fromJson(message.getKey(), ECSNode.class);
+                                server.moveData(metadata);
+                                serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_MOVE_DATA);
+                                break;
+                            }
+                            case SERVER_UPDATE_METADATA: {
+                                // metadata also stored in the key
+                                ECSNode metadata = new Gson().fromJson(message.getKey(), ECSNode.class);
+                                server.updateMetadata(metadata);
+                                serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_UPDATE_METADATA);
+                                break;
+                            }
+                            default:
+                                serverresponse = new ServerMessage(message.getKey(), null, IServerMessage.StatusType.FAILED);
+                        }
+                        if (response != null) {
+                            messenger.sendMessage(new TextMessage(response));
+                        } else {
+                            messenger.sendMessage(new TextMessage(serverresponse));
+                        }
+                    }
                     /* connection either terminated by the client or lost due to
                      * network problems*/
                 } catch (IOException ioe) {
@@ -130,8 +148,7 @@ public class KVClientConnection implements Runnable {
                     isOpen = false;
                 }
             }
-
-        } finally {
+        }finally {
             messenger.closeConnections();
         }
     }
