@@ -158,7 +158,6 @@ public class ECSClientUI {
                 } catch (Exception e) {
                     printError("Could not start ECS");
                 }
-            }
 
         } else if (tokens[0].equals("remove")) {
             if (tokens.length == 2) {
@@ -172,21 +171,10 @@ public class ECSClientUI {
                 } catch (Exception e) {
                     printError("Incorrect node index given.");
                 }
-//            if (tokens.length > 1) {
-//                try {
-//                    int node_idx = Integer.parseInt(tokens[1]);
-//                    if (ecsClient != null && ecsClient.isRunning()) {
-//                        List<String> nodes = Arrays.asList(Arrays.copyOfRange(tokens, 1, tokens.length));
-//                        removeNodes(nodes);
-//                    } else {
-//                        printError("ECSClient is not running");
-//                    }
-//                } catch (Exception e) {
-//                    printError("Incorrect nodes given, please give existing nodes.");
-//                }
             } else {
                 printError("Incorrect number of arguments, no node given");
             }
+
 
         } else if (tokens[0].equals("logLevel")) {
             if (tokens.length == 2) {

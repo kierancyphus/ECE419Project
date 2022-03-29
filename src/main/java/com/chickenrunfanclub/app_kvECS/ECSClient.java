@@ -249,7 +249,7 @@ public class ECSClient implements IECSClient {
         for (ECSNode node : nodes) {
             // shutdown each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
-            client.connect();
+            client.connect(node.getHost(), node.getPort());
             client.shutDown();
         }
 
