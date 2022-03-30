@@ -62,7 +62,7 @@ public class KVServerTest {
         assertNull(ex);
         assertNotSame(response.getStatus(), IKVMessage.StatusType.SERVER_STOPPED);
     }
-    
+
     @Test
     public void dataTransferSuccess() {
         int port = 50007;

@@ -137,6 +137,12 @@ public class KVClientConnection implements Runnable {
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_UPDATE_METADATA);
                                 break;
                             }
+                            case SERVER_UPDATE_ALL_METADATA: {
+                                AllServerMetadata asm = new Gson().fromJson(message.getKey(), AllServerMetadata.class);
+                                server.replaceAllServerMetadata(asm);
+                                serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
+                                break;
+                            }
                             default:
                                 serverresponse = new ServerMessage(message.getKey(), null, IServerMessage.StatusType.FAILED);
                         }

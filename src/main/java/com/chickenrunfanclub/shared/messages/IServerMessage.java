@@ -11,7 +11,8 @@ public interface IServerMessage {
         SERVER_LOCK_WRITE,		    /* Lock writes to the server */
         SERVER_UNLOCK_WRITE,		/* Unlock writes to the server */
         SERVER_SHUTDOWN,            /* Server is to be shutdown all nodes to be killed */
-        FAILED                      /* Operation failed */
+        FAILED,                      /* Operation failed */
+        SERVER_UPDATE_ALL_METADATA,
     }
 
     /**

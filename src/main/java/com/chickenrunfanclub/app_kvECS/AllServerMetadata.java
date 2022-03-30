@@ -1,5 +1,6 @@
 package com.chickenrunfanclub.app_kvECS;
 
+import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.Hasher;
 import org.apache.logging.log4j.LogManager;
@@ -169,5 +170,19 @@ public class AllServerMetadata {
 
     public void print() {
         nodeHashesToServerInfo.forEach((key, value) -> logger.info(value.getPort() + ": [" + value.getRangeStart() + ", " + value.getRangeEnd() + "]"));
+    }
+
+    public void broadcastMetadata() {
+        // only broadcast to servers that are running
+        List<ECSNode> runningServers = getAllNodesByStatus(ECSNode.ECSNodeFlag.START);
+
+        runningServers.forEach(node -> {
+            KVStore kvClient = new KVStore(node.getHost(), node.getPort());
+            try {
+                kvClient.updateAllMetadata(this);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

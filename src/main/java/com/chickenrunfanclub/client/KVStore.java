@@ -269,4 +269,13 @@ public class KVStore implements KVCommInterface {
         TextMessage response = messenger.receiveMessage();
         return new ServerMessage(response);
     }
+
+    public IServerMessage updateAllMetadata(AllServerMetadata asm) throws Exception {
+        String asmString = new Gson().toJson(asm, AllServerMetadata.class);
+        ServerMessage message = new ServerMessage(asmString, null, IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
+        TextMessage textMessage = new TextMessage(message);
+        messenger.sendMessage(textMessage);
+        TextMessage response = messenger.receiveMessage();
+        return new ServerMessage(response);
+    }
 }
