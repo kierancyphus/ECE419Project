@@ -18,6 +18,8 @@ public interface IKVMessage {
 		SERVER_WRITE_LOCK,		/* Server locked for write, only get possible */
 		SERVER_NOT_RESPONSIBLE,	/* Request not successful, server not responsible for key */
 
+		MOVE_DATA_PUT,			/* This is used to move data without checking the metadata */
+
 	}
 
 	/**

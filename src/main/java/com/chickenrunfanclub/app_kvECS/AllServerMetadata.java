@@ -2,18 +2,23 @@ package com.chickenrunfanclub.app_kvECS;
 
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.Hasher;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import javax.print.DocFlavor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag.IDLE;
 import static com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag.STOP;
 
 public class AllServerMetadata {
-    private final HashMap<String, ECSNode> nodeHashesToServerInfo;
+    private HashMap<String, ECSNode> nodeHashesToServerInfo;
+    private static final Logger logger = LogManager.getLogger(AllServerMetadata.class);
+
+    public AllServerMetadata() {
+        nodeHashesToServerInfo = new HashMap<>();
+    }
 
     public AllServerMetadata(HashMap<String, ECSNode> nodeHashesToServerInfo) {
         // this is used for passing metadata around
@@ -24,8 +29,6 @@ public class AllServerMetadata {
         nodeHashesToServerInfo = new HashMap<>();
         initServerMetadata(pathToConfigFile);
     }
-
-
 
     private void initServerMetadata(String file) {
         File f = new File(file);
@@ -116,7 +119,55 @@ public class AllServerMetadata {
                 .findFirst().get();
     }
 
+    public ECSNode getFirstByEndRange(String rangeEnd) {
+        return nodeHashesToServerInfo
+                .values()
+                .stream()
+                .filter(node -> Objects.equals(node.getRangeEnd(), rangeEnd))
+                .findFirst().get();
+    }
+
     public void updateNodeStatus(ECSNode node, ECSNode.ECSNodeFlag status) {
         nodeHashesToServerInfo.get(node.getRangeStart()).setStatus(status);
+    }
+
+    public void reset() {
+        nodeHashesToServerInfo = new HashMap<>();
+    }
+
+    public void addNode(ECSNode node) {
+        String hash = Hasher.hash(node.getHost() + node.getPort());
+
+        if (nodeHashesToServerInfo.size() == 0) {
+            node.setRangeEnd(hash);
+            node.setRangeStart(hash);
+            nodeHashesToServerInfo.put(hash, node);
+            return;
+        }
+
+        ECSNode previous = findServerResponsible(node.getHost() + node.getPort());
+
+        // insert new node into the hash ring
+        node.setRangeStart(hash);
+        node.setRangeEnd(previous.getRangeEnd());
+        nodeHashesToServerInfo.put(hash, node);
+
+        // update previous nodes range to end at the new node
+        nodeHashesToServerInfo.get(previous.getRangeStart()).setRangeEnd(hash);
+    }
+
+    public void removeNode(ECSNode node) {
+        if (nodeHashesToServerInfo.size() == 1) {
+            // don't allow an empty ring
+            return;
+        }
+
+        ECSNode previous = getFirstByEndRange(node.getRangeStart());
+        nodeHashesToServerInfo.get(previous.getRangeStart()).setRangeEnd(node.getRangeEnd());
+        nodeHashesToServerInfo.remove(node.getRangeStart());
+    }
+
+    public void print() {
+        nodeHashesToServerInfo.forEach((key, value) -> logger.info(value.getPort() + ": [" + value.getRangeStart() + ", " + value.getRangeEnd() + "]"));
     }
 }

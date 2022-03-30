@@ -177,20 +177,16 @@ public class KVServer extends Thread implements IKVServer {
     }
 
     @Override
-    public boolean moveData(ECSNode ECSNode) {
-        KVStore kvClient = new KVStore(ECSNode.getHost(), ECSNode.getPort());
-        try {
-            kvClient.connect(ECSNode.getHost(), ECSNode.getPort());
-        } catch (IOException e) {
-            logger.error("Could not connect to server: " + ECSNode.getHost() + ":" + ECSNode.getPort());
-        }
-
+    public boolean moveData(ECSNode node) {
+        KVStore kvClient = new KVStore(node.getHost(), node.getPort());
         List<Map.Entry<String, String>> failed = new ArrayList<>();
 
-        this.repo.getEntriesInHashRange(ECSNode)
+        this.repo.getEntriesInHashRange(node)
                 .forEach(entry -> {
                     try {
-                        kvClient.put(entry.getKey(), entry.getValue());
+                        logger.info(entry.getKey());
+                        IKVMessage response = kvClient.moveDataPut(entry.getKey(), entry.getValue(), node.getHost(), node.getPort());
+                        logger.info(response);
                     } catch (Exception e) {
                         failed.add(entry);
                     }
@@ -214,6 +210,9 @@ public class KVServer extends Thread implements IKVServer {
 
     public void replaceAllServerMetadata(AllServerMetadata replacer) {
         allServerMetadata = replacer;
+
+        // need to update individual metadata too
+        metadata = allServerMetadata.findServerResponsible(getHostname() + getPort());
     }
 
     public ECSNode getMetadata() { return metadata; }

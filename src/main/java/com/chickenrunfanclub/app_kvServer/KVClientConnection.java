@@ -92,6 +92,11 @@ public class KVClientConnection implements Runnable {
                                 break;
 
                             }
+                            case MOVE_DATA_PUT: {
+                                response = repo.put(message.getKey(), message.getValue());
+                                break;
+                            }
+
                             default:
                                 response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
                         }
@@ -135,11 +140,11 @@ public class KVClientConnection implements Runnable {
                             default:
                                 serverresponse = new ServerMessage(message.getKey(), null, IServerMessage.StatusType.FAILED);
                         }
-                        if (response != null) {
-                            messenger.sendMessage(new TextMessage(response));
-                        } else {
-                            messenger.sendMessage(new TextMessage(serverresponse));
-                        }
+                    }
+                    if (response != null) {
+                        messenger.sendMessage(new TextMessage(response));
+                    } else {
+                        messenger.sendMessage(new TextMessage(serverresponse));
                     }
                     /* connection either terminated by the client or lost due to
                      * network problems*/

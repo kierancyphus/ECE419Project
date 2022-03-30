@@ -158,6 +158,13 @@ public class KVStore implements KVCommInterface {
         return newMeta;
     }
 
+    public IKVMessage moveDataPut(String key, String value, String host, int port) throws Exception {
+        connect(host, port);
+        IKVMessage response = sendAndReceiveMessage(key, value, IKVMessage.StatusType.MOVE_DATA_PUT);
+        disconnect();
+        return response;
+    }
+
     @Override
     public IKVMessage put(String key, String value) throws Exception {
         IKVMessage.StatusType returnStatus = IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE;

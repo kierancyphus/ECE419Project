@@ -62,8 +62,7 @@ public class KVServerTest {
         assertNull(ex);
         assertNotSame(response.getStatus(), IKVMessage.StatusType.SERVER_STOPPED);
     }
-
-    @Disabled
+    
     @Test
     public void dataTransferSuccess() {
         int port = 50007;
@@ -72,7 +71,8 @@ public class KVServerTest {
         // initialize original server
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
         server.clearStorage();
-        server.updateMetadata(new ECSNode("localhost", port, "0".repeat(32), "F".repeat(32), false, false));
+        ECSNode firstNode = new ECSNode("localhost", port, "0".repeat(32), "F".repeat(32), false, false);
+        server.updateMetadata(firstNode);
         server.start();
 
         // initialize server to be transferred to
@@ -82,6 +82,7 @@ public class KVServerTest {
         ECSNode otherServerECSNode = new ECSNode("localhost", otherPort, "0".repeat(32), "9".repeat(32), false, false);
         otherServer.updateMetadata(otherServerECSNode);
         otherServer.start();
+
         utils.stall(5);
 
         // populate original server
@@ -95,11 +96,18 @@ public class KVServerTest {
             ex = e;
         }
 
+        // update AllServerMetadata for both
+        AllServerMetadata allServerMetadata = new AllServerMetadata();
+        allServerMetadata.addNode(firstNode);
+        allServerMetadata.addNode(otherServerECSNode);
+        server.replaceAllServerMetadata(allServerMetadata);
+        otherServer.replaceAllServerMetadata(allServerMetadata);
+
         // transfer data
-        server.moveData(otherServerECSNode);
+        server.moveData(allServerMetadata.findServerResponsible("localhost" + 50008));
         Set<String> transferredKeys = otherServer.listKeys();
         // these values were computed to be in the range. If the hash function is changed these will change too.
-        Set<String> correctKeys = new HashSet<>(Arrays.asList("6", "7", "9"));
+        Set<String> correctKeys = new HashSet<>(Arrays.asList("6", "9"));
 
         assertNull(ex);
         assertEquals(correctKeys, transferredKeys);
