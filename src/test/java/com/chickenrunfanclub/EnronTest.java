@@ -45,12 +45,13 @@ public class EnronTest extends TestCase {
 
     }
 
+    @Disabled
     @Test
     public void test_none() {
         try {
             try {
-                ecsClient = new ECSClient("/Users/rui/Documents/School/ECE419/ECE419Project/src/test/resources/servers.cfg", CACHE_STRATEGY, CACHE_SIZE);
-                ecsClient.addNodes(NUM_SERVERS, CACHE_STRATEGY, CACHE_SIZE);
+                ecsClient = new ECSClient("./src/test/resources/servers.cfg", CACHE_STRATEGY, CACHE_SIZE, port);
+                ecsClient.addNodes(NUM_SERVERS);
                 ecsClient.start();
             }catch(Exception e){
                 e.printStackTrace();

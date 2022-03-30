@@ -48,6 +48,13 @@ public class KVRepo {
         initializeHash();
     }
 
+    public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy, ECSNode ECSNode) {
+        createStore(defaultStorePath);
+        createCache(cacheSize, strategy);
+        this.serverMetadata = ECSNode;
+        initializeHash();
+    }
+
     public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy, String storePath, ECSNode ECSNode) {
         createStore(storePath);
         createCache(cacheSize, strategy);
