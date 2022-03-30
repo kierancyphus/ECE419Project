@@ -49,7 +49,7 @@ public class KVServer extends Thread implements IKVServer {
             return;
         }
         metadata = new ECSNode();
-        this.repo = new KVRepo(cacheSize, this.strategy);
+        this.repo = new KVRepo(cacheSize, this.strategy, metadata);
         allServerMetadata = null;
 
     }
