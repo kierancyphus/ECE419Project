@@ -126,11 +126,13 @@ public class KVStore implements KVCommInterface {
     }
 
 
-    public IServerMessage sendAndReceiveServerMessage(IServerMessage.StatusType status) throws Exception {
+    public IServerMessage sendAndReceiveServerMessage(IServerMessage.StatusType status, String address, int port) throws Exception {
+        connect(address, port);
         ServerMessage message = new ServerMessage(null, null, status);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();
+        disconnect();
         return new ServerMessage(response);
     }
 
@@ -228,28 +230,28 @@ public class KVStore implements KVCommInterface {
     }
 
     @Override
-    public IServerMessage start() throws Exception {
-        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_START);
+    public IServerMessage start(String address, int port) throws Exception {
+        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_START, address, port);
     }
 
     @Override
-    public IServerMessage stop() throws Exception {
-        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_STOP);
+    public IServerMessage stop(String address, int port) throws Exception {
+        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_STOP, address, port);
     }
 
     @Override
-    public IServerMessage shutDown() throws Exception {
-        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_SHUTDOWN);
+    public IServerMessage shutDown(String address, int port) throws Exception {
+        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_SHUTDOWN, address, port);
     }
 
     @Override
-    public IServerMessage lockWrite() throws Exception {
-        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_LOCK_WRITE);
+    public IServerMessage lockWrite(String address, int port) throws Exception {
+        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_LOCK_WRITE, address, port);
     }
 
     @Override
-    public IServerMessage unlockWrite() throws Exception {
-        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_UNLOCK_WRITE);
+    public IServerMessage unlockWrite(String address, int port) throws Exception {
+        return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_UNLOCK_WRITE, address, port);
 
     }
 

@@ -39,7 +39,7 @@ public class KVServerTest {
     }
 
     @Test
-    public void serverNotReturnsStoppedAfterInitialization() {
+    public void serverNotReturnsStoppedAfterInitialization() throws Exception {
         int port = 50006;
 
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
@@ -51,6 +51,8 @@ public class KVServerTest {
         KVStore kvClient = new KVStore("./src/test/resources/servers_kv_2.cfg");
         IKVMessage response = null;
         Exception ex = null;
+
+
         try {
             response = kvClient.get("something");
         } catch (Exception e) {

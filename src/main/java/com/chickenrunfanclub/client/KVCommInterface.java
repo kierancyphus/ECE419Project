@@ -41,11 +41,11 @@ public interface KVCommInterface {
 	 */
 	public IKVMessage get(String key) throws Exception;
 
-	public IServerMessage start() throws Exception;
-	public IServerMessage stop() throws Exception;
-	public IServerMessage shutDown() throws Exception;
-	public IServerMessage lockWrite() throws Exception;
-	public IServerMessage unlockWrite() throws Exception;
+	public IServerMessage start(String address, int port) throws Exception;
+	public IServerMessage stop(String address, int port) throws Exception;
+	public IServerMessage shutDown(String address, int port) throws Exception;
+	public IServerMessage lockWrite(String address, int port) throws Exception;
+	public IServerMessage unlockWrite(String address, int port) throws Exception;
 	public IServerMessage moveData(ECSNode metadata) throws Exception;
 	public IServerMessage updateMetadata(ECSNode metadata) throws Exception;
 
