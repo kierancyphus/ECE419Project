@@ -7,11 +7,9 @@ import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.google.gson.Gson;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -83,7 +81,7 @@ public class KVServerTest {
         otherServer.updateMetadata(otherServerECSNode);
         otherServer.start();
 
-        utils.stall(5);
+        utils.stall(2);
 
         // populate original server
         KVStore kvClient = new KVStore("./src/test/resources/servers_kv_3.cfg");
@@ -192,9 +190,6 @@ public class KVServerTest {
         assertSame(IKVMessage.StatusType.PUT_SUCCESS, response.getStatus());
     }
 
-    // TODO: When cluster metadata has been created, the below needs to be updated to return the new metadata.
-
-    @Disabled
     @Test
     public void serverReturnsNotResponsibleWithMetadataWhenPut() {
         int port = 50012;
@@ -203,16 +198,24 @@ public class KVServerTest {
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
         server.clearStorage();
         server.start();
-        server.updateMetadata(new ECSNode("localhost", port, "A".repeat(32), "F".repeat(32), false, false));
-        AllServerMetadata someMetadata = new AllServerMetadata(new HashMap<>());
+
+
+        ECSNode node = new ECSNode("localhost", port, "A".repeat(32), "F".repeat(32), false, false);
+        ECSNode otherNode = new ECSNode("localhost", port + 1, "A".repeat(32), "F".repeat(32), false, false);
+
+        AllServerMetadata someMetadata = new AllServerMetadata();
+        someMetadata.addNode(node);
+        someMetadata.addNode(otherNode);
         server.replaceAllServerMetadata(someMetadata);
+
         utils.stall(1);
 
         KVStore kvClient = new KVStore("./src/test/resources/servers_kv_7.cfg");
         IKVMessage response = null;
         Exception ex = null;
+
         try {
-            response = kvClient.put("6", "value");
+            response = kvClient.put("9", "who cares");
         } catch (Exception e) {
             ex = e;
         }
@@ -221,7 +224,6 @@ public class KVServerTest {
         assertEquals(response.getKey(), new Gson().toJson(someMetadata, AllServerMetadata.class));
     }
 
-    @Disabled
     @Test
     public void serverReturnsNotResponsibleWithMetadataWhenGet() {
         int port = 50013;
@@ -230,18 +232,25 @@ public class KVServerTest {
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
         server.clearStorage();
         server.start();
-        server.updateMetadata(new ECSNode("localhost", port, "A".repeat(32), "F".repeat(32), false, false));
-        AllServerMetadata someMetadata = new AllServerMetadata(new HashMap<>());
+
+
+        ECSNode node = new ECSNode("localhost", port, "A".repeat(32), "F".repeat(32), false, false);
+        ECSNode otherNode = new ECSNode("localhost", port + 1, "A".repeat(32), "F".repeat(32), false, false);
+
+        AllServerMetadata someMetadata = new AllServerMetadata();
+        someMetadata.addNode(node);
+        someMetadata.addNode(otherNode);
         server.replaceAllServerMetadata(someMetadata);
+
         utils.stall(1);
 
         KVStore kvClient = new KVStore("./src/test/resources/servers_kv_8.cfg");
         IKVMessage response = null;
         Exception ex = null;
+
         try {
-            response = kvClient.get("6");
+            response = kvClient.get("4");
         } catch (Exception e) {
-            e.printStackTrace();
             ex = e;
         }
         assertNull(ex);

@@ -184,9 +184,7 @@ public class KVServer extends Thread implements IKVServer {
         this.repo.getEntriesInHashRange(node)
                 .forEach(entry -> {
                     try {
-                        logger.info(entry.getKey());
-                        IKVMessage response = kvClient.moveDataPut(entry.getKey(), entry.getValue(), node.getHost(), node.getPort());
-                        logger.info(response);
+                        kvClient.moveDataPut(entry.getKey(), entry.getValue(), node.getHost(), node.getPort());
                     } catch (Exception e) {
                         failed.add(entry);
                     }
@@ -212,7 +210,7 @@ public class KVServer extends Thread implements IKVServer {
         allServerMetadata = replacer;
 
         // need to update individual metadata too
-        metadata = allServerMetadata.findServerResponsible(getHostname() + getPort());
+        metadata.updateMetadata(allServerMetadata.findServerResponsible(getHostname() + getPort()));
     }
 
     public ECSNode getMetadata() { return metadata; }

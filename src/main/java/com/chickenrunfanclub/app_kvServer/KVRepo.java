@@ -101,12 +101,18 @@ public class KVRepo {
     }
 
     public IKVMessage get(String key) {
-        if (serverMetadata.notResponsibleFor(key)) {
-            return new KVMessage(key, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
-        }
+        return forceGet(key, false);
+    }
 
-        if (serverMetadata.serverLocked()) {
-            return new KVMessage(key, null, IKVMessage.StatusType.SERVER_STOPPED);
+    public IKVMessage forceGet(String key, boolean force) {
+        if (!force) {
+            if (serverMetadata.notResponsibleFor(key)) {
+                return new KVMessage(key, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
+            }
+
+            if (serverMetadata.serverLocked()) {
+                return new KVMessage(key, null, IKVMessage.StatusType.SERVER_STOPPED);
+            }
         }
 
         if (this.cacheStrategy != IKVServer.CacheStrategy.None) {
@@ -201,10 +207,12 @@ public class KVRepo {
         // I could also do this for each put, but I'd rather not incur the overhead on the user
         initializeHash();
 
+        logger.info("freshly grabbed hashes: " + hashes.entrySet());
+
         return hashes.entrySet()
                 .stream()
                 .filter(entry -> rangeECSNode.inRange(entry.getKey()))  // filter out those not in range
-                .map(entry -> new AbstractMap.SimpleEntry<>(entry.getValue(), get(entry.getValue()).getValue()))  // construct kv pairs
+                .map(entry -> new AbstractMap.SimpleEntry<>(entry.getValue(), forceGet(entry.getValue(), true).getValue()))  // construct kv pairs
                 .collect(Collectors.toList());
     }
 
@@ -215,9 +223,7 @@ public class KVRepo {
 
         for (File file : Objects.requireNonNull(storePathFile.listFiles())) {
             String hash = Hasher.hash(file.getName());
-            if (serverMetadata.inRange(hash)) {
-                hashes.put(hash, file.getName());
-            }
+            hashes.put(hash, file.getName());
         }
     }
 }

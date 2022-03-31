@@ -132,13 +132,17 @@ public class ECSNode implements IECSNode {
         }
     }
 
-    public void updateMetadata(ECSNode ECSNode) {
-        this.host = ECSNode.getHost();
-        this.port = ECSNode.getPort();
-        this.rangeStart = ECSNode.getRangeStart();
-        this.rangeEnd = ECSNode.getRangeEnd();
-        this.serverLock = ECSNode.getServerLock();
-        this.writeLock = ECSNode.getWriteLock();
+    public void updateMetadata(ECSNode node) {
+        this.host = node.getHost();
+        this.port = node.getPort();
+        this.rangeStart = node.getRangeStart();
+        this.rangeEnd = node.getRangeEnd();
+        this.serverLock = node.getServerLock();
+        this.writeLock = node.getWriteLock();
+        this.cacheStrategy = node.getCacheStrategy();
+        this.cacheSize = node.getCacheSize();
+        this.name = node.getName();
+        this.status = node.getStatus();
     }
 
     public boolean serverLocked() {
@@ -195,5 +199,9 @@ public class ECSNode implements IECSNode {
 
     public String getRangeEnd() {
         return rangeEnd;
+    }
+
+    public String toString() {
+        return name + "@" + host + ":" + port + " range=[" + rangeStart + ", " + rangeEnd + "]";
     }
 }

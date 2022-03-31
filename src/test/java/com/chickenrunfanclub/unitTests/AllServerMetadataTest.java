@@ -56,7 +56,7 @@ public class AllServerMetadataTest {
     }
 
     @Test
-    public void removeNodeToLongerChain() {
+    public void removeNodeToLongerRing() {
         AllServerMetadata metadata = new AllServerMetadata();
         ECSNode node = new ECSNode("localhost", 50000);
         ECSNode otherNode = new ECSNode("localhost", 50001);
