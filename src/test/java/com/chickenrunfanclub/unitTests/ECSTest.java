@@ -33,11 +33,6 @@ public class ECSTest {
     }
 
     @Test
-    public void zooInit() throws Exception {
-        assertSame(4, ecs.getNodes().size());
-    }
-
-    @Test
     public void addNode() throws Exception {
         numServer = ecs.getNumServers();
         assertSame(numServer, ecs.zookeeperNodes());
