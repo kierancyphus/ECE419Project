@@ -4,12 +4,14 @@ import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.*;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.chickenrunfanclub.shared.Messenger;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Objects;
 
 /**
  * Represents a connection end point for a particular client that is
@@ -60,15 +62,17 @@ public class KVClientConnection implements Runnable {
                         latestMsg = messenger.receiveMessage();
                     }
 
-                    try {
-                        message = new KVMessage(latestMsg);
-                        KV = true;
-                    } catch (Exception e) {
+                    message = new KVMessage(latestMsg);
+                    KV = true;
+
+                    if (Objects.equals(message.toString(), "{}")) {
                         servermessage = new ServerMessage(latestMsg);
                         KV = false;
                     }
+
                     response = null;
                     serverresponse = null;
+
                     if (KV) {
                         switch (message.getStatus()) {
                             case GET: {

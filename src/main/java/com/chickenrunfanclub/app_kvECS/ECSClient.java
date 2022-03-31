@@ -83,8 +83,7 @@ public class ECSClient implements IECSClient {
         for (ECSNode node : idleNodes) {
             // start each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
-            client.connect(node.getHost(), node.getPort());
-            client.start();
+            client.start(node.getHost(), node.getPort());
         }
 
         allServerMetadata.updateStatus(ECSNodeFlag.IDLE, ECSNodeFlag.START);
@@ -97,8 +96,7 @@ public class ECSClient implements IECSClient {
         for (ECSNode node : idleNodes) {
             // stop each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
-            client.connect(node.getHost(), node.getPort());
-            client.stop();
+            client.stop(node.getHost(), node.getPort());
         }
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.STOP);
@@ -111,8 +109,7 @@ public class ECSClient implements IECSClient {
         for (ECSNode node : idleNodes) {
             // shutdown each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
-            client.connect(node.getHost(), node.getPort());
-            client.shutDown();
+            client.shutDown(node.getHost(), node.getPort());
         }
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.SHUT_DOWN);
@@ -249,8 +246,7 @@ public class ECSClient implements IECSClient {
         for (ECSNode node : nodes) {
             // shutdown each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
-            client.connect(node.getHost(), node.getPort());
-            client.shutDown();
+            client.shutDown(node.getHost(), node.getPort());
         }
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.SHUT_DOWN);
