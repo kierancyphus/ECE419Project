@@ -85,6 +85,20 @@ public class AllServerMetadata {
         return nodesSortedByHash.get(index);
     }
 
+    public List<ECSNode> findGetServersResponsible(String key) {
+        /*
+        * This is used for get since clients are allowed to query at any point along the chain
+        * */
+        ECSNode chainHead = findServerResponsible(key, false);
+        List<ECSNode> responsibleServers = new ArrayList<>();
+        for(int i = 1; i < chainLength + 1; i++) {
+            responsibleServers.add(findServerAheadInHashRing(chainHead, i));
+        }
+        responsibleServers.add(chainHead);
+        return responsibleServers;
+
+    }
+
     public ECSNode findServerResponsible(String key, boolean get) {
         // need to add a boolean get param that if true, returns the server at the tail
         if (get) {

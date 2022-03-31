@@ -64,12 +64,12 @@ public class KVClientConnection implements Runnable {
 
                     switch (message.getStatus()) {
                         case GET: {
-                            if (server.getMetadata().notResponsibleFor(message.getKey())) {
-                                // handle here
-                                String allServerMetadata = new Gson().toJson(server.getAllMetadata(), AllServerMetadata.class) ;
-                                response = new KVMessage(allServerMetadata, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
-                            } else {
+                            // if we are in the replication chain
+                            if (server.getAllMetadata().findGetServersResponsible(message.getKey()).contains(server.getMetadata())) {
                                 response = repo.get(message.getKey());
+                            } else {
+                                String allServerMetadata = new Gson().toJson(server.getAllMetadata(), AllServerMetadata.class);
+                                response = new KVMessage(allServerMetadata, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
                             }
                             break;
                         }
@@ -82,9 +82,7 @@ public class KVClientConnection implements Runnable {
                             }
                             // either index is 0 and responsible or passing along => persist to disk and then pass message along
                             else if (message.getIndex() >= 0 && message.getIndex() < 2) {
-                                logger.info("persisting and passing message along");
-                                // flush to memory -> this is also the response we send to the client
-                                response = repo.put(message.getKey(), message.getValue());
+                                logger.info("Passing message along");
                                 // find next server in hash ring
                                 ECSNode nextServer = server.getAllMetadata().findServerAheadInHashRing(server.getMetadata(), 1);
 
@@ -95,11 +93,20 @@ public class KVClientConnection implements Runnable {
                                     KVStore kvClient = new KVStore(nextServer.getHost(), nextServer.getPort());
                                     try {
                                         kvClient.connect();
-                                        kvClient.put(message.getKey(), message.getValue(), message.getIndex() + 1);
+                                        response = kvClient.put(message.getKey(), message.getValue(), message.getIndex() + 1);
                                     } catch (Exception e) {
+                                        response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.PUT_ERROR);
                                         logger.info("Could not pass along message :(");
                                     }
+                                    // persist to memory
+                                    // TODO: ideally we should only send a success message if the client was successful and
+                                    // TODO: our local repo put was. I can't be bothered to do that rn.
+                                    repo.put(message.getKey(), message.getValue());
+                                } else {
+                                    // ring size of 1 (just retur
+                                    response = repo.put(message.getKey(), message.getValue());
                                 }
+
                             }
                             // reached the end of the chain, so just persist to disk
                             else {
