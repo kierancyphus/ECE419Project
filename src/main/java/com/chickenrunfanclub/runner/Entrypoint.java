@@ -113,10 +113,10 @@ public class Entrypoint {
         } else if (Objects.equals(args[0], "server")) {
             runServer(Arrays.copyOfRange(args, 1, args.length));
         } else if (Objects.equals(args[0], "client")) {
-            runClient(Arrays.copyOfRange(args, 1, args.length ));
-        } else if (Objects.equals(args[0], "ecs")){
+            runClient(Arrays.copyOfRange(args, 1, args.length));
+        } else if (Objects.equals(args[0], "ecs")) {
             runECS(Arrays.copyOfRange(args, 1, args.length));
-        } else if (Objects.equals(args[0], "ecsUI")){
+        } else if (Objects.equals(args[0], "ecsUI")) {
             runECSUI(Arrays.copyOfRange(args, 1, args.length));
         } else {
             System.out.println("Error! Not specified if server or client");

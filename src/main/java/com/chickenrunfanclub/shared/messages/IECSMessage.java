@@ -3,30 +3,30 @@ package com.chickenrunfanclub.shared.messages;
 public interface IECSMessage {
 
     public enum StatusType {
-        ADD, 			/* Add - request */
-        ADD_ERROR, 		/* Nodes could not be added */
-        ADD_SUCCESS, 	/* Nodes added */
-        REMOVE, 			/* Remove - request */
-        REMOVE_SUCCESS, 	/* Node removal successful */
-        REMOVE_ERROR, 	/* Node removal failed */
-        FAILED,			/* General failure message - could not tell if put or get */
+        ADD,            /* Add - request */
+        ADD_ERROR,        /* Nodes could not be added */
+        ADD_SUCCESS,    /* Nodes added */
+        REMOVE,            /* Remove - request */
+        REMOVE_SUCCESS,    /* Node removal successful */
+        REMOVE_ERROR,    /* Node removal failed */
+        FAILED,            /* General failure message - could not tell if put or get */
 
-        ECS_STOPPED,			/* ECS is stopped, no requests are processed */
+        ECS_STOPPED,            /* ECS is stopped, no requests are processed */
 
-        ECS_START,				/* Start ECS, */
-        ECS_STOP,				/* Stop ECS */
+        ECS_START,                /* Start ECS, */
+        ECS_STOP,                /* Stop ECS */
         ECS_SHUTDOWN,           /* Shutdown ECS */
     }
 
     /**
      * @return the key that is associated with this message,
-     * 		null if not key is associated.
+     * null if not key is associated.
      */
     public String getKey();
 
     /**
      * @return the value that is associated with this message,
-     * 		null if not value is associated.
+     * null if not value is associated.
      */
     public String getValue();
 
@@ -38,7 +38,7 @@ public interface IECSMessage {
 
     /**
      * @return a string in the form `status key value` to be used in message passing
-     * */
+     */
     public String toString();
 
 }

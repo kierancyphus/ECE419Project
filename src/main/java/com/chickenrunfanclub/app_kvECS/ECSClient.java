@@ -33,7 +33,7 @@ public class ECSClient implements IECSClient {
     private HashMap<String, IECSNode> nameToNode = new HashMap<String, IECSNode>();     // hash to node
     private HashMap<String, ECSNodeFlag> serverNameToStatus = new HashMap<String, ECSNodeFlag>();     // node status
     private CountDownLatch connectedSignal;
-  
+
     private static final String SCRIPT_TEXT = "java -jar build/libs/ece419-1.3-SNAPSHOT-all.jar server %s %s %s &";
 
     private final int TIMEOUT = 15000;
@@ -71,8 +71,7 @@ public class ECSClient implements IECSClient {
 //                zk.create("/ecs", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 //            }
             zk.create("/ecs", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        }
-        catch (KeeperException.NodeExistsException e){
+        } catch (KeeperException.NodeExistsException e) {
             // logger.error(e);
         }
 
@@ -148,8 +147,8 @@ public class ECSClient implements IECSClient {
                 System.out.println(s);
             }
 
-            while (true){
-                try{
+            while (true) {
+                try {
                     KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
                     client.connect(serverToAdd.getHost(), serverToAdd.getPort());
                     //client.shutDown();
@@ -191,7 +190,7 @@ public class ECSClient implements IECSClient {
 //            }
 
             // proc.destroy();
-            logger.info("starting new server "+ serverToAdd.getName());
+            logger.info("starting new server " + serverToAdd.getName());
             numServers++;
 
         } catch (Exception e) {
@@ -226,8 +225,8 @@ public class ECSClient implements IECSClient {
                 System.out.println(s);
             }
 
-            while (true){
-                try{
+            while (true) {
+                try {
                     KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
                     client.connect(serverToAdd.getHost(), serverToAdd.getPort());
                     //client.shutDown();
@@ -238,7 +237,7 @@ public class ECSClient implements IECSClient {
                 }
             }
 
-            logger.info("starting new server "+ serverToAdd.getName());
+            logger.info("starting new server " + serverToAdd.getName());
             numServers++;
 
         } catch (Exception e) {
@@ -266,7 +265,7 @@ public class ECSClient implements IECSClient {
 
             String sPath = configFile.getAbsolutePath();
             String script = String.format(SCRIPT_TEXT, node.getPort(), node.getCacheSize(), node.getCacheStrategy());
-            if (!(Objects.equals(node.getHost(), "127.0.0.1") || Objects.equals(node.getHost(), "localhost"))){
+            if (!(Objects.equals(node.getHost(), "127.0.0.1") || Objects.equals(node.getHost(), "localhost"))) {
                 script = "ssh -n " + node.getHost() + " nohup " + script;
             }
             //script = "ssh -n " + node.getHost() + " nohup " + script;
@@ -317,7 +316,7 @@ public class ECSClient implements IECSClient {
     public boolean removeNodes(Collection<String> nodeNames) throws Exception {
         try {
             int n = nodeNames.size();
-            List<ECSNode> usedNodes =  allServerMetadata.getAllNodesByStatus(ECSNodeFlag.START);
+            List<ECSNode> usedNodes = allServerMetadata.getAllNodesByStatus(ECSNodeFlag.START);
             for (ECSNode node : usedNodes) {
                 if (nodeNames.contains(node.getName())) {
                     // stop the node
@@ -327,7 +326,7 @@ public class ECSClient implements IECSClient {
                     zk.delete("/ecs/" + node.getName(), -1);
                     n--;
                     numServers--;
-                    logger.info("removed server "+ node.getName());
+                    logger.info("removed server " + node.getName());
                 }
             }
             if (n == 0)
@@ -354,7 +353,7 @@ public class ECSClient implements IECSClient {
 
     public boolean removeAllNodes() throws Exception {
         try {
-            List<ECSNode> nodes =  allServerMetadata.getAllNodes();
+            List<ECSNode> nodes = allServerMetadata.getAllNodes();
             for (ECSNode node : nodes) {
                 if (zk.exists("/ecs/" + node.getName(), false) != null) {
                     // stop the node
@@ -411,8 +410,7 @@ public class ECSClient implements IECSClient {
             out.writeObject(node);
             out.flush();
             bytes = byteOut.toByteArray();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error(e);
         }
         return bytes;
@@ -465,7 +463,7 @@ public class ECSClient implements IECSClient {
         }
     }
 
-//    private void writeMetaData() throws Exception {
+    //    private void writeMetaData() throws Exception {
 //        zk.setData("/servers/metadata", HashMapToByte(metaData), -1);
 //    }
     public class Heartbeat implements Runnable {
@@ -474,40 +472,45 @@ public class ECSClient implements IECSClient {
         private ECSClient ecs;
         private boolean running = true;
 
-        public Heartbeat(AllServerMetadata metadata, ECSClient ecs){
+        public Heartbeat(AllServerMetadata metadata, ECSClient ecs) {
             this.ecs = ecs;
             this.metadata = metadata;
 
         }
 
-        public void stop(){
+        public void stop() {
             this.running = false;
         }
 
         public void stall(int seconds) {
             long start = System.currentTimeMillis();
             long end = start + seconds * 1000L;
-            while (System.currentTimeMillis() < end) {}
+            while (System.currentTimeMillis() < end) {
+            }
         }
 
         @Override
-        public void run(){
-            while (this.running){
+        public void run() {
+            while (this.running) {
                 ArrayList<ECSNode> deadNodes = new ArrayList<>();
                 List<ECSNode> runningNodes = metadata.getAllNodesByStatus(ECSNodeFlag.START);
 
-                for (ECSNode node: runningNodes){
+                for (ECSNode node : runningNodes) {
                     try {
                         KVStore client = new KVStore(node.getHost(), node.getPort());
                         IServerMessage hbResponse = client.sendHeartbeat();
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         deadNodes.add(node);
 //                        e.printStackTrace();
                     }
                 }
                 stall(TIMEOUT);
-                for (ECSNode node: deadNodes){
-                    ecs.addNode(node);
+                for (ECSNode node : deadNodes) {
+                    try {
+                        ecs.addNode(node);
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
                 }
             }
         }

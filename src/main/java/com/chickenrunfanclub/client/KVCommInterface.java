@@ -29,24 +29,28 @@ public interface KVCommInterface {
      */
     public IKVMessage put(String key, String value) throws Exception;
 
-	/**
-	 * Retrieves the value for a given key from the KVServer.
-	 *
-	 * @param key
-	 *            the key that identifies the value.
-	 * @return the value, which is indexed by the given key.
-	 * @throws Exception
-	 *             if put command cannot be executed (e.g. not connected to any
-	 *             KV server).
-	 */
-	public IKVMessage get(String key) throws Exception;
+    /**
+     * Retrieves the value for a given key from the KVServer.
+     *
+     * @param key the key that identifies the value.
+     * @return the value, which is indexed by the given key.
+     * @throws Exception if put command cannot be executed (e.g. not connected to any
+     *                   KV server).
+     */
+    public IKVMessage get(String key) throws Exception;
 
-	public IServerMessage start(String address, int port) throws Exception;
-	public IServerMessage stop(String address, int port) throws Exception;
-	public IServerMessage shutDown(String address, int port) throws Exception;
-	public IServerMessage lockWrite(String address, int port) throws Exception;
-	public IServerMessage unlockWrite(String address, int port) throws Exception;
-	public IServerMessage moveData(ECSNode metadata) throws Exception;
-	public IServerMessage updateMetadata(ECSNode metadata) throws Exception;
+    public IServerMessage start(String address, int port) throws Exception;
+
+    public IServerMessage stop(String address, int port) throws Exception;
+
+    public IServerMessage shutDown(String address, int port) throws Exception;
+
+    public IServerMessage lockWrite(String address, int port) throws Exception;
+
+    public IServerMessage unlockWrite(String address, int port) throws Exception;
+
+    public IServerMessage moveData(ECSNode metadata) throws Exception;
+
+    public IServerMessage updateMetadata(ECSNode metadata) throws Exception;
 
 }

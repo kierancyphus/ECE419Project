@@ -168,7 +168,7 @@ public class KVClientConnection implements Runnable {
                     isOpen = false;
                 }
             }
-        }finally {
+        } finally {
             messenger.closeConnections();
         }
     }

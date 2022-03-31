@@ -58,9 +58,9 @@ public class KVStore implements KVCommInterface {
         System.out.println(this.meta);
     }
 
-    public void processConfig(String config_file){
+    public void processConfig(String config_file) {
         File f = new File(config_file);
-        try{
+        try {
             Scanner scanner = new Scanner(f);
             while (scanner.hasNextLine()) {
                 allServers.add(scanner.nextLine());
@@ -73,6 +73,7 @@ public class KVStore implements KVCommInterface {
             e.printStackTrace();
         }
     }
+
     public synchronized void closeConnection() {
         logger.info("try to close connection ...");
 
@@ -136,7 +137,7 @@ public class KVStore implements KVCommInterface {
         return new ServerMessage(response);
     }
 
-    public AllServerMetadata pollAll(){
+    public AllServerMetadata pollAll() {
         AllServerMetadata newMeta = null;
         for (String allServer : this.allServers) {
             try {
@@ -154,7 +155,7 @@ public class KVStore implements KVCommInterface {
             } catch (Exception e) {
             }
         }
-        if (newMeta == null){
+        if (newMeta == null) {
             logger.error("Critical servers are down so no requests can be processed right now. Please try again once shit is figured out");
         }
         return newMeta;
@@ -173,7 +174,7 @@ public class KVStore implements KVCommInterface {
         IKVMessage kvresponse = null;
         int attempts = 0;
 
-        while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE && attempts < 3){
+        while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE && attempts < 3) {
             try {
                 ECSNode node_responsible = this.meta.findServerResponsible(key);
                 connect(node_responsible.getHost(), node_responsible.getPort());
@@ -189,7 +190,7 @@ public class KVStore implements KVCommInterface {
                     }
                 }
                 disconnect();
-            } catch (SocketTimeoutException e){
+            } catch (SocketTimeoutException e) {
                 this.meta = pollAll();
             }
             attempts++;
@@ -284,7 +285,7 @@ public class KVStore implements KVCommInterface {
         return new ServerMessage(response);
     }
 
-    public IServerMessage sendHeartbeat() throws Exception{
+    public IServerMessage sendHeartbeat() throws Exception {
         ServerMessage message = new ServerMessage("", null, IServerMessage.StatusType.SERVER_HEARTBEAT);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);

@@ -45,7 +45,7 @@ public class ECSClientConnection implements Runnable {
                     switch (message.getStatus()) {
                         case ADD: {
                             try {
-                                if (ecs.addNodes(Integer.parseInt(message.getKey())).size() == Integer.parseInt(message.getKey())){
+                                if (ecs.addNodes(Integer.parseInt(message.getKey())).size() == Integer.parseInt(message.getKey())) {
                                     response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ADD_SUCCESS);
                                     break;
                                 }
@@ -56,8 +56,8 @@ public class ECSClientConnection implements Runnable {
                             }
                         }
                         case REMOVE: {
-                            try{
-                                if (ecs.removeNode(Integer.parseInt(message.getKey()))){
+                            try {
+                                if (ecs.removeNode(Integer.parseInt(message.getKey()))) {
                                     response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.REMOVE_SUCCESS);
                                 }
                             } catch (Exception e) {
@@ -113,7 +113,7 @@ public class ECSClientConnection implements Runnable {
                     isOpen = false;
                 }
             }
-        }finally {
+        } finally {
             messenger.closeConnections();
         }
     }
