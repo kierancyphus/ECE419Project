@@ -29,6 +29,7 @@ public class ECSClientConnection implements Runnable {
 
             IECSMessage message = null;
             IECSMessage response = null;
+            IECSMessage serverresponse = null;
 
             while (isOpen) {
                 try {
@@ -46,10 +47,12 @@ public class ECSClientConnection implements Runnable {
                             try {
                                 if (ecs.addNodes(Integer.parseInt(message.getKey())).size() == Integer.parseInt(message.getKey())){
                                     response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ADD_SUCCESS);
+                                    break;
                                 }
                                 // response = (IECSMessage) ecs.addNodes(Integer.parseInt(message.getKey()));
                             } catch (Exception e) {
                                 response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
+                                break;
                             }
                         }
                         case REMOVE: {
@@ -62,6 +65,7 @@ public class ECSClientConnection implements Runnable {
                             }
 
                             // response = ecs.removeNode(Integer.parseInt(message.getKey()));
+                            break;
                         }
                         case ECS_START: {
                             try {
@@ -69,8 +73,10 @@ public class ECSClientConnection implements Runnable {
                                     response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.ECS_START);
                                 }
                             } catch (Exception e) {
+                                logger.error(e);
                                 response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
                             }
+                            break;
                         }
                         case ECS_STOP: {
                             try {
@@ -80,6 +86,7 @@ public class ECSClientConnection implements Runnable {
                             } catch (Exception e) {
                                 response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
                             }
+                            break;
                         }
                         case ECS_SHUTDOWN: {
                             try {
@@ -89,12 +96,16 @@ public class ECSClientConnection implements Runnable {
                             } catch (Exception e) {
                                 response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
                             }
+                            break;
                         }
                         default:
-                            response = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
+                            serverresponse = new ECSMessage(message.getKey(), null, IECSMessage.StatusType.FAILED);
                     }
-
-                    messenger.sendMessage(new TextMessage(response));
+                    if (response != null) {
+                        messenger.sendMessage(new TextMessage(response));
+                    } else {
+                        messenger.sendMessage(new TextMessage(serverresponse));
+                    }
                     /* connection either terminated by the client or lost due to
                      * network problems*/
                 } catch (IOException ioe) {

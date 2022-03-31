@@ -1,4 +1,5 @@
-server1 127.0.0.1 50000
-server2 127.0.0.1 50001
-server3 127.0.0.1 50002
-server4 127.0.0.1 50003
+I localhost 50008
+hate localhost 50001
+this localhost 50002
+so localhost 50009
+much localhost 50011

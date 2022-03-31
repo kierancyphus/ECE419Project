@@ -88,6 +88,7 @@ public class Entrypoint {
                 int cacheSize = Integer.parseInt(args[1]);
                 String strategy = args[2];
                 new KVServer(port, cacheSize, strategy).start();
+                System.out.println("server started by ssh");
             }
         } catch (IOException e) {
             System.out.println("Error! Unable to initialize logger!");

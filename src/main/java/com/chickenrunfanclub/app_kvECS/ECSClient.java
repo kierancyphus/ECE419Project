@@ -11,12 +11,14 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 
 import java.io.*;
 import java.net.BindException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class ECSClient implements IECSClient {
     private static Logger logger = LogManager.getLogger(ECSClient.class);
@@ -28,7 +30,7 @@ public class ECSClient implements IECSClient {
     private HashMap<String, ECSNodeFlag> serverNameToStatus = new HashMap<String, ECSNodeFlag>();     // node status
     private CountDownLatch connectedSignal;
   
-    private static final String SCRIPT_TEXT = "java -jar build/libs/ece419-1.3-SNAPSHOT-all.jar server %s %s %s";
+    private static final String SCRIPT_TEXT = "java -jar build/libs/ece419-1.3-SNAPSHOT-all.jar server %s %s %s &";
 
     private final int TIMEOUT = 15000;
     private int numServers = 0;
@@ -83,6 +85,8 @@ public class ECSClient implements IECSClient {
         for (ECSNode node : idleNodes) {
             // start each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
+            System.out.println(node.getHost());
+            System.out.println(node.getPort());
             client.connect(node.getHost(), node.getPort());
             client.start();
         }
@@ -128,25 +132,68 @@ public class ECSClient implements IECSClient {
 
         String path = "/ecs/" + serverToAdd.getName();
         zk.create(path, nodeToByte(serverToAdd), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-
-        Runtime run = Runtime.getRuntime();
-        String script = String.format(SCRIPT_TEXT, serverToAdd.getPort(), serverToAdd.getCacheSize(), serverToAdd.getCacheStrategy());
-        if (!(Objects.equals(serverToAdd.getHost(), "127.0.0.1") || Objects.equals(serverToAdd.getHost(), "localhost"))){
-            script = "ssh -n " + serverToAdd.getHost() + " nohup " + script + " &";
-        }
-        // logger.info("About to run: " + script);
+        //zk.create(path, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         try {
-            // System.out.println("Hello?");
-            Process proc = run.exec(script);
+            System.out.println("creating server at port " + serverToAdd.getPort());
+            Runtime run = Runtime.getRuntime();
+            String file = createScript(serverToAdd);
+            run.exec("chmod u+x " + file);
+            Process proc = run.exec(file);
             proc.waitFor();
-            if (proc.exitValue() == 0) {
-                logger.info("starting new server "+ serverToAdd.getName());
-                numServers++;
+            //TimeUnit.SECONDS.sleep(5);
+
+            BufferedReader stdInput = new BufferedReader(new
+                    InputStreamReader(proc.getInputStream()));
+            String s = null;
+            while ((s = stdInput.readLine()) != null) {
+                System.out.println(s);
             }
-            else {
-                System.out.println("can not add nodes because ssh command failed");
-                logger.error("can not add nodes because ssh command failed");
+
+            while (true){
+                try{
+                    KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
+                    client.connect(serverToAdd.getHost(), serverToAdd.getPort());
+                    //client.shutDown();
+                    break;
+                } catch (Exception e) {
+                    logger.error(e);
+                    TimeUnit.SECONDS.sleep(1);
+                }
             }
+
+//        String script = String.format(SCRIPT_TEXT, serverToAdd.getPort(), serverToAdd.getCacheSize(), serverToAdd.getCacheStrategy());
+//        System.out.println(serverToAdd.getPort());
+//        if (!(Objects.equals(serverToAdd.getHost(), "127.0.0.1") || Objects.equals(serverToAdd.getHost(), "localhost"))){
+//            script = "ssh -n " + serverToAdd.getHost() + " nohup " + script + " &";
+//        }
+//        // script = "ssh -n " + serverToAdd.getHost() + " nohup " + script + " &";
+//        logger.info("About to run: " + script);
+//        try {
+//            // System.out.println("Hello?");
+//            Process proc = run.exec(script);
+//            TimeUnit.SECONDS.sleep(2);
+//            BufferedReader stdInput = new BufferedReader(new
+//                    InputStreamReader(proc.getInputStream()));
+//            String s = null;
+//            while ((s = stdInput.readLine()) != null) {
+//                System.out.println(s);
+//            }
+//
+//            while (true){
+//                try{
+//                    KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
+//                    client.connect(serverToAdd.getHost(), serverToAdd.getPort());
+//                    client.disconnect();
+//                    break;
+//                } catch (Exception e) {
+//                    logger.error(e);
+//                    TimeUnit.SECONDS.sleep(1);
+//                }
+//            }
+
+            // proc.destroy();
+            logger.info("starting new server "+ serverToAdd.getName());
+            numServers++;
 
         } catch (Exception e) {
             System.out.println("can not add nodes " + e);
@@ -154,6 +201,40 @@ public class ECSClient implements IECSClient {
         }
 
         return serverToAdd;
+    }
+
+    public String createScript(ECSNode node) throws IOException {
+
+        try {
+            File configFile = new File("script.sh");
+
+            if (!configFile.exists()) {
+                configFile.createNewFile();
+            }
+
+            PrintWriter out = new PrintWriter(new FileOutputStream("script.sh",
+                    false));
+
+            InetAddress ia = InetAddress.getLocalHost();
+            String hostname = ia.getHostName();
+
+            String sPath = configFile.getAbsolutePath();
+            String script = String.format(SCRIPT_TEXT, node.getPort(), node.getCacheSize(), node.getCacheStrategy());
+            if (!(Objects.equals(node.getHost(), "127.0.0.1") || Objects.equals(node.getHost(), "localhost"))){
+                script = "ssh -n " + node.getHost() + " nohup " + script;
+            }
+            //script = "ssh -n " + node.getHost() + " nohup " + script;
+            out.println(script);
+
+            out.close();
+            return configFile.getAbsolutePath();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            System.out.println("Cannot create ssh script");
+        }
+
+        return null;
+
     }
 
     @Override
@@ -277,7 +358,7 @@ public class ECSClient implements IECSClient {
         return running;
     }
 
-    private byte[] nodeToByte(ECSNode node) throws IOException {
+    private byte[] nodeToByte(Object node) throws IOException {
         byte[] bytes = null;
         try {
             ByteArrayOutputStream byteOut = new ByteArrayOutputStream();

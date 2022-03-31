@@ -4,7 +4,7 @@ import com.chickenrunfanclub.shared.Hasher;
 
 import java.util.Objects;
 
-public class ECSNode implements IECSNode {
+public class ECSNode implements IECSNode, java.io.Serializable{
     public enum ECSNodeFlag {
         STOP,
         START,
