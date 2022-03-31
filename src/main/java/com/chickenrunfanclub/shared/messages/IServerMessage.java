@@ -13,6 +13,7 @@ public interface IServerMessage {
         SERVER_SHUTDOWN,            /* Server is to be shutdown all nodes to be killed */
         FAILED,                      /* Operation failed */
         SERVER_UPDATE_ALL_METADATA,
+        SERVER_HEARTBEAT;
     }
 
     /**

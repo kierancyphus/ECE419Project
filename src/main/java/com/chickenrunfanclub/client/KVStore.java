@@ -283,4 +283,12 @@ public class KVStore implements KVCommInterface {
         TextMessage response = messenger.receiveMessage();
         return new ServerMessage(response);
     }
+
+    public IServerMessage sendHeartbeat() throws Exception{
+        ServerMessage message = new ServerMessage("", null, IServerMessage.StatusType.SERVER_HEARTBEAT);
+        TextMessage textMessage = new TextMessage(message);
+        messenger.sendMessage(textMessage);
+        TextMessage response = messenger.receiveMessage();
+        return new ServerMessage(response);
+    }
 }

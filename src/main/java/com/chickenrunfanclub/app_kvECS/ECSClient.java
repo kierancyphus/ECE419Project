@@ -4,6 +4,8 @@ import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag;
 import com.chickenrunfanclub.ecs.IECSNode;
+import com.chickenrunfanclub.shared.messages.IServerMessage;
+import com.chickenrunfanclub.shared.messages.ServerMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.*;
@@ -16,9 +18,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import java.security.NoSuchAlgorithmException;
+import java.sql.Array;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class ECSClient implements IECSClient {
     private static Logger logger = LogManager.getLogger(ECSClient.class);
@@ -187,6 +191,53 @@ public class ECSClient implements IECSClient {
 //            }
 
             // proc.destroy();
+            logger.info("starting new server "+ serverToAdd.getName());
+            numServers++;
+
+        } catch (Exception e) {
+            System.out.println("can not add nodes " + e);
+            logger.error("can not add nodes " + e);
+        }
+
+        return serverToAdd;
+    }
+
+    public IECSNode addNode(ECSNode serverToAdd) throws InterruptedException, KeeperException, IOException {
+        // sets the first stopped node to IDLE so that it can be started by start
+//        ECSNode serverToAdd = allServerMetadata.getFirstByStatus(ECSNodeFlag.STOP);
+        allServerMetadata.updateNodeStatus(serverToAdd, ECSNodeFlag.IDLE);
+
+        String path = "/ecs/" + serverToAdd.getName();
+        zk.create(path, nodeToByte(serverToAdd), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        //zk.create(path, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        try {
+            System.out.println("creating server at port " + serverToAdd.getPort());
+            Runtime run = Runtime.getRuntime();
+            String file = createScript(serverToAdd);
+            run.exec("chmod u+x " + file);
+            Process proc = run.exec(file);
+            proc.waitFor();
+            //TimeUnit.SECONDS.sleep(5);
+
+            BufferedReader stdInput = new BufferedReader(new
+                    InputStreamReader(proc.getInputStream()));
+            String s = null;
+            while ((s = stdInput.readLine()) != null) {
+                System.out.println(s);
+            }
+
+            while (true){
+                try{
+                    KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
+                    client.connect(serverToAdd.getHost(), serverToAdd.getPort());
+                    //client.shutDown();
+                    break;
+                } catch (Exception e) {
+                    logger.error(e);
+                    TimeUnit.SECONDS.sleep(1);
+                }
+            }
+
             logger.info("starting new server "+ serverToAdd.getName());
             numServers++;
 
@@ -417,5 +468,48 @@ public class ECSClient implements IECSClient {
 //    private void writeMetaData() throws Exception {
 //        zk.setData("/servers/metadata", HashMapToByte(metaData), -1);
 //    }
+    public class Heartbeat implements Runnable {
+        private static final int TIMEOUT = 30;
+        private AllServerMetadata metadata;
+        private ECSClient ecs;
+        private boolean running = true;
 
+        public Heartbeat(AllServerMetadata metadata, ECSClient ecs){
+            this.ecs = ecs;
+            this.metadata = metadata;
+
+        }
+
+        public void stop(){
+            this.running = false;
+        }
+
+        public void stall(int seconds) {
+            long start = System.currentTimeMillis();
+            long end = start + seconds * 1000L;
+            while (System.currentTimeMillis() < end) {}
+        }
+
+        @Override
+        public void run(){
+            while (this.running){
+                ArrayList<ECSNode> deadNodes = new ArrayList<>();
+                List<ECSNode> runningNodes = metadata.getAllNodesByStatus(ECSNodeFlag.START);
+
+                for (ECSNode node: runningNodes){
+                    try {
+                        KVStore client = new KVStore(node.getHost(), node.getPort());
+                        IServerMessage hbResponse = client.sendHeartbeat();
+                    }catch (Exception e){
+                        deadNodes.add(node);
+//                        e.printStackTrace();
+                    }
+                }
+                stall(TIMEOUT);
+                for (ECSNode node: deadNodes){
+                    ecs.addNode(node);
+                }
+            }
+        }
+    }
 }

@@ -147,6 +147,11 @@ public class KVClientConnection implements Runnable {
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
                                 break;
                             }
+                            case SERVER_HEARTBEAT: {
+                                String hbResponse = server.heartBeat();
+                                serverresponse = new ServerMessage(hbResponse, "", IServerMessage.StatusType.SERVER_HEARTBEAT);
+                                break;
+                            }
                             default:
                                 serverresponse = new ServerMessage(message.getKey(), null, IServerMessage.StatusType.FAILED);
                         }
