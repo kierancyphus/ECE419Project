@@ -5,10 +5,7 @@ import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag;
 import com.chickenrunfanclub.ecs.IECSNode;
 import com.chickenrunfanclub.shared.messages.IServerMessage;
-<<<<<<< HEAD
-=======
 import com.chickenrunfanclub.shared.messages.KVMessage;
->>>>>>> master
 import com.chickenrunfanclub.shared.messages.ServerMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,11 +18,9 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Array;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class ECSClient implements IECSClient {
     private static Logger logger = LogManager.getLogger(ECSClient.class);
@@ -91,9 +86,9 @@ public class ECSClient implements IECSClient {
 
         numServers = zk.getChildren("/ecs", false).size();
         running = false;
-//        heartbeat = new Heartbeat(allServerMetadata, this);
-//        Thread t = new Thread(heartbeat);
-//        t.start();
+        heartbeat = new Heartbeat(allServerMetadata, this);
+        Thread t = new Thread(heartbeat);
+        t.start();
     }
 
     @Override
@@ -136,7 +131,7 @@ public class ECSClient implements IECSClient {
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.SHUT_DOWN);
         removeAllNodes();
-//        heartbeat.stop();
+        heartbeat.stop();
         return true;
     }
 
@@ -165,32 +160,26 @@ public class ECSClient implements IECSClient {
 
             BufferedReader stdInput = new BufferedReader(new
                     InputStreamReader(proc.getInputStream()));
-            BufferedReader stdError = new BufferedReader(new
-                    InputStreamReader(proc.getErrorStream()));
             String s = null;
             while ((s = stdInput.readLine()) != null) {
                 System.out.println(s);
             }
-            while ((s = stdError.readLine()) != null) {
-                System.out.println(s);
-            }
-            int attempts = 0;
-            while (attempts < 4){
-                try{
+
+            while (true) {
+                try {
                     KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
                     client.connect(serverToAdd.getHost(), serverToAdd.getPort());
+                    client.disconnect();
                     // client.shutDown();
                     break;
                 } catch (Exception e) {
-                    e.printStackTrace();
                     // logger.error(e);
                     TimeUnit.SECONDS.sleep(1);
-                    attempts++;
                 }
             }
 
             allServerMetadata.updateNodeStatus(serverToAdd, ECSNodeFlag.IDLE);
-            logger.info("starting new server "+ serverToAdd.getName());
+            logger.info("starting new server " + serverToAdd.getName());
             numServers++;
 
         } catch (Exception e) {
@@ -201,9 +190,9 @@ public class ECSClient implements IECSClient {
         return serverToAdd;
     }
 
-
     public IECSNode addNode(ECSNode serverToAdd) throws InterruptedException, KeeperException, IOException {
         // sets the first stopped node to IDLE so that it can be started by start
+
         String path = "/ecs/" + serverToAdd.getName();
         zk.create(path, nodeToByte(serverToAdd), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         //zk.create(path, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -332,13 +321,10 @@ public class ECSClient implements IECSClient {
                     n--;
                     numServers--;
                     logger.info("removed server " + node.getName());
-<<<<<<< HEAD
-=======
 
                     KVStore kvClient = new KVStore(node.getHost(), node.getPort());
                     IServerMessage response = kvClient.shutDown(node.getHost(), node.getPort());
                     logger.info(response);
->>>>>>> master
                 }
             }
             if (n == 0)
@@ -479,7 +465,7 @@ public class ECSClient implements IECSClient {
         }
     }
 
-    //    private void writeMetaData() throws Exception {
+//    private void writeMetaData() throws Exception {
 //        zk.setData("/servers/metadata", HashMapToByte(metaData), -1);
 //    }
     public class Heartbeat implements Runnable {
