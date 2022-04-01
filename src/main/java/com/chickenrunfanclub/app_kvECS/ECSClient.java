@@ -97,9 +97,16 @@ public class ECSClient implements IECSClient {
             // start each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
             client.start(node.getHost(), node.getPort());
+
+            // add them to the hash ring
+            allServerMetadata.addNodeToHashRing(node);
         }
 
         allServerMetadata.updateStatus(ECSNodeFlag.IDLE, ECSNodeFlag.START);
+
+        // broadcast metadata to all started nodes
+        allServerMetadata.print();
+        allServerMetadata.broadcastMetadata();
         return true;
     }
 
@@ -110,9 +117,15 @@ public class ECSClient implements IECSClient {
             // stop each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
             client.stop(node.getHost(), node.getPort());
+
+            // remove them from hash ring
+            allServerMetadata.removeNodeFromHashRing(node);
         }
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.STOP);
+
+        // broadcast metadata changes
+        allServerMetadata.broadcastMetadata();
         return true;
     }
 

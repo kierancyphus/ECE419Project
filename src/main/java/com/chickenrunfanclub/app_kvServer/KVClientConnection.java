@@ -79,15 +79,8 @@ public class KVClientConnection implements Runnable {
                     }
 
                     message = new KVMessage(latestMsg);
-                    KV = true;
-
-                    logger.info(message);
-                    logger.info("here is what I'm asking " + message.toString());
-                    if (Objects.equals(message.toString(), "{\"index\":0}")) {
-                        logger.info("this is a server message!");
-                        servermessage = new ServerMessage(latestMsg);
-                        KV = false;
-                    }
+                    servermessage = new ServerMessage(latestMsg);
+                    KV = message.getStatus() != null;
 
                     response = null;
                     serverresponse = null;
@@ -152,33 +145,45 @@ public class KVClientConnection implements Runnable {
                                 response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
                         }
                     } else {
+                        logger.info("definitely a server message");
+
                         switch (servermessage.getStatus()) {
                             case SERVER_START: {
+                                logger.info("start");
                                 server.updateServerStopped(false);
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_START);
                                 break;
                             }
                             case SERVER_STOP: {
+                                logger.info("stop");
                                 server.updateServerStopped(false);
                                 response = new KVMessage("", "", IKVMessage.StatusType.SERVER_STOPPED);
                                 break;
                             }
                             case SERVER_SHUTDOWN: {
+
+                                logger.info("shutdown");
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_SHUTDOWN);
                                 break;
                             }
                             case SERVER_LOCK_WRITE: {
+
+                                logger.info("lockwrite");
                                 server.lockWrite();
                                 // TODO: convert these into success and failure message (although idk how it could fail)
                                 response = new KVMessage("", "", IKVMessage.StatusType.SERVER_WRITE_LOCK);
                                 break;
                             }
                             case SERVER_UNLOCK_WRITE: {
+
+                                logger.info("unlock");
                                 server.unLockWrite();
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_WRITE_UNLOCKED);
                                 break;
                             }
                             case SERVER_MOVE_DATA: {
+
+                                logger.info("move");
                                 // I'm storing the json of the metadata in the key field of the KVMessage lmao
                                 ECSNode metadata = new Gson().fromJson(message.getKey(), ECSNode.class);
                                 server.moveData(metadata);
@@ -186,6 +191,8 @@ public class KVClientConnection implements Runnable {
                                 break;
                             }
                             case SERVER_UPDATE_METADATA: {
+
+                                logger.info("single metadata");
                                 // metadata also stored in the key
                                 ECSNode metadata = new Gson().fromJson(message.getKey(), ECSNode.class);
                                 server.updateMetadata(metadata);
@@ -193,6 +200,7 @@ public class KVClientConnection implements Runnable {
                                 break;
                             }
                             case SERVER_UPDATE_ALL_METADATA: {
+                                logger.info("updating all metadata \n\n\n\n\n\n\n");
                                 AllServerMetadata asm = new Gson().fromJson(message.getKey(), AllServerMetadata.class);
                                 server.replaceAllServerMetadata(asm);
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
@@ -204,6 +212,7 @@ public class KVClientConnection implements Runnable {
                                 break;
                             }
                             default:
+                                logger.info("I am dumb");
                                 serverresponse = new ServerMessage(message.getKey(), null, IServerMessage.StatusType.FAILED);
                         }
                     }

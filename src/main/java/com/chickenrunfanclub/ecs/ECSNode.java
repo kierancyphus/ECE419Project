@@ -63,11 +63,13 @@ public class ECSNode implements IECSNode, java.io.Serializable {
         this.rangeEnd = end;
         this.serverLock = serverLock;
         this.writeLock = writeLock;
+        this.name = host + port;
     }
 
     public ECSNode(String host, Integer port) {
         this.host = host;
         this.port = port;
+        this.name = host + port;
 
         // default is it accepts everything
         rangeStart = "0".repeat(32);

@@ -6,7 +6,6 @@ import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.IKVMessage.StatusType;
-import com.chickenrunfanclub.unitTests.AllServerMetadataTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +24,7 @@ public class InteractionTest {
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/Interaction");
         ECSNode node = new ECSNode("localhost", port);
         AllServerMetadata asm = new AllServerMetadata();
-        asm.addNode(node);
+        asm.addNodeToHashRing(node);
         server.replaceAllServerMetadata(asm);
 
         server.clearStorage();
@@ -35,7 +34,7 @@ public class InteractionTest {
 
     @BeforeEach
     public void setUp() {
-        kvClient = new KVStore("./src/test/resources/servers_interaction.cfg");
+        kvClient = new KVStore("./src/test/resources/servers_interaction.cfg", true);
     }
 
     @Test

@@ -26,8 +26,10 @@ public class KVClient implements IKVClient {
     private String serverAddress;
     private int serverPort;
 
-    public KVClient(String config_file) {
+    public KVClient(String config_file){
+
         this.config_file = config_file;
+        kvStore = new KVStore(config_file, true);
     }
 
     public void run() {
@@ -194,18 +196,18 @@ public class KVClient implements IKVClient {
             }
         } catch (Exception e) {
             printError("Unable to execute command!");
-            disconnect();
+//            disconnect();
         }
     }
 
     @Override
     public void newConnection(String hostname, int port) throws IOException, UnknownHostException {
-        kvStore = new KVStore(hostname, port);
-        try {
-            kvStore.connect(hostname, port);
-        } catch (Exception e) {
-            logger.info("Error! Could not establish connection");
-        }
+//        kvStore = new KVStore(config_file, true);
+//        try {
+//            kvStore.connect(hostname, port);
+//        } catch (Exception e) {
+//            logger.info("Error! Could not establish connection");
+//        }
     }
 
     private void disconnect() {
