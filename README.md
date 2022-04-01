@@ -27,3 +27,7 @@ The file can be found at `build/libs/ece419-1.3-SNAPSHOT-all.jar` and can be cal
 
 ## Testing
 `./gradlew clean test`
+
+## Cleaning
+To remove straggling servers, you can run
+```kill -9 `jps | grep "ece419-1.3-SNAPSHOT-all.jar" | cut -d " " -f 1````
