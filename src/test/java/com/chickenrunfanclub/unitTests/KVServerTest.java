@@ -458,4 +458,31 @@ public class KVServerTest {
 //        System.out.println(message);
 //        assertTrue(false);
 //    }
+
+    @Test
+    public void heartbeat() {
+        int port = 50033;
+
+        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
+        ECSNode node = new ECSNode("localhost", port, "0".repeat(32), "F".repeat(32), true, false);
+        AllServerMetadata asm = new AllServerMetadata();
+        asm.addNode(node);
+        server.replaceAllServerMetadata(asm);
+
+        server.clearStorage();
+        server.start();
+        utils.stall(2);
+
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_hb.cfg");
+        IServerMessage response = null;
+        Exception ex = null;
+        try {
+            response = kvClient.sendHeartbeat(node.getHost(), node.getPort());
+        } catch (Exception e) {
+            ex = e;
+        }
+        assertNull(ex);
+        assertSame(IServerMessage.StatusType.SERVER_HEARTBEAT, response.getStatus());
+        assertTrue("Hello".equals(response.getKey()));
+    }
 }

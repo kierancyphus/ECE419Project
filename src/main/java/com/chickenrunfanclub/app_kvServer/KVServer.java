@@ -228,7 +228,13 @@ public class KVServer extends Thread implements IKVServer {
         metadata.updateMetadata(allServerMetadata.findServerResponsible(getHostname() + getPort(), false));
     }
 
-    public ECSNode getMetadata() { return metadata; }
+    public String heartBeat() {
+        return "Hello";
+    }
+
+    public ECSNode getMetadata() {
+        return metadata;
+    }
 
     public boolean isRunning() {
         return running;

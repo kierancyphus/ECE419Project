@@ -54,7 +54,6 @@ public class KVClientConnection implements Runnable {
             IServerMessage servermessage = null;
             IServerMessage serverresponse = null;
             boolean KV;
-
             while (isOpen) {
                 try {
                     boolean breaker = false;
@@ -81,27 +80,10 @@ public class KVClientConnection implements Runnable {
 
                     message = new KVMessage(latestMsg);
                     servermessage = new ServerMessage(latestMsg);
-
-
-                    KV = true;
-
-                    logger.info(message.getStatus());
-                    logger.info(servermessage.getStatus());
-
                     KV = message.getStatus() != null;
-
-
-//                    if (Objects.equals(message.toString(), "{\"index\":0}")) {
-//                        logger.info("this is a server message!");
-//                        logger.info(message);
-//                        servermessage = new ServerMessage(latestMsg);
-//                        logger.info(servermessage);
-//                        KV = false;
-//                    }
 
                     response = null;
                     serverresponse = null;
-
                     if (KV) {
                         switch (message.getStatus()) {
                             case GET: {
@@ -222,6 +204,11 @@ public class KVClientConnection implements Runnable {
                                 AllServerMetadata asm = new Gson().fromJson(message.getKey(), AllServerMetadata.class);
                                 server.replaceAllServerMetadata(asm);
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
+                                break;
+                            }
+                            case SERVER_HEARTBEAT: {
+                                String hbResponse = server.heartBeat();
+                                serverresponse = new ServerMessage(hbResponse, "", IServerMessage.StatusType.SERVER_HEARTBEAT);
                                 break;
                             }
                             default:

@@ -57,7 +57,6 @@ public class KVStore implements KVCommInterface {
         this.config_file = config_file;
         this.allServers = new ArrayList<String>();
         processConfig(config_file);
-        System.out.println(this.meta);
     }
 
     public KVStore(String config_file, boolean addToHashRing) {
@@ -158,6 +157,7 @@ public class KVStore implements KVCommInterface {
         disconnect();
         return new ServerMessage(response);
     }
+
 
     public AllServerMetadata pollAll() {
         AllServerMetadata newMeta = null;
@@ -286,6 +286,7 @@ public class KVStore implements KVCommInterface {
                     }
                 }
                 disconnect();
+
             } catch (IOException e) {
                 logger.info(e);
                 logger.info("About to poll all servers");
@@ -413,6 +414,16 @@ public class KVStore implements KVCommInterface {
         connect(host, port);
         String asmString = new Gson().toJson(asm, AllServerMetadata.class);
         ServerMessage message = new ServerMessage(asmString, null, IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
+        TextMessage textMessage = new TextMessage(message);
+        messenger.sendMessage(textMessage);
+        TextMessage response = messenger.receiveMessage();
+        disconnect();
+        return new ServerMessage(response);
+    }
+
+    public IServerMessage sendHeartbeat(String address, int port) throws Exception {
+        connect(address, port);
+        ServerMessage message = new ServerMessage(null, null, IServerMessage.StatusType.SERVER_HEARTBEAT);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();

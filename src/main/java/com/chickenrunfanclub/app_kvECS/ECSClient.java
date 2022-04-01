@@ -13,10 +13,7 @@ import org.apache.zookeeper.*;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 
 import java.io.*;
-import java.net.BindException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -42,7 +39,7 @@ public class ECSClient implements IECSClient {
     private AllServerMetadata allServerMetadata;
     private ServerSocket serverSocket;
     private int port;
-
+    private Heartbeat heartbeat;
 
     public ECSClient(String configFileName, String cacheStrat, int cacheSiz, int port) throws IOException, InterruptedException, KeeperException {
         // start zookeeper connection
@@ -86,6 +83,9 @@ public class ECSClient implements IECSClient {
 
         numServers = zk.getChildren("/ecs", false).size();
         running = false;
+        heartbeat = new Heartbeat(allServerMetadata, this);
+        Thread t = new Thread(heartbeat);
+        t.start();
     }
 
     @Override
@@ -141,6 +141,7 @@ public class ECSClient implements IECSClient {
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.SHUT_DOWN);
         removeAllNodes();
+        heartbeat.stop();
         return true;
     }
 
@@ -154,6 +155,53 @@ public class ECSClient implements IECSClient {
             logger.info("Failed to add a node because no nodes available.");
             return null;
         }
+
+        String path = "/ecs/" + serverToAdd.getName();
+        zk.create(path, nodeToByte(serverToAdd), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        //zk.create(path, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        try {
+            System.out.println("creating server at port " + serverToAdd.getPort());
+            Runtime run = Runtime.getRuntime();
+            String file = createScript(serverToAdd);
+            run.exec("chmod u+x " + file);
+            Process proc = run.exec(file);
+            proc.waitFor();
+            //TimeUnit.SECONDS.sleep(5);
+
+            BufferedReader stdInput = new BufferedReader(new
+                    InputStreamReader(proc.getInputStream()));
+            String s = null;
+            while ((s = stdInput.readLine()) != null) {
+                System.out.println(s);
+            }
+
+            while (true) {
+                try {
+                    KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
+                    client.connect(serverToAdd.getHost(), serverToAdd.getPort());
+                    client.disconnect();
+                    // client.shutDown();
+                    break;
+                } catch (Exception e) {
+                    // logger.error(e);
+                    TimeUnit.SECONDS.sleep(1);
+                }
+            }
+
+            allServerMetadata.updateNodeStatus(serverToAdd, ECSNodeFlag.IDLE);
+            logger.info("starting new server " + serverToAdd.getName());
+            numServers++;
+
+        } catch (Exception e) {
+            System.out.println("can not add nodes " + e);
+            logger.error("can not add nodes " + e);
+        }
+
+        return serverToAdd;
+    }
+
+    public IECSNode addNode(ECSNode serverToAdd) throws InterruptedException, KeeperException, IOException {
+        // sets the first stopped node to IDLE so that it can be started by start
 
         String path = "/ecs/" + serverToAdd.getName();
         zk.create(path, nodeToByte(serverToAdd), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -427,8 +475,83 @@ public class ECSClient implements IECSClient {
         }
     }
 
+
+
+    public AllServerMetadata getMetadata(){
+        return this.allServerMetadata;
+    }
 //    private void writeMetaData() throws Exception {
 //        zk.setData("/servers/metadata", HashMapToByte(metaData), -1);
 //    }
+    public class Heartbeat implements Runnable {
+        private static final int TIMEOUT = 10;
+        private AllServerMetadata metadata;
+        private ECSClient ecs;
+        private boolean running = true;
 
+        public Heartbeat(AllServerMetadata metadata, ECSClient ecs) {
+            this.ecs = ecs;
+            this.metadata = metadata;
+        }
+
+        public void stop() {
+            this.running = false;
+        }
+
+        @Override
+        public void run() {
+            while (this.running) {
+                logger.info("Sent heartbeat");
+                ArrayList<ECSNode> deadNodes = new ArrayList<>();
+                List<ECSNode> runningNodes = metadata.getAllNodesByStatus(ECSNodeFlag.START);
+                for (ECSNode node : runningNodes) {
+                    try {
+                        KVStore client = new KVStore(node.getHost(), node.getPort());
+                        IServerMessage hbResponse = client.sendHeartbeat(node.getHost(), node.getPort());
+                        logger.info(hbResponse.getKey());
+                    } catch (ConnectException e) {
+                        logger.info("Dead node encountered!");
+                        deadNodes.add(node);
+//                        e.printStackTrace();
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+                for (ECSNode node : deadNodes) {
+                    try {
+                        System.out.println("restarting server at port " + node.getPort());
+                        Runtime run = Runtime.getRuntime();
+                        String file = createScript(node);
+                        run.exec("chmod u+x " + file);
+                        Process proc = run.exec(file);
+                        proc.waitFor();
+
+                        while (true) {
+                            try {
+                                KVStore client = new KVStore(node.getHost(), node.getPort());
+                                client.connect(node.getHost(), node.getPort());
+                                client.disconnect();
+                                break;
+                            } catch (Exception e) {
+                                 logger.error(e);
+                                stall(1);
+                            }
+                        }
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+                stall(TIMEOUT);
+            }
+            logger.info("Heartbeat shutting down!");
+
+        }
+
+        public void stall(int seconds) {
+            long start = System.currentTimeMillis();
+            long end = start + seconds * 1000L;
+            while (System.currentTimeMillis() < end) {
+            }
+        }
+    }
 }

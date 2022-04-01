@@ -103,25 +103,25 @@ public class ECSClientUI {
             System.out.println(PROMPT + "Application stopped!");
 
         } else if (tokens[0].equals("connect")) {
-                if (tokens.length == 3) {
-                    try {
-                        address = tokens[1];
-                        port = Integer.parseInt(tokens[2]);
-                        connect(address, port);
-                        logger.info("Created new connection at " + address + ":" + port);
-                    } catch (NumberFormatException nfe) {
-                        printError("No valid address. Port must be a number!");
-                        logger.info("Unable to parse argument <port>", nfe);
-                    } catch (UnknownHostException e) {
-                        printError("Unknown Host!");
-                        logger.info("Unknown Host!", e);
-                    } catch (IOException e) {
-                        printError("Could not establish connection!");
-                        logger.warn("Could not establish connection!", e);
-                    }
-                } else {
-                    printError("Invalid number of parameters!");
+            if (tokens.length == 3) {
+                try {
+                    address = tokens[1];
+                    port = Integer.parseInt(tokens[2]);
+                    connect(address, port);
+                    logger.info("Created new connection at " + address + ":" + port);
+                } catch (NumberFormatException nfe) {
+                    printError("No valid address. Port must be a number!");
+                    logger.info("Unable to parse argument <port>", nfe);
+                } catch (UnknownHostException e) {
+                    printError("Unknown Host!");
+                    logger.info("Unknown Host!", e);
+                } catch (IOException e) {
+                    printError("Could not establish connection!");
+                    logger.warn("Could not establish connection!", e);
                 }
+            } else {
+                printError("Invalid number of parameters!");
+            }
         } else if (tokens[0].equals("disconnect")) {
             disconnect();
             setRunning(false);
@@ -152,7 +152,7 @@ public class ECSClientUI {
         } else if (tokens[0].equals("start")) {
             if (!connected) {
                 printError("ECSClient is not connected");
-            } else 
+            } else
                 try {
                     start();
                 } catch (Exception e) {
@@ -199,17 +199,17 @@ public class ECSClientUI {
     }
 
 
-    private IECSMessage shutdown() throws Exception{
+    private IECSMessage shutdown() throws Exception {
         running = false;
         return sendAndReceiveECSMessage(IECSMessage.StatusType.ECS_SHUTDOWN);
     }
 
-    private IECSMessage stop() throws Exception{
+    private IECSMessage stop() throws Exception {
         running = false;
         return sendAndReceiveECSMessage(IECSMessage.StatusType.ECS_STOP);
     }
 
-    private void addNodes(int num_nodes){
+    private void addNodes(int num_nodes) {
         try {
             if (running && connected) {
                 ECSMessage message = new ECSMessage(Integer.toString(num_nodes), null, IECSMessage.StatusType.ADD);
@@ -219,7 +219,7 @@ public class ECSClientUI {
                 ECSMessage response = new ECSMessage(textResponse);
                 logger.info("Add completed");
 
-                IECSMessage.StatusType status  = response.getStatus();
+                IECSMessage.StatusType status = response.getStatus();
                 if (status == IECSMessage.StatusType.ADD_SUCCESS) {
                     System.out.println(PROMPT + "Node addition successful");
                 } else if (status == IECSMessage.StatusType.ADD_ERROR) {
@@ -236,7 +236,7 @@ public class ECSClientUI {
         }
     }
 
-    private void addNode(){
+    private void addNode() {
         addNodes(1);
     }
 
@@ -252,7 +252,7 @@ public class ECSClientUI {
 //        }
 //    }
 
-    private void removeNode(int nodeIdx){
+    private void removeNode(int nodeIdx) {
         try {
             if (running && connected) {
                 ECSMessage message = new ECSMessage(Integer.toString(nodeIdx), null, IECSMessage.StatusType.REMOVE);
@@ -262,7 +262,7 @@ public class ECSClientUI {
                 ECSMessage response = new ECSMessage(textResponse);
                 logger.info("Removal completed");
 
-                IECSMessage.StatusType status  = response.getStatus();
+                IECSMessage.StatusType status = response.getStatus();
                 if (status == IECSMessage.StatusType.REMOVE_SUCCESS) {
                     System.out.println(PROMPT + "Node removal successful");
                 } else if (status == IECSMessage.StatusType.REMOVE_ERROR) {
