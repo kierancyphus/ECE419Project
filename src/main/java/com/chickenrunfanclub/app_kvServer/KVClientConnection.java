@@ -54,7 +54,6 @@ public class KVClientConnection implements Runnable {
             IServerMessage servermessage = null;
             IServerMessage serverresponse = null;
             boolean KV;
-
             while (isOpen) {
                 try {
                     boolean breaker = false;
@@ -83,17 +82,15 @@ public class KVClientConnection implements Runnable {
                     KV = true;
 
                     logger.info(message);
-
+                    logger.info("here is what I'm asking " + message.toString());
                     if (Objects.equals(message.toString(), "{\"index\":0}")) {
                         logger.info("this is a server message!");
-                        logger.info(message);
                         servermessage = new ServerMessage(latestMsg);
                         KV = false;
                     }
 
                     response = null;
                     serverresponse = null;
-
                     if (KV) {
                         switch (message.getStatus()) {
                             case GET: {

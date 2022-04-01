@@ -146,6 +146,7 @@ public class KVStore implements KVCommInterface {
         return new ServerMessage(response);
     }
 
+
     public AllServerMetadata pollAll() {
         AllServerMetadata newMeta = null;
         for (String allServer : this.allServers) {
@@ -355,11 +356,13 @@ public class KVStore implements KVCommInterface {
         return new ServerMessage(response);
     }
 
-    public IServerMessage sendHeartbeat() throws Exception {
-        ServerMessage message = new ServerMessage("", null, IServerMessage.StatusType.SERVER_HEARTBEAT);
+    public IServerMessage sendHeartbeat(String address, int port) throws Exception {
+        connect(address, port);
+        ServerMessage message = new ServerMessage(null, null, IServerMessage.StatusType.SERVER_HEARTBEAT);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();
+        disconnect();
         return new ServerMessage(response);
     }
 }
