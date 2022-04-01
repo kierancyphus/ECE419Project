@@ -151,21 +151,18 @@ public class ECSClient implements IECSClient {
 
             BufferedReader stdInput = new BufferedReader(new
                     InputStreamReader(proc.getInputStream()));
+            BufferedReader stdError = new BufferedReader(new
+                    InputStreamReader(proc.getErrorStream()));
             String s = null;
             while ((s = stdInput.readLine()) != null) {
                 System.out.println(s);
             }
-
-            while (true){
+            while ((s = stdError.readLine()) != null) {
+                System.out.println(s);
+            }
+            int attempts = 0;
+            while (attempts < 4){
                 try{
-                    Runtime run_2 = Runtime.getRuntime();
-                    Process proc_2 = run_2.exec("ps -A | grep java");
-                    BufferedReader stdInput_2 = new BufferedReader(new InputStreamReader(proc_2.getInputStream()));
-                    String s_2 = null;
-                    while ((s_2 = stdInput_2.readLine()) != null) {
-                        System.out.println(s_2);
-                    }
-
                     KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
                     client.connect(serverToAdd.getHost(), serverToAdd.getPort());
                     // client.shutDown();
@@ -174,6 +171,7 @@ public class ECSClient implements IECSClient {
                     e.printStackTrace();
                     // logger.error(e);
                     TimeUnit.SECONDS.sleep(1);
+                    attempts++;
                 }
             }
 
