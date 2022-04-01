@@ -4,6 +4,7 @@ import com.chickenrunfanclub.app_kvClient.KVClient;
 import com.chickenrunfanclub.app_kvECS.ECSClient;
 import com.chickenrunfanclub.app_kvECS.ECSClientUI;
 import com.chickenrunfanclub.app_kvServer.KVServer;
+import com.chickenrunfanclub.shared.AllPerformanceTest;
 import com.chickenrunfanclub.logger.LogSetup;
 import org.apache.logging.log4j.Level;
 import org.apache.zookeeper.KeeperException;
@@ -101,6 +102,32 @@ public class Entrypoint {
         }
     }
 
+    private static void runPerformanceTest(String[] args) {
+        try {
+            new LogSetup("logs/perftest.log", Level.ALL);
+            if (args.length != 6) {
+                System.out.println("Error! Invalid number of arguments!");
+                System.out.println("Usage: perftest <config_file> <maxRequest> <dataPath> <numServers> <numClients> <putRatio>!");
+            } else {
+                String config_file = args[0];
+                int maxRequest = Integer.parseInt(args[1]);
+                String dataPath = args[2];
+                int numServers = Integer.parseInt(args[3]);
+                int numClients = Integer.parseInt(args[4]);
+                double putRatio = Double.parseDouble(args[5]);
+                AllPerformanceTest perfTest = new AllPerformanceTest(config_file, maxRequest, dataPath, numServers, numClients, putRatio);
+                perfTest.runEvaluation();
+            }
+        } catch (IOException e) {
+            System.out.println("Error! Unable to initialize logger!");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (NumberFormatException nfe) {
+            System.out.println("Error! must be an integer");
+            System.exit(1);
+        }
+    }
+
     /**
      * Main entry point for the m1 server application.
      *
@@ -113,11 +140,13 @@ public class Entrypoint {
         } else if (Objects.equals(args[0], "server")) {
             runServer(Arrays.copyOfRange(args, 1, args.length));
         } else if (Objects.equals(args[0], "client")) {
-            runClient(Arrays.copyOfRange(args, 1, args.length ));
-        } else if (Objects.equals(args[0], "ecs")){
+            runClient(Arrays.copyOfRange(args, 1, args.length));
+        } else if (Objects.equals(args[0], "ecs")) {
             runECS(Arrays.copyOfRange(args, 1, args.length));
-        } else if (Objects.equals(args[0], "ecsUI")){
+        } else if (Objects.equals(args[0], "ecsUI")) {
             runECSUI(Arrays.copyOfRange(args, 1, args.length));
+        } else if (Objects.equals(args[0], "perftest")) {
+            runPerformanceTest(Arrays.copyOfRange(args, 1, args.length));
         } else {
             System.out.println("Error! Not specified if server or client");
             System.out.println("Usage: \"./gradlew run --args=\"server\" \" or \"./gradlew run --args=\"client\" --console=plain\"");

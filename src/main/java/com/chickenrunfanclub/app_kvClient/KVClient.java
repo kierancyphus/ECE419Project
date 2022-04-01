@@ -26,7 +26,7 @@ public class KVClient implements IKVClient {
     private String serverAddress;
     private int serverPort;
 
-    public KVClient(String config_file){
+    public KVClient(String config_file) {
         this.config_file = config_file;
     }
 

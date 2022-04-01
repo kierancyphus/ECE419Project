@@ -83,8 +83,6 @@ public class TextMessage implements Serializable {
     }
 
 
-
-
     /**
      * Returns the content of this TextMessage as a String.
      *

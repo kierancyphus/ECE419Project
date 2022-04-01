@@ -57,7 +57,6 @@ public class KVStore implements KVCommInterface {
         this.config_file = config_file;
         this.allServers = new ArrayList<String>();
         processConfig(config_file);
-        System.out.println(this.meta);
     }
 
     public void processConfig(String config_file) {
@@ -225,6 +224,7 @@ public class KVStore implements KVCommInterface {
                     }
                 }
                 disconnect();
+
             } catch (IOException e) {
                 logger.info(e);
                 logger.info("About to poll all servers");
@@ -349,6 +349,14 @@ public class KVStore implements KVCommInterface {
     public IServerMessage updateAllMetadata(AllServerMetadata asm) throws Exception {
         String asmString = new Gson().toJson(asm, AllServerMetadata.class);
         ServerMessage message = new ServerMessage(asmString, null, IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
+        TextMessage textMessage = new TextMessage(message);
+        messenger.sendMessage(textMessage);
+        TextMessage response = messenger.receiveMessage();
+        return new ServerMessage(response);
+    }
+
+    public IServerMessage sendHeartbeat() throws Exception {
+        ServerMessage message = new ServerMessage("", null, IServerMessage.StatusType.SERVER_HEARTBEAT);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();
