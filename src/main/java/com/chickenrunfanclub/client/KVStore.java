@@ -297,7 +297,7 @@ public class KVStore implements KVCommInterface {
         try {
             return sendAndReceiveServerMessage(IServerMessage.StatusType.SERVER_SHUTDOWN, address, port);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.info(e);
             return null;
 
         }

@@ -5,6 +5,10 @@ import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag;
 import com.chickenrunfanclub.ecs.IECSNode;
 import com.chickenrunfanclub.shared.messages.IServerMessage;
+<<<<<<< HEAD
+=======
+import com.chickenrunfanclub.shared.messages.KVMessage;
+>>>>>>> master
 import com.chickenrunfanclub.shared.messages.ServerMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,7 +20,6 @@ import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-
 import java.security.NoSuchAlgorithmException;
 import java.sql.Array;
 import java.util.*;
@@ -76,6 +79,16 @@ public class ECSClient implements IECSClient {
         }
 
         allServerMetadata = new AllServerMetadata(configFileName);
+
+
+        try {
+            removeAllNodes();
+        } catch (Exception e) {
+            logger.info("Was unable to purge zookeeper :(");
+            e.printStackTrace();
+        }
+
+
         numServers = zk.getChildren("/ecs", false).size();
         running = false;
 //        heartbeat = new Heartbeat(allServerMetadata, this);
@@ -117,7 +130,8 @@ public class ECSClient implements IECSClient {
         for (ECSNode node : idleNodes) {
             // shutdown each of the servers
             KVStore client = new KVStore(node.getHost(), node.getPort());
-            client.shutDown(node.getHost(), node.getPort());
+            IServerMessage response = client.shutDown(node.getHost(), node.getPort());
+            logger.info(response);
         }
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.SHUT_DOWN);
@@ -209,10 +223,11 @@ public class ECSClient implements IECSClient {
                 System.out.println(s);
             }
 
-            while (true){
-                try{
+            while (true) {
+                try {
                     KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
                     client.connect(serverToAdd.getHost(), serverToAdd.getPort());
+                    client.disconnect();
                     // client.shutDown();
                     break;
                 } catch (Exception e) {
@@ -222,7 +237,7 @@ public class ECSClient implements IECSClient {
             }
 
             allServerMetadata.updateNodeStatus(serverToAdd, ECSNodeFlag.IDLE);
-            logger.info("starting new server "+ serverToAdd.getName());
+            logger.info("starting new server " + serverToAdd.getName());
             numServers++;
 
         } catch (Exception e) {
@@ -317,6 +332,13 @@ public class ECSClient implements IECSClient {
                     n--;
                     numServers--;
                     logger.info("removed server " + node.getName());
+<<<<<<< HEAD
+=======
+
+                    KVStore kvClient = new KVStore(node.getHost(), node.getPort());
+                    IServerMessage response = kvClient.shutDown(node.getHost(), node.getPort());
+                    logger.info(response);
+>>>>>>> master
                 }
             }
             if (n == 0)
