@@ -125,8 +125,13 @@ public class ECSClient implements IECSClient {
     @Override
     public IECSNode addNode(String cacheStrategy, int cacheSize) throws InterruptedException, KeeperException, IOException {
         // sets the first stopped node to IDLE so that it can be started by start
-        ECSNode serverToAdd = allServerMetadata.getFirstByStatus(ECSNodeFlag.STOP);
-        allServerMetadata.updateNodeStatus(serverToAdd, ECSNodeFlag.IDLE);
+        ECSNode serverToAdd;
+        try {
+            serverToAdd = allServerMetadata.getFirstByStatus(ECSNodeFlag.STOP);
+        } catch (NoSuchElementException e) {
+            logger.info("Failed to add a node because no nodes available.");
+            return null;
+        }
 
         String path = "/ecs/" + serverToAdd.getName();
         zk.create(path, nodeToByte(serverToAdd), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -147,50 +152,20 @@ public class ECSClient implements IECSClient {
                 System.out.println(s);
             }
 
-            while (true) {
-                try {
+            while (true){
+                try{
                     KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
                     client.connect(serverToAdd.getHost(), serverToAdd.getPort());
-                    //client.shutDown();
+                    // client.shutDown();
                     break;
                 } catch (Exception e) {
-                    logger.error(e);
+                    // logger.error(e);
                     TimeUnit.SECONDS.sleep(1);
                 }
             }
 
-//        String script = String.format(SCRIPT_TEXT, serverToAdd.getPort(), serverToAdd.getCacheSize(), serverToAdd.getCacheStrategy());
-//        System.out.println(serverToAdd.getPort());
-//        if (!(Objects.equals(serverToAdd.getHost(), "127.0.0.1") || Objects.equals(serverToAdd.getHost(), "localhost"))){
-//            script = "ssh -n " + serverToAdd.getHost() + " nohup " + script + " &";
-//        }
-//        // script = "ssh -n " + serverToAdd.getHost() + " nohup " + script + " &";
-//        logger.info("About to run: " + script);
-//        try {
-//            // System.out.println("Hello?");
-//            Process proc = run.exec(script);
-//            TimeUnit.SECONDS.sleep(2);
-//            BufferedReader stdInput = new BufferedReader(new
-//                    InputStreamReader(proc.getInputStream()));
-//            String s = null;
-//            while ((s = stdInput.readLine()) != null) {
-//                System.out.println(s);
-//            }
-//
-//            while (true){
-//                try{
-//                    KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
-//                    client.connect(serverToAdd.getHost(), serverToAdd.getPort());
-//                    client.disconnect();
-//                    break;
-//                } catch (Exception e) {
-//                    logger.error(e);
-//                    TimeUnit.SECONDS.sleep(1);
-//                }
-//            }
-
-            // proc.destroy();
-            logger.info("starting new server " + serverToAdd.getName());
+            allServerMetadata.updateNodeStatus(serverToAdd, ECSNodeFlag.IDLE);
+            logger.info("starting new server "+ serverToAdd.getName());
             numServers++;
 
         } catch (Exception e) {
@@ -201,11 +176,9 @@ public class ECSClient implements IECSClient {
         return serverToAdd;
     }
 
+
     public IECSNode addNode(ECSNode serverToAdd) throws InterruptedException, KeeperException, IOException {
         // sets the first stopped node to IDLE so that it can be started by start
-//        ECSNode serverToAdd = allServerMetadata.getFirstByStatus(ECSNodeFlag.STOP);
-        allServerMetadata.updateNodeStatus(serverToAdd, ECSNodeFlag.IDLE);
-
         String path = "/ecs/" + serverToAdd.getName();
         zk.create(path, nodeToByte(serverToAdd), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         //zk.create(path, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -225,19 +198,20 @@ public class ECSClient implements IECSClient {
                 System.out.println(s);
             }
 
-            while (true) {
-                try {
+            while (true){
+                try{
                     KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
                     client.connect(serverToAdd.getHost(), serverToAdd.getPort());
-                    //client.shutDown();
+                    // client.shutDown();
                     break;
                 } catch (Exception e) {
-                    logger.error(e);
+                    // logger.error(e);
                     TimeUnit.SECONDS.sleep(1);
                 }
             }
 
-            logger.info("starting new server " + serverToAdd.getName());
+            allServerMetadata.updateNodeStatus(serverToAdd, ECSNodeFlag.IDLE);
+            logger.info("starting new server "+ serverToAdd.getName());
             numServers++;
 
         } catch (Exception e) {
@@ -284,6 +258,11 @@ public class ECSClient implements IECSClient {
 
     @Override
     public List<IECSNode> addNodes(int count) throws Exception {
+        int numServer = allServerMetadata.getAllNodesByStatus(ECSNodeFlag.STOP).size();
+        if (numServer < count) {
+            logger.info("Failed to add nodes. There are only " + numServer + " servers available.");
+            return null;
+        }
         List<IECSNode> nodeList = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             //System.out.println(i);
@@ -347,6 +326,9 @@ public class ECSClient implements IECSClient {
             return true;
         } catch (KeeperException | InterruptedException | NoSuchAlgorithmException e) {
             logger.error(e);
+            return false;
+        } catch (IndexOutOfBoundsException e) {
+            logger.info("The node index you entered is not running.");
             return false;
         }
     }
@@ -497,7 +479,7 @@ public class ECSClient implements IECSClient {
                 }
                 for (ECSNode node : deadNodes) {
                     try {
-                        ecs.addNode(node);
+                        IECSNode newNode = ecs.addNode(node);
                     } catch (Exception e){
                         e.printStackTrace();
                     }
