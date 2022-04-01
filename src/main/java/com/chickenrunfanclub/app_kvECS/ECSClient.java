@@ -78,9 +78,9 @@ public class ECSClient implements IECSClient {
         allServerMetadata = new AllServerMetadata(configFileName);
         numServers = zk.getChildren("/ecs", false).size();
         running = false;
-        heartbeat = new Heartbeat(allServerMetadata, this);
-        Thread t = new Thread(heartbeat);
-        t.start();
+//        heartbeat = new Heartbeat(allServerMetadata, this);
+//        Thread t = new Thread(heartbeat);
+//        t.start();
     }
 
     @Override
@@ -122,7 +122,7 @@ public class ECSClient implements IECSClient {
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.SHUT_DOWN);
         removeAllNodes();
-        heartbeat.stop();
+//        heartbeat.stop();
         return true;
     }
 
@@ -158,11 +158,20 @@ public class ECSClient implements IECSClient {
 
             while (true){
                 try{
+                    Runtime run_2 = Runtime.getRuntime();
+                    Process proc_2 = run_2.exec("ps -A | grep java");
+                    BufferedReader stdInput_2 = new BufferedReader(new InputStreamReader(proc_2.getInputStream()));
+                    String s_2 = null;
+                    while ((s_2 = stdInput_2.readLine()) != null) {
+                        System.out.println(s_2);
+                    }
+
                     KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
                     client.connect(serverToAdd.getHost(), serverToAdd.getPort());
                     // client.shutDown();
                     break;
                 } catch (Exception e) {
+                    e.printStackTrace();
                     // logger.error(e);
                     TimeUnit.SECONDS.sleep(1);
                 }

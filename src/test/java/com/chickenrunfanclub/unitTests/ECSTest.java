@@ -37,8 +37,11 @@ public class ECSTest {
         numServer = ecs.getNumServers();
         assertSame(numServer, ecs.zookeeperNodes());
         ecs.addNode("LRU", 100);
+        System.out.println("wtf");
         utils.stall(3);
+        System.out.println("hello");
         ecs.start();
+        System.out.println("general kenobi");
         assertSame(1, ecs.getNumServers() - numServer);
         assertSame(1, ecs.zookeeperNodes() - numServer);
     }
