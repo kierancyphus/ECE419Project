@@ -5,6 +5,7 @@ import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
+import com.chickenrunfanclub.shared.Hasher;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.google.gson.Gson;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ public class KVServerTest {
         server.start();
         utils.stall(2);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_1.cfg");
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_1.cfg", true);
         IKVMessage response = null;
         Exception ex = null;
         try {
@@ -52,15 +53,16 @@ public class KVServerTest {
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
         server.clearStorage();
         server.start();
-        server.updateServerStopped(false);
+//        server.updateServerStopped(false);
         utils.stall(1);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_2.cfg");
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_2.cfg", true);
         IKVMessage response = null;
         Exception ex = null;
 
 
         try {
+            kvClient.start("localhost", port);
             response = kvClient.get("something");
         } catch (Exception e) {
             ex = e;
@@ -68,6 +70,35 @@ public class KVServerTest {
 
         assertNull(ex);
         assertNotSame(response.getStatus(), IKVMessage.StatusType.SERVER_STOPPED);
+    }
+
+    @Test
+    public void serverUpdatesAllMetadata() {
+        int port = 50099;
+
+        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
+        server.clearStorage();
+        server.start();
+//        server.updateServerStopped(false);
+        utils.stall(1);
+
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_2.cfg", true);
+        IKVMessage response = null;
+        Exception ex = null;
+
+        AllServerMetadata asm = new AllServerMetadata();
+
+
+        try {
+            kvClient.start("localhost", port);
+            kvClient.updateAllMetadata(asm, "localhost", port);
+//            response = kvClient.get("something");
+        } catch (Exception e) {
+            ex = e;
+        }
+
+        assertNull(ex);
+//        assertNotSame(response.getStatus(), IKVMessage.StatusType.SERVER_STOPPED);
     }
 
     @Test
@@ -93,7 +124,7 @@ public class KVServerTest {
         utils.stall(2);
 
         // populate original server
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_3.cfg");
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_3.cfg", true);
         Exception ex = null;
         try {
             for (int i = 0; i < 10; i++) {
@@ -132,7 +163,7 @@ public class KVServerTest {
         server.lockWrite();
         utils.stall(1);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_4.cfg");
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_4.cfg", true);
         IKVMessage response = null;
         Exception ex = null;
         try {
@@ -155,7 +186,7 @@ public class KVServerTest {
         server.updateServerStopped(false);
         utils.stall(1);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_5.cfg");
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_5.cfg", true);
         IKVMessage response = null;
         Exception ex = null;
         try {
@@ -182,7 +213,7 @@ public class KVServerTest {
         server.updateServerStopped(false);
         utils.stall(1);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_6.cfg");
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_6.cfg", true);
         IKVMessage response = null;
         Exception ex = null;
         try {
@@ -219,7 +250,7 @@ public class KVServerTest {
 
         utils.stall(2);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_7.cfg");
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_7.cfg", true);
         IKVMessage response = null;
         Exception ex = null;
 
@@ -252,7 +283,7 @@ public class KVServerTest {
 
         utils.stall(1);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_8.cfg");
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_8.cfg", true);
         IKVMessage response = null;
         Exception ex = null;
 
@@ -284,7 +315,7 @@ public class KVServerTest {
 
         utils.stall(2);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_9.cfg");
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_9.cfg", true);
         IKVMessage response = null;
         Exception ex = null;
 
@@ -319,7 +350,7 @@ public class KVServerTest {
 
         utils.stall(2);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_10.cfg");
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_10.cfg", true);
         IKVMessage response = null;
         Exception ex = null;
 
@@ -355,7 +386,7 @@ public class KVServerTest {
 
         utils.stall(2);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_11.cfg");
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_11.cfg", true);
         IKVMessage response = null;
         Exception ex = null;
 

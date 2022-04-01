@@ -34,7 +34,7 @@ public class InteractionTest {
 
     @BeforeEach
     public void setUp() {
-        kvClient = new KVStore("./src/test/resources/servers_interaction.cfg");
+        kvClient = new KVStore("./src/test/resources/servers_interaction.cfg", true);
     }
 
     @Test

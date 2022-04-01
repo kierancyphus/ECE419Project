@@ -2,7 +2,11 @@ package com.chickenrunfanclub.unitTests;
 
 import com.chickenrunfanclub.TestUtils;
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
+import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
+import com.chickenrunfanclub.shared.messages.IKVMessage;
+import com.chickenrunfanclub.shared.messages.KVMessage;
+import com.chickenrunfanclub.shared.messages.ServerMessage;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -52,7 +56,7 @@ public class AllServerMetadataTest {
         ECSNode otherNode = new ECSNode("localhost", 50001);
         metadata.addNodeToHashRing(node);
         metadata.addNodeToHashRing(otherNode);
-        metadata.removeNode(otherNode);
+        metadata.removeNodeFromHashRing(otherNode);
 
         assertEquals(1, metadata.getAllNodes().size());
         assertEquals(node, metadata.findServerResponsible("anything really", false));
@@ -67,7 +71,7 @@ public class AllServerMetadataTest {
         metadata.addNodeToHashRing(node);
         metadata.addNodeToHashRing(otherNode);
         metadata.addNodeToHashRing(thirdNode);
-        metadata.removeNode(thirdNode);
+        metadata.removeNodeFromHashRing(thirdNode);
 
         assertEquals(2, metadata.getAllNodes().size());
         assertEquals(otherNode, metadata.findServerResponsible("anything really", false));
@@ -116,6 +120,31 @@ public class AllServerMetadataTest {
         assertTrue(getChain.contains(nodes.get(4)));
         assertTrue(getChain.contains(nodes.get(6)));
         assertTrue(getChain.contains(nodes.get(7)));
+    }
 
+    @Test
+    public void helper() throws Exception {
+//        AllServerMetadata asm = new AllServerMetadata();
+////        ECSNode node = new ECSNode("localhost", 50000, null, null, false, false);
+//        ECSNode otherNode = new ECSNode("localhost", 50002, null, null, false, false);
+////        asm.addNodeToHashRing(node);
+//        asm.addNodeToHashRing(otherNode);
+
+        KVStore client = new KVStore("./src/test/resources/test.cfg", true);
+        client.start("localhost", 50002);
+
+        AllServerMetadata asm = new AllServerMetadata();
+        ECSNode node = new ECSNode("localhost", 50002, null, null, false, false);
+        asm.addNodeToHashRing(node);
+        asm.broadcastMetadata();
+//        client.updateAllMetadata(asm, "localhost", 50000);
+
+        IKVMessage message = client.put("some key", "some value", "localhost", 50002, 0);
+        IKVMessage getMessage = client.get("some key");
+
+        System.out.println(message);
+        System.out.println(getMessage);
+
+        assertTrue(false);
     }
 }

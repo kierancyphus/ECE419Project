@@ -60,6 +60,18 @@ public class KVStore implements KVCommInterface {
         System.out.println(this.meta);
     }
 
+    public KVStore(String config_file, boolean addToHashRing) {
+        this.meta = new AllServerMetadata(config_file);
+        if (addToHashRing) {
+            this.meta.getAllNodes().forEach(meta::addNodeToHashRing);
+        }
+
+        this.config_file = config_file;
+        this.allServers = new ArrayList<String>();
+        running = true;
+        processConfig(config_file);
+    }
+
     public void processConfig(String config_file) {
         File f = new File(config_file);
         try {
@@ -149,11 +161,16 @@ public class KVStore implements KVCommInterface {
 
     public AllServerMetadata pollAll() {
         AllServerMetadata newMeta = null;
-        for (String allServer : this.allServers) {
+
+        logger.info("polling all servers, size: " + meta.getAllNodes().size());
+
+        for (ECSNode node: meta.getAllNodes()) {
             try {
-                String[] info = allServer.split(" ");
-                connect(info[1], Integer.parseInt(info[2]));
+                connect(node.getHost(), node.getPort());
+                logger.info("About to send message to " + node);
                 IKVMessage kvresponse = sendAndReceiveMessage("I LOVE ECE419", null, IKVMessage.StatusType.GET);
+                logger.info(kvresponse);
+                disconnect();
                 IKVMessage.StatusType returnStatus = kvresponse.getStatus();
                 if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
                     try {
@@ -163,8 +180,26 @@ public class KVStore implements KVCommInterface {
                     }
                 }
             } catch (Exception e) {
+                logger.info(e);
             }
         }
+
+//        for (String allServer : this.allServers) {
+//            try {
+//                String[] info = allServer.split(" ");
+//                connect(info[1], Integer.parseInt(info[2]));
+//                IKVMessage kvresponse = sendAndReceiveMessage("I LOVE ECE419", null, IKVMessage.StatusType.GET);
+//                IKVMessage.StatusType returnStatus = kvresponse.getStatus();
+//                if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
+//                    try {
+//                        newMeta = new Gson().fromJson(kvresponse.getKey(), AllServerMetadata.class);
+//                    } catch (JsonParseException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            } catch (Exception e) {
+//            }
+//        }
         if (newMeta == null) {
             logger.error("Critical servers are down so no requests can be processed right now. Please try again once shit is figured out");
         }
@@ -187,9 +222,33 @@ public class KVStore implements KVCommInterface {
             connect(host, port);
             try {
                 response = sendAndReceiveMessage(key, value, IKVMessage.StatusType.PUT, index);
+                logger.info(response);
                 connectionSuccess = true;
             } catch (Exception e) {
                 response = new KVMessage(key, value, IKVMessage.StatusType.PUT_ERROR);
+                logger.info(e);
+            }
+            disconnect();
+
+            retries++;
+        }
+        return response;
+    }
+
+    public IKVMessage get(String key, String value, String host, int port, int index) throws IOException {
+        int retries = 0;
+        boolean connectionSuccess = false;
+        IKVMessage response = null;
+
+        while (retries < 3 && !connectionSuccess) {
+            connect(host, port);
+            try {
+                response = sendAndReceiveMessage(key, value, IKVMessage.StatusType.GET, index);
+                logger.info(response);
+                connectionSuccess = true;
+            } catch (Exception e) {
+                response = new KVMessage(key, value, IKVMessage.StatusType.GET_ERROR);
+                logger.info(e);
             }
             disconnect();
 
@@ -212,6 +271,8 @@ public class KVStore implements KVCommInterface {
         while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE && attempts < 3) {
             try {
                 ECSNode node_responsible = this.meta.findServerResponsible(key, false);
+                logger.info(node_responsible);
+
                 connect(node_responsible.getHost(), node_responsible.getPort());
 
                 kvresponse = sendAndReceiveMessage(key, value, IKVMessage.StatusType.PUT, index);
@@ -243,9 +304,11 @@ public class KVStore implements KVCommInterface {
         IKVMessage kvresponse = null;
         int attempts = 0;
 
+        logger.info(this.meta);
 
         while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE && attempts < 3) {
             try {
+                logger.info(attempts + " " + this.meta);
                 ECSNode node_responsible = this.meta.findServerResponsible(key, true);
                 connect(node_responsible.getHost(), node_responsible.getPort());
 
@@ -346,12 +409,14 @@ public class KVStore implements KVCommInterface {
         return new ServerMessage(response);
     }
 
-    public IServerMessage updateAllMetadata(AllServerMetadata asm) throws Exception {
+    public IServerMessage updateAllMetadata(AllServerMetadata asm, String host, int port) throws Exception {
+        connect(host, port);
         String asmString = new Gson().toJson(asm, AllServerMetadata.class);
         ServerMessage message = new ServerMessage(asmString, null, IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();
+        disconnect();
         return new ServerMessage(response);
     }
 }

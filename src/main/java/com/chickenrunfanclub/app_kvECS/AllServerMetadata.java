@@ -60,8 +60,6 @@ public class AllServerMetadata {
                 name = line[0];
                 host = line[1];
                 port = line[2];
-                String hostPort = host + port;
-                String hash = Hasher.hash(hostPort);
                 String cacheStrategy = "LRU";
                 int cacheSize = 100;
 
@@ -205,7 +203,7 @@ public class AllServerMetadata {
         addNodesSortedByHash(nodeHashesToServerInfo.get(previous.getName()));
     }
 
-    public void removeNode(ECSNode node) {
+    public void removeNodeFromHashRing(ECSNode node) {
         if (nodeHashesToServerInfo.size() == 1) {
             // don't allow an empty ring
             return;
@@ -234,9 +232,9 @@ public class AllServerMetadata {
         runningServers.forEach(node -> {
             KVStore kvClient = new KVStore(node.getHost(), node.getPort());
             try {
-                kvClient.updateAllMetadata(this);
+                kvClient.updateAllMetadata(this, node.getHost(), node.getPort());
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.info(e);
             }
         });
     }

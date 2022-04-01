@@ -73,7 +73,7 @@ public class KVServer extends Thread implements IKVServer {
         allServerMetadata = new AllServerMetadata(serverMetadatas);
 
 
-        repo = new KVRepo(cacheSize, this.strategy, storePath, metadata);
+        repo = new KVRepo(cacheSize, this.strategy, storePath + "/" + port, metadata);
         threads = new ArrayList<>();
     }
 
