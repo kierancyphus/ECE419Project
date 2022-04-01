@@ -95,25 +95,23 @@ public class KVClientConnection implements Runnable {
                                 }
                                 // either index is 0 and responsible or passing along => persist to disk and then pass message along
                                 else if (message.getIndex() >= 0 && message.getIndex() < 2) {
-                                    logger.info("Passing message along");
                                     // find next server in hash ring
                                     ECSNode nextServer = server.getAllMetadata().findServerAheadInHashRing(server.getMetadata(), 1);
+                                    logger.info("Passing message along to " + nextServer + " from " + server.getMetadata());
+
 
                                     // edge case here -> if we have a ring size of 1 this will be a deadlock because we are
                                     // trying to talk to ourselves. However, since this is also now the tail, we do nothing.
                                     if (!nextServer.equals(server.getMetadata())) {
                                         // pass message along and increment index
-                                        KVStore kvClient = new KVStore(nextServer.getHost(), nextServer.getPort());
-                                        try {
-                                            response = kvClient.put(message.getKey(), message.getValue(), message.getIndex() + 1);
-                                        } catch (Exception e) {
-                                            response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.PUT_ERROR);
-                                            logger.info("Could not pass along message :(");
-                                        }
+                                        KVStore kvClient = new KVStore(nextServer.getHost(), nextServer.getPort(), server.getAllMetadata());
+                                        response = kvClient.put(message.getKey(), message.getValue(), nextServer.getHost(), nextServer.getPort(), message.getIndex() + 1);
+
                                         // persist to memory
-                                        // TODO: ideally we should only send a success message if the client was successful and
-                                        // TODO: our local repo put was. I can't be bothered to do that rn.
-                                        repo.put(message.getKey(), message.getValue());
+                                        if (response.getStatus() != IKVMessage.StatusType.PUT_ERROR) {
+                                            logger.info(server.getMetadata() + " persisting");
+                                            repo.put(message.getKey(), message.getValue());
+                                        }
                                     } else {
                                         // ring size of 1 (just retur
                                         response = repo.put(message.getKey(), message.getValue());

@@ -5,7 +5,6 @@ import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
-import com.chickenrunfanclub.shared.Hasher;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.google.gson.Gson;
 import org.junit.jupiter.api.Test;
@@ -14,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,7 +23,7 @@ public class KVServerTest {
     @Test
     public void serverReturnsStoppedWithoutInitialization() {
         int port = 50005;
-        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
+        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
         ECSNode node = new ECSNode("localhost", port, "0".repeat(32), "F".repeat(32), true, false);
         AllServerMetadata asm = new AllServerMetadata();
         asm.addNode(node);
@@ -49,7 +49,7 @@ public class KVServerTest {
     public void serverNotReturnsStoppedAfterInitialization() {
         int port = 50006;
 
-        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
+        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
         server.clearStorage();
         server.start();
         server.updateServerStopped(false);
@@ -76,7 +76,7 @@ public class KVServerTest {
         int otherPort = 50008;
 
         // initialize original server
-        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
+        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/");
         server.clearStorage();
         ECSNode firstNode = new ECSNode("localhost", port, "0".repeat(32), "F".repeat(32), false, false);
         server.updateMetadata(firstNode);
@@ -125,7 +125,7 @@ public class KVServerTest {
         int port = 50009;
 
         // initialize original server
-        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
+        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
         server.clearStorage();
         server.start();
         server.updateServerStopped(false);
@@ -176,7 +176,7 @@ public class KVServerTest {
         int port = 50011;
 
         // initialize original server
-        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
+        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
         server.clearStorage();
         server.start();
         server.updateServerStopped(false);
@@ -204,7 +204,7 @@ public class KVServerTest {
         int port = 50012;
 
         // initialize original server
-        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
+        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
         server.clearStorage();
         server.start();
 
@@ -217,7 +217,7 @@ public class KVServerTest {
         someMetadata.addNode(otherNode);
         server.replaceAllServerMetadata(someMetadata);
 
-        utils.stall(1);
+        utils.stall(2);
 
         KVStore kvClient = new KVStore("./src/test/resources/servers_kv_7.cfg");
         IKVMessage response = null;
@@ -229,9 +229,6 @@ public class KVServerTest {
             ex = e;
         }
 
-//        System.out.println(server.getMetadata());
-//        System.out.println(Hasher.hash("a key it is not responsible for"));
-
         assertNull(ex);
         assertSame(IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE, response.getStatus());
         assertEquals(response.getKey(), new Gson().toJson(someMetadata, AllServerMetadata.class));
@@ -242,7 +239,7 @@ public class KVServerTest {
         int port = 50013;
 
         // initialize original server
-        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
+        KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/50013");
         server.clearStorage();
         server.start();
 
@@ -265,10 +262,116 @@ public class KVServerTest {
             ex = e;
         }
 
-        System.out.println(response);
-
         assertNull(ex);
         assertSame(IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE, response.getStatus());
         assertEquals(new Gson().toJson(someMetadata, AllServerMetadata.class), response.getKey());
+    }
+
+    @Test
+    public void dataIsReplicatedOnThreeServers() {
+        // need to create three running servers and pass them all the right metadata
+        List<Integer> ports = Arrays.asList(50014, 50015, 50016);
+        List<KVServer> servers = ports
+                .stream()
+                .map(p -> new KVServer(p, 10, "FIFO", "./testStore/KVServer/" + p))
+                .collect(Collectors.toList());
+        servers.forEach(KVServer::clearStorage);
+
+        AllServerMetadata asm = new AllServerMetadata();
+        ports.forEach(port -> asm.addNode(new ECSNode("localhost", port, null, null, false, false)));
+        servers.forEach(s -> s.replaceAllServerMetadata(asm));
+        servers.forEach(KVServer::start);
+
+        utils.stall(2);
+
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_9.cfg");
+        IKVMessage response = null;
+        Exception ex = null;
+
+        try {
+            response = kvClient.put("something", "else", 0);
+        } catch (Exception e) {
+            ex = e;
+        }
+
+        assertNull(ex);
+        assertNotNull(response);
+        assertSame(IKVMessage.StatusType.PUT_SUCCESS, response.getStatus());
+        assertEquals(servers.get(0).listKeys(), servers.get(1).listKeys());
+        assertEquals(servers.get(0).listKeys(), servers.get(2).listKeys());
+        assertEquals(servers.get(2).listKeys(), servers.get(1).listKeys());
+    }
+
+    @Test
+    public void dataIsReplicatedOnOnlyThreeServers() {
+        // need to create three running servers and pass them all the right metadata
+        List<Integer> ports = Arrays.asList(50017, 50018, 50019, 50020);
+        List<KVServer> servers = ports
+                .stream()
+                .map(p -> new KVServer(p, 10, "FIFO", "./testStore/KVServer/" + p))
+                .collect(Collectors.toList());
+        servers.forEach(KVServer::clearStorage);
+
+        AllServerMetadata asm = new AllServerMetadata();
+        ports.forEach(port -> asm.addNode(new ECSNode("localhost", port, null, null, false, false)));
+        servers.forEach(s -> s.replaceAllServerMetadata(asm));
+        servers.forEach(KVServer::start);
+
+        utils.stall(2);
+
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_10.cfg");
+        IKVMessage response = null;
+        Exception ex = null;
+
+        try {
+            response = kvClient.put("something", "else", 0);
+        } catch (Exception e) {
+            ex = e;
+        }
+
+        assertNull(ex);
+        assertNotNull(response);
+        assertSame(IKVMessage.StatusType.PUT_SUCCESS, response.getStatus());
+        assertEquals(servers.get(0).listKeys(), servers.get(3).listKeys());
+        assertEquals(servers.get(0).listKeys(), servers.get(1).listKeys());
+        assertEquals(servers.get(3).listKeys(), servers.get(1).listKeys());
+        assertNotEquals(servers.get(0).listKeys(), servers.get(2).listKeys());
+    }
+
+    @Test
+    public void deleteGoesThroughChain() {
+        // need to create three running servers and pass them all the right metadata
+        List<Integer> ports = Arrays.asList(50021, 50022, 50023, 50024);
+        List<KVServer> servers = ports
+                .stream()
+                .map(p -> new KVServer(p, 10, "FIFO", "./testStore/KVServer/" + p))
+                .collect(Collectors.toList());
+        servers.forEach(KVServer::clearStorage);
+
+        AllServerMetadata asm = new AllServerMetadata();
+        ports.forEach(port -> asm.addNode(new ECSNode("localhost", port, null, null, false, false)));
+        servers.forEach(s -> s.replaceAllServerMetadata(asm));
+        servers.forEach(KVServer::start);
+
+        utils.stall(2);
+
+        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_11.cfg");
+        IKVMessage response = null;
+        Exception ex = null;
+
+        try {
+            kvClient.put("something", "else", 0);
+            response = kvClient.put("something", null, 0);
+        } catch (Exception e) {
+            ex = e;
+        }
+
+        assertNull(ex);
+        assertNotNull(response);
+        assertSame(IKVMessage.StatusType.DELETE_SUCCESS, response.getStatus());
+        assertEquals(servers.get(0).listKeys(), servers.get(3).listKeys());
+        assertEquals(servers.get(0).listKeys(), servers.get(1).listKeys());
+        assertEquals(servers.get(3).listKeys(), servers.get(1).listKeys());
+        assertEquals(servers.get(0).listKeys(), servers.get(2).listKeys());
     }
 }
