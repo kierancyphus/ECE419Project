@@ -135,7 +135,7 @@ public class PerformanceTestLFU {
                 reqStart = System.nanoTime();
                 if (doPut) {
                     try {
-                        client.put(rand_key, rand_value);
+                        client.put(rand_key, rand_value, 0);
                     } catch (Exception e) {
                         throw e;
                     }

@@ -16,19 +16,28 @@ import static com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag.STOP;
 public class AllServerMetadata {
     private HashMap<String, ECSNode> nodeHashesToServerInfo;
     private static final Logger logger = LogManager.getLogger(AllServerMetadata.class);
+    private List<ECSNode> nodesSortedByHash;
+    private final static int chainLength = 2;  // number of additional servers -> this is a chain of three
+
 
     public AllServerMetadata() {
         nodeHashesToServerInfo = new HashMap<>();
+        nodesSortedByHash = new ArrayList<>();
     }
 
     public AllServerMetadata(HashMap<String, ECSNode> nodeHashesToServerInfo) {
         // this is used for passing metadata around
         this.nodeHashesToServerInfo = nodeHashesToServerInfo;
+        nodesSortedByHash = new ArrayList<>(nodeHashesToServerInfo.values());
+        nodesSortedByHash.sort(Comparator.comparing(ECSNode::getRangeStart));
     }
 
     public AllServerMetadata(String pathToConfigFile) {
         nodeHashesToServerInfo = new HashMap<>();
         initServerMetadata(pathToConfigFile);
+        // make sure the list is sorted
+        nodesSortedByHash = new ArrayList<>(nodeHashesToServerInfo.values());
+        nodesSortedByHash.sort(Comparator.comparing(ECSNode::getRangeStart));
     }
 
     private void initServerMetadata(String file) {
@@ -81,7 +90,13 @@ public class AllServerMetadata {
         return nodeHashesToServerInfo;
     }
 
-    public ECSNode findServerResponsible(String key) {
+    public ECSNode findServerResponsible(String key, boolean get) {
+        // need to add a boolean get param that if true, returns the server at the tail
+        if (get) {
+            ECSNode headNode = findServerResponsible(key, false);
+            return findServerAheadInHashRing(headNode, chainLength);
+        }
+
         return nodeHashesToServerInfo
                 .values()
                 .stream()
@@ -136,25 +151,48 @@ public class AllServerMetadata {
         nodeHashesToServerInfo = new HashMap<>();
     }
 
+    private void addNodesSortedByHash(ECSNode node) {
+        nodesSortedByHash.add(node);
+        nodesSortedByHash.sort(Comparator.comparing(ECSNode::getRangeStart));
+    }
+
+    private void removeNodesSortedByHash(ECSNode node) {
+        nodesSortedByHash = nodesSortedByHash
+                .stream()
+                .filter(x -> x != node)
+                .collect(Collectors.toList());
+
+        nodesSortedByHash.sort(Comparator.comparing(ECSNode::getRangeStart));
+    }
+
+
     public void addNode(ECSNode node) {
         String hash = Hasher.hash(node.getHost() + node.getPort());
 
         if (nodeHashesToServerInfo.size() == 0) {
             node.setRangeEnd(hash);
             node.setRangeStart(hash);
+
+            // need to update the map as well as the sorted list
             nodeHashesToServerInfo.put(hash, node);
+            addNodesSortedByHash(node);
             return;
         }
 
-        ECSNode previous = findServerResponsible(node.getHost() + node.getPort());
+        ECSNode previous = findServerResponsible(node.getHost() + node.getPort(), false);
 
         // insert new node into the hash ring
         node.setRangeStart(hash);
         node.setRangeEnd(previous.getRangeEnd());
         nodeHashesToServerInfo.put(hash, node);
 
+        // update sorted hashes
+        addNodesSortedByHash(node);
+        removeNodesSortedByHash(previous);
+
         // update previous nodes range to end at the new node
         nodeHashesToServerInfo.get(previous.getRangeStart()).setRangeEnd(hash);
+        addNodesSortedByHash(nodeHashesToServerInfo.get(previous.getRangeStart()));
     }
 
     public void removeNode(ECSNode node) {
@@ -164,8 +202,15 @@ public class AllServerMetadata {
         }
 
         ECSNode previous = getFirstByEndRange(node.getRangeStart());
+
+        // update sorted hashes
+        removeNodesSortedByHash(node);
+        removeNodesSortedByHash(nodeHashesToServerInfo.get(previous.getRangeStart()));
+
         nodeHashesToServerInfo.get(previous.getRangeStart()).setRangeEnd(node.getRangeEnd());
         nodeHashesToServerInfo.remove(node.getRangeStart());
+
+        addNodesSortedByHash(nodeHashesToServerInfo.get(previous.getRangeStart()));
     }
 
     public void print() {
@@ -184,5 +229,25 @@ public class AllServerMetadata {
                 e.printStackTrace();
             }
         });
+    }
+
+    public ECSNode findServerAheadInHashRing(ECSNode node, int ahead) {
+        int index = nodesSortedByHash.indexOf(node);
+        index = (index + ahead) % nodesSortedByHash.size();
+        return nodesSortedByHash.get(index);
+    }
+
+    public List<ECSNode> findGetServersResponsible(String key) {
+        /*
+         * This is used for get since clients are allowed to query at any point along the chain
+         * */
+        ECSNode chainHead = findServerResponsible(key, false);
+        List<ECSNode> responsibleServers = new ArrayList<>();
+        for(int i = 1; i < chainLength + 1; i++) {
+            responsibleServers.add(findServerAheadInHashRing(chainHead, i));
+        }
+        responsibleServers.add(chainHead);
+        return responsibleServers;
+
     }
 }

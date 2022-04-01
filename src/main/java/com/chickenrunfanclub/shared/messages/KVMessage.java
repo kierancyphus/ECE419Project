@@ -8,12 +8,21 @@ public class KVMessage implements IKVMessage {
     private String key;
     private String value;
     private IKVMessage.StatusType status;
+    private int index;
     private final static Logger logger = LogManager.getLogger(KVMessage.class);
 
     public KVMessage(String key, String value, IKVMessage.StatusType status) {
         this.key = key;
         this.value = value;
         this.status = status;
+        this.index = 0;
+    }
+
+    public KVMessage(String key, String value, IKVMessage.StatusType status, int index) {
+        this.key = key;
+        this.value = value;
+        this.status = status;
+        this.index = index;
     }
 
     public KVMessage(TextMessage textMessage) {
@@ -21,6 +30,7 @@ public class KVMessage implements IKVMessage {
         this.key = message.getKey();
         this.value = message.getValue();
         this.status = message.getStatus();
+        this.index = message.getIndex();
     }
 
     @Override
@@ -40,5 +50,13 @@ public class KVMessage implements IKVMessage {
 
     public String toString() {
         return new Gson().toJson(this);
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
     }
 }

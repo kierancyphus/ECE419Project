@@ -1,5 +1,6 @@
 package com.chickenrunfanclub.unitTests;
 
+import com.chickenrunfanclub.TestUtils;
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.ecs.ECSNode;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AllServerMetadataTest {
+
+    private final TestUtils utils = new TestUtils();
 
     @Test
     public void serverMetadataPopulatesOnInit() {
@@ -27,7 +30,7 @@ public class AllServerMetadataTest {
         metadata.addNode(node);
 
         assertEquals(1, metadata.getAllNodes().size());
-        assertEquals(node, metadata.findServerResponsible("anything really"));
+        assertEquals(node, metadata.findServerResponsible("anything really", false));
     }
 
     @Test
@@ -39,7 +42,7 @@ public class AllServerMetadataTest {
         metadata.addNode(otherNode);
 
         assertEquals(2, metadata.getAllNodes().size());
-        assertEquals(otherNode, metadata.findServerResponsible("anything really"));
+        assertEquals(otherNode, metadata.findServerResponsible("anything really", false));
     }
 
     @Test
@@ -52,7 +55,7 @@ public class AllServerMetadataTest {
         metadata.removeNode(otherNode);
 
         assertEquals(1, metadata.getAllNodes().size());
-        assertEquals(node, metadata.findServerResponsible("anything really"));
+        assertEquals(node, metadata.findServerResponsible("anything really", false));
     }
 
     @Test
@@ -67,8 +70,52 @@ public class AllServerMetadataTest {
         metadata.removeNode(thirdNode);
 
         assertEquals(2, metadata.getAllNodes().size());
-        assertEquals(otherNode, metadata.findServerResponsible("anything really"));
+        assertEquals(otherNode, metadata.findServerResponsible("anything really", false));
     }
 
-    // should really have another test here showing that we initialize them properly (e.g. closest hashes are together)
+    @Test
+    public void findServerResponsibleOnGetReturnsTail() {
+        AllServerMetadata metadata = new AllServerMetadata();
+
+        ECSNode node = new ECSNode("localhost", 50000);
+        ECSNode otherNode = new ECSNode("localhost", 50001);
+        ECSNode thirdNode = new ECSNode("localhost", 50002);
+        metadata.addNode(node);
+        metadata.addNode(otherNode);
+        metadata.addNode(thirdNode);
+
+        ECSNode responsible = metadata.findServerResponsible("testkey", true);
+        assertEquals(otherNode, responsible);
+    }
+
+    @Test
+    public void findServerResponsibleOnPutReturnsHead() {
+        AllServerMetadata metadata = new AllServerMetadata();
+
+        ECSNode node = new ECSNode("localhost", 50000);
+        ECSNode otherNode = new ECSNode("localhost", 50001);
+        ECSNode thirdNode = new ECSNode("localhost", 50002);
+        metadata.addNode(node);
+        metadata.addNode(otherNode);
+        metadata.addNode(thirdNode);
+
+        ECSNode responsible = metadata.findServerResponsible("testkey", false);
+        assertEquals(thirdNode, responsible);
+    }
+
+    @Test
+    public void createsProperGetReplicationChain() {
+        // make big hash ring
+        AllServerMetadata metadata = new AllServerMetadata();
+        List<ECSNode> nodes = utils.generateECSNodes(50000);
+        nodes.forEach(metadata::addNode);
+
+        List<ECSNode> getChain = metadata.findGetServersResponsible("key");
+
+        // precomputed replication chain is 5000[467]
+        assertTrue(getChain.contains(nodes.get(4)));
+        assertTrue(getChain.contains(nodes.get(6)));
+        assertTrue(getChain.contains(nodes.get(7)));
+
+    }
 }

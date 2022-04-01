@@ -101,18 +101,8 @@ public class KVRepo {
     }
 
     public IKVMessage get(String key) {
-        return forceGet(key, false);
-    }
-
-    public IKVMessage forceGet(String key, boolean force) {
-        if (!force) {
-            if (serverMetadata.notResponsibleFor(key)) {
-                return new KVMessage(key, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
-            }
-
-            if (serverMetadata.serverLocked()) {
-                return new KVMessage(key, null, IKVMessage.StatusType.SERVER_STOPPED);
-            }
+        if (serverMetadata.serverLocked()) {
+            return new KVMessage(key, null, IKVMessage.StatusType.SERVER_STOPPED);
         }
 
         if (this.cacheStrategy != IKVServer.CacheStrategy.None) {
@@ -212,7 +202,7 @@ public class KVRepo {
         return hashes.entrySet()
                 .stream()
                 .filter(entry -> rangeECSNode.inRange(entry.getKey()))  // filter out those not in range
-                .map(entry -> new AbstractMap.SimpleEntry<>(entry.getValue(), forceGet(entry.getValue(), true).getValue()))  // construct kv pairs
+                .map(entry -> new AbstractMap.SimpleEntry<>(entry.getValue(), get(entry.getValue()).getValue()))  // construct kv pairs
                 .collect(Collectors.toList());
     }
 

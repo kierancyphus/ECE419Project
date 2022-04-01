@@ -3,6 +3,7 @@ package com.chickenrunfanclub.app_kvServer;
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
+import com.chickenrunfanclub.shared.Hasher;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,10 +12,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class KVServer extends Thread implements IKVServer {
     private int port;
@@ -49,6 +47,10 @@ public class KVServer extends Thread implements IKVServer {
             return;
         }
         metadata = new ECSNode();
+        HashMap<String, ECSNode> serverMetadatas = new HashMap<>();
+        serverMetadatas.put(metadata.getRangeStart(), metadata);
+        allServerMetadata = new AllServerMetadata(serverMetadatas);
+
         this.repo = new KVRepo(cacheSize, this.strategy, metadata);
         allServerMetadata = null;
 
@@ -63,9 +65,13 @@ public class KVServer extends Thread implements IKVServer {
             logger.error("Error! Unknown cache strategy");
             return;
         }
-        metadata = new ECSNode();
+        metadata = new ECSNode("localhost", port);
+        HashMap<String, ECSNode> serverMetadatas = new HashMap<>();
+        serverMetadatas.put(metadata.getRangeStart(), metadata);
+        allServerMetadata = new AllServerMetadata(serverMetadatas);
+
+
         repo = new KVRepo(cacheSize, this.strategy, storePath, metadata);
-        allServerMetadata = null;
     }
 
 
@@ -209,8 +215,8 @@ public class KVServer extends Thread implements IKVServer {
     public void replaceAllServerMetadata(AllServerMetadata replacer) {
         allServerMetadata = replacer;
 
-        // need to update individual metadata too
-        metadata.updateMetadata(allServerMetadata.findServerResponsible(getHostname() + getPort()));
+        // need to update individual metadata too (this is the head)
+        metadata.updateMetadata(allServerMetadata.findServerResponsible(getHostname() + getPort(), false));
     }
 
     public ECSNode getMetadata() { return metadata; }
