@@ -7,6 +7,7 @@ import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.Hasher;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
+import com.chickenrunfanclub.shared.messages.IServerMessage;
 import com.google.gson.Gson;
 import org.junit.jupiter.api.Test;
 
@@ -466,7 +467,7 @@ public class KVServerTest {
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
         ECSNode node = new ECSNode("localhost", port, "0".repeat(32), "F".repeat(32), true, false);
         AllServerMetadata asm = new AllServerMetadata();
-        asm.addNode(node);
+        asm.addNodeToHashRing(node);
         server.replaceAllServerMetadata(asm);
 
         server.clearStorage();
