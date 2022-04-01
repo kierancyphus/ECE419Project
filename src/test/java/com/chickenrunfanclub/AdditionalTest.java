@@ -39,7 +39,7 @@ public class AdditionalTest {
 
         KVStore kvClient = new KVStore("./src/test/resources/servers_additional.cfg");
         try {
-            putResponse = kvClient.put(key, value);
+            putResponse = kvClient.put(key, value, 0);
         } catch (Exception e) {
             e.printStackTrace();
             ex = e;
@@ -66,7 +66,7 @@ public class AdditionalTest {
         KVStore kvClient = new KVStore("./src/test/resources/servers_additional.cfg");
 
         try {
-            kvClient.put(key, value);
+            kvClient.put(key, value, 0);
             response = kvClient.get(key);
         } catch (Exception e) {
             ex = e;
@@ -88,20 +88,20 @@ public class AdditionalTest {
         
         // delete the key value pair in case already exist
         try {
-            kvClient1.put(key, null);
+            kvClient1.put(key, null, 0);
         } catch (Exception e) {
         }
 
         // user 1 put
         try {
-            putResponse = kvClient1.put(key, value);
+            putResponse = kvClient1.put(key, value, 0);
         } catch (Exception e) {
             ex = e;
         }
 
         // user 2 updates it
         try {
-            updateResponse = kvClient2.put(key, newValue);
+            updateResponse = kvClient2.put(key, newValue, 0);
         } catch (Exception e) {
             ex = e;
         }
@@ -129,7 +129,7 @@ public class AdditionalTest {
         // put 10000 pairs
         try {
             for (int i = 0; i < 1000; i++) {
-                kvClient.put(String.valueOf(i), String.valueOf(i));
+                kvClient.put(String.valueOf(i), String.valueOf(i), 0);
             }
         } catch (Exception e) {
             ex = e;
@@ -160,7 +160,7 @@ public class AdditionalTest {
 
             public void run() {
                 try {
-                    client.put(String.valueOf(idx), String.valueOf(idx));
+                    client.put(String.valueOf(idx), String.valueOf(idx), 0);
                 } catch (Exception e) {
                 }
             }
@@ -242,7 +242,7 @@ public class AdditionalTest {
 
         try {
             for (int i = 0; i < n; i++) {
-                kvClient[0].put(String.valueOf(i), String.valueOf(i));
+                kvClient[0].put(String.valueOf(i), String.valueOf(i), 0);
                 ;
             }
         } catch (Exception e) {
@@ -280,7 +280,7 @@ public class AdditionalTest {
 
             public void run() {
                 try {
-                    client.put(String.valueOf(this.idx), String.valueOf(2 * this.idx));
+                    client.put(String.valueOf(this.idx), String.valueOf(2 * this.idx), 0);
                 } catch (Exception e) {
                 }
             }
@@ -295,7 +295,7 @@ public class AdditionalTest {
         try {
             for (int i = 0; i < n; i++) {
                 kvClient[i] = new KVStore("./src/test/resources/servers_additional.cfg");
-                kvClient[i].put(String.valueOf(i), String.valueOf(i));
+                kvClient[i].put(String.valueOf(i), String.valueOf(i), 0);
             }
         } catch (Exception e) {
             ex = e;
@@ -334,13 +334,13 @@ public class AdditionalTest {
 
         try {
             // special characters
-            kvClient.put("test1", "~`!@#$%^&*()_+-={}[]|\\:;\"\'<>,.?/");
+            kvClient.put("test1", "~`!@#$%^&*()_+-={}[]|\\:;\"\'<>,.?/", 0);
             // multiple spaces
-            kvClient.put("test2", "thank   ,    u      next   !");
+            kvClient.put("test2", "thank   ,    u      next   !", 0);
             // very long string
-            kvClient.put("test3", String.join(" ", Collections.nCopies(10, "hello world")));
+            kvClient.put("test3", String.join(" ", Collections.nCopies(10, "hello world")), 0);
             // "null" as key
-            kvClient.put("null", "test");
+            kvClient.put("null", "test", 0);
         } catch (Exception e) {
             ex = e;
         }
@@ -357,7 +357,7 @@ public class AdditionalTest {
 
         // null as value -> it should perform delete
         try {
-            assertSame(kvClient.put("test3", null).getStatus(), IKVMessage.StatusType.DELETE_SUCCESS);
+            assertSame(kvClient.put("test3", null, 0).getStatus(), IKVMessage.StatusType.DELETE_SUCCESS);
         } catch (Exception e) {
             ex = e;
         }
@@ -374,7 +374,7 @@ public class AdditionalTest {
 
         try {
             kvClient.connect("localhost", port);
-            kvClient.put("test", "test");
+            kvClient.put("test", "test", 0);
             assertEquals(kvClient.get("test").getValue(), "test");
             kvClient.disconnect();
         } catch (Exception e) {
@@ -383,7 +383,7 @@ public class AdditionalTest {
 
         try {
             kvClient.disconnect();
-            kvClient.put("test", "new value");
+            kvClient.put("test", "new value", 0);
         } catch (Exception e) {    // should throw exception because disconnected
             ex = e;
         }

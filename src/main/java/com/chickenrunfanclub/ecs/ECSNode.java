@@ -25,6 +25,7 @@ public class ECSNode implements IECSNode, java.io.Serializable {
     private int cacheSize;
     private String name;
     private ECSNodeFlag status;
+    private final int chainLength = 2;
 
     public ECSNodeFlag getStatus() {
         return status;
@@ -203,5 +204,18 @@ public class ECSNode implements IECSNode, java.io.Serializable {
 
     public String toString() {
         return name + "@" + host + ":" + port + " range=[" + rangeStart + ", " + rangeEnd + "]";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ECSNode ecsNode = (ECSNode) o;
+        return Objects.equals(rangeStart, ecsNode.rangeStart) && Objects.equals(rangeEnd, ecsNode.rangeEnd) && Objects.equals(host, ecsNode.host) && Objects.equals(port, ecsNode.port) && Objects.equals(name, ecsNode.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(rangeStart, rangeEnd, host, port, name);
     }
 }

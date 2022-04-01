@@ -27,7 +27,7 @@ public interface KVCommInterface {
      * @throws Exception if put command cannot be executed (e.g. not connected to any
      *                   KV server).
      */
-    public IKVMessage put(String key, String value) throws Exception;
+    public IKVMessage put(String key, String value, int index) throws Exception;
 
     /**
      * Retrieves the value for a given key from the KVServer.

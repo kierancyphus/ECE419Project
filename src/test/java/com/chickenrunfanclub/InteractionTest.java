@@ -1,9 +1,12 @@
 package com.chickenrunfanclub;
 
+import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
+import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.IKVMessage.StatusType;
+import com.chickenrunfanclub.unitTests.AllServerMetadataTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +23,11 @@ public class InteractionTest {
     @BeforeAll
     static void setup() {
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/Interaction");
+        ECSNode node = new ECSNode("localhost", port);
+        AllServerMetadata asm = new AllServerMetadata();
+        asm.addNode(node);
+        server.replaceAllServerMetadata(asm);
+
         server.clearStorage();
         server.start();
         server.updateServerStopped(false);
@@ -38,12 +46,12 @@ public class InteractionTest {
         Exception ex = null;
         // delete the key in case exist already
         try {
-            kvClient.put(key, null);
+            kvClient.put(key, null, 0);
         } catch (Exception e) {
         }
 
         try {
-            response = kvClient.put(key, value);
+            response = kvClient.put(key, value, 0);
         } catch (Exception e) {
             e.printStackTrace();
             ex = e;
@@ -64,8 +72,8 @@ public class InteractionTest {
         Exception ex = null;
 
         try {
-            kvClient.put(key, initialValue);
-            response = kvClient.put(key, updatedValue);
+            kvClient.put(key, initialValue, 0);
+            response = kvClient.put(key, updatedValue, 0);
         } catch (Exception e) {
             ex = e;
         }
@@ -83,8 +91,8 @@ public class InteractionTest {
         Exception ex = null;
 
         try {
-            kvClient.put(key, value);
-            response = kvClient.put(key, null);
+            kvClient.put(key, value, 0);
+            response = kvClient.put(key, null, 0);
 
         } catch (Exception e) {
             ex = e;
@@ -101,7 +109,7 @@ public class InteractionTest {
         Exception ex = null;
 
         try {
-            kvClient.put(key, value);
+            kvClient.put(key, value, 0);
             response = kvClient.get(key);
         } catch (Exception e) {
             ex = e;
