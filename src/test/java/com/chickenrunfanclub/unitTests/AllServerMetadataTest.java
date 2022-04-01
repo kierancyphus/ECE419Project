@@ -27,7 +27,7 @@ public class AllServerMetadataTest {
     public void successfulFirstNodeAddition() {
         AllServerMetadata metadata = new AllServerMetadata();
         ECSNode node = new ECSNode("localhost", 50000);
-        metadata.addNode(node);
+        metadata.addNodeToHashRing(node);
 
         assertEquals(1, metadata.getAllNodes().size());
         assertEquals(node, metadata.findServerResponsible("anything really", false));
@@ -38,8 +38,8 @@ public class AllServerMetadataTest {
         AllServerMetadata metadata = new AllServerMetadata();
         ECSNode node = new ECSNode("localhost", 50000);
         ECSNode otherNode = new ECSNode("localhost", 50001);
-        metadata.addNode(node);
-        metadata.addNode(otherNode);
+        metadata.addNodeToHashRing(node);
+        metadata.addNodeToHashRing(otherNode);
 
         assertEquals(2, metadata.getAllNodes().size());
         assertEquals(otherNode, metadata.findServerResponsible("anything really", false));
@@ -50,8 +50,8 @@ public class AllServerMetadataTest {
         AllServerMetadata metadata = new AllServerMetadata();
         ECSNode node = new ECSNode("localhost", 50000);
         ECSNode otherNode = new ECSNode("localhost", 50001);
-        metadata.addNode(node);
-        metadata.addNode(otherNode);
+        metadata.addNodeToHashRing(node);
+        metadata.addNodeToHashRing(otherNode);
         metadata.removeNode(otherNode);
 
         assertEquals(1, metadata.getAllNodes().size());
@@ -64,9 +64,9 @@ public class AllServerMetadataTest {
         ECSNode node = new ECSNode("localhost", 50000);
         ECSNode otherNode = new ECSNode("localhost", 50001);
         ECSNode thirdNode = new ECSNode("localhost", 50002);
-        metadata.addNode(node);
-        metadata.addNode(otherNode);
-        metadata.addNode(thirdNode);
+        metadata.addNodeToHashRing(node);
+        metadata.addNodeToHashRing(otherNode);
+        metadata.addNodeToHashRing(thirdNode);
         metadata.removeNode(thirdNode);
 
         assertEquals(2, metadata.getAllNodes().size());
@@ -80,9 +80,9 @@ public class AllServerMetadataTest {
         ECSNode node = new ECSNode("localhost", 50000);
         ECSNode otherNode = new ECSNode("localhost", 50001);
         ECSNode thirdNode = new ECSNode("localhost", 50002);
-        metadata.addNode(node);
-        metadata.addNode(otherNode);
-        metadata.addNode(thirdNode);
+        metadata.addNodeToHashRing(node);
+        metadata.addNodeToHashRing(otherNode);
+        metadata.addNodeToHashRing(thirdNode);
 
         ECSNode responsible = metadata.findServerResponsible("testkey", true);
         assertEquals(otherNode, responsible);
@@ -95,9 +95,9 @@ public class AllServerMetadataTest {
         ECSNode node = new ECSNode("localhost", 50000);
         ECSNode otherNode = new ECSNode("localhost", 50001);
         ECSNode thirdNode = new ECSNode("localhost", 50002);
-        metadata.addNode(node);
-        metadata.addNode(otherNode);
-        metadata.addNode(thirdNode);
+        metadata.addNodeToHashRing(node);
+        metadata.addNodeToHashRing(otherNode);
+        metadata.addNodeToHashRing(thirdNode);
 
         ECSNode responsible = metadata.findServerResponsible("testkey", false);
         assertEquals(thirdNode, responsible);
@@ -108,7 +108,7 @@ public class AllServerMetadataTest {
         // make big hash ring
         AllServerMetadata metadata = new AllServerMetadata();
         List<ECSNode> nodes = utils.generateECSNodes(50000);
-        nodes.forEach(metadata::addNode);
+        nodes.forEach(metadata::addNodeToHashRing);
 
         List<ECSNode> getChain = metadata.findGetServersResponsible("key");
 
