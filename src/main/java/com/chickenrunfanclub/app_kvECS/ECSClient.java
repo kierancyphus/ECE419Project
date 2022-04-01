@@ -44,7 +44,7 @@ public class ECSClient implements IECSClient {
     private AllServerMetadata allServerMetadata;
     private ServerSocket serverSocket;
     private int port;
-
+    private Heartbeat heartbeat;
 
     public ECSClient(String configFileName, String cacheStrat, int cacheSiz, int port) throws IOException, InterruptedException, KeeperException {
         // start zookeeper connection
@@ -78,6 +78,9 @@ public class ECSClient implements IECSClient {
         allServerMetadata = new AllServerMetadata(configFileName);
         numServers = zk.getChildren("/ecs", false).size();
         running = false;
+        heartbeat = new Heartbeat(allServerMetadata, this);
+        Thread t = new Thread(heartbeat);
+        t.start();
     }
 
     @Override
@@ -119,6 +122,7 @@ public class ECSClient implements IECSClient {
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.SHUT_DOWN);
         removeAllNodes();
+        heartbeat.stop();
         return true;
     }
 
@@ -474,7 +478,7 @@ public class ECSClient implements IECSClient {
                         IServerMessage hbResponse = client.sendHeartbeat();
                     } catch (Exception e) {
                         deadNodes.add(node);
-//                        e.printStackTrace();
+                        e.printStackTrace();
                     }
                 }
                 for (ECSNode node : deadNodes) {
