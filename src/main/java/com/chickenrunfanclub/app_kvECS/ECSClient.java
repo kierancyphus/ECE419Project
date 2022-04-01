@@ -475,18 +475,10 @@ public class ECSClient implements IECSClient {
         public Heartbeat(AllServerMetadata metadata, ECSClient ecs) {
             this.ecs = ecs;
             this.metadata = metadata;
-
         }
 
         public void stop() {
             this.running = false;
-        }
-
-        public void stall(int seconds) {
-            long start = System.currentTimeMillis();
-            long end = start + seconds * 1000L;
-            while (System.currentTimeMillis() < end) {
-            }
         }
 
         @Override
@@ -494,7 +486,6 @@ public class ECSClient implements IECSClient {
             while (this.running) {
                 ArrayList<ECSNode> deadNodes = new ArrayList<>();
                 List<ECSNode> runningNodes = metadata.getAllNodesByStatus(ECSNodeFlag.START);
-
                 for (ECSNode node : runningNodes) {
                     try {
                         KVStore client = new KVStore(node.getHost(), node.getPort());
@@ -504,7 +495,6 @@ public class ECSClient implements IECSClient {
 //                        e.printStackTrace();
                     }
                 }
-                stall(TIMEOUT);
                 for (ECSNode node : deadNodes) {
                     try {
                         ecs.addNode(node);
@@ -512,6 +502,14 @@ public class ECSClient implements IECSClient {
                         e.printStackTrace();
                     }
                 }
+                stall(TIMEOUT);
+            }
+        }
+
+        public void stall(int seconds) {
+            long start = System.currentTimeMillis();
+            long end = start + seconds * 1000L;
+            while (System.currentTimeMillis() < end) {
             }
         }
     }
