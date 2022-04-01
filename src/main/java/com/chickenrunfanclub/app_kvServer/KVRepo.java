@@ -63,10 +63,10 @@ public class KVRepo {
     }
 
     public IKVMessage put(String key, String value) {
-        if (serverMetadata.notResponsibleFor(key)) {
-            logger.info("Repo not responsible. Put<" + key + ", " + value + "> failed");
-            return new KVMessage(key, value, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
-        }
+//        if (serverMetadata.notResponsibleFor(key)) {
+//            logger.info("Repo not responsible. Put<" + key + ", " + value + "> failed");
+//            return new KVMessage(key, value, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
+//        }
 
         if (serverMetadata.serverLocked()) {
             logger.info("Repo is locked. Put<" + key + ", " + value + "> failed");
