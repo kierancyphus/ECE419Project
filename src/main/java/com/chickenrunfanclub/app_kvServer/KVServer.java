@@ -21,6 +21,7 @@ public class KVServer extends Thread implements IKVServer {
     private KVRepo repo;
     private ECSNode metadata;
     private AllServerMetadata allServerMetadata;
+    private List<KVClientConnection> threads;
 
     private static final Logger logger = LogManager.getLogger(KVServer.class);
     private ServerSocket serverSocket;
@@ -53,6 +54,7 @@ public class KVServer extends Thread implements IKVServer {
 
         this.repo = new KVRepo(cacheSize, this.strategy, metadata);
         allServerMetadata = null;
+        threads = new ArrayList<>();
 
     }
 
@@ -72,6 +74,7 @@ public class KVServer extends Thread implements IKVServer {
 
 
         repo = new KVRepo(cacheSize, this.strategy, storePath, metadata);
+        threads = new ArrayList<>();
     }
 
 
@@ -138,6 +141,7 @@ public class KVServer extends Thread implements IKVServer {
                 try {
                     Socket client = serverSocket.accept();
                     KVClientConnection connection = new KVClientConnection(client, repo, this);
+                    threads.add(connection);
                     new Thread(connection).start();
                     logger.info("Connected to "
                             + client.getInetAddress().getHostName()
@@ -165,6 +169,11 @@ public class KVServer extends Thread implements IKVServer {
     @Override
     public void close() {
         running = false;
+
+        long start = System.currentTimeMillis();
+        long end = start + 5 * 1000L;
+        while (System.currentTimeMillis() < end) {}
+
         try {
             serverSocket.close();
         } catch (IOException e) {
@@ -221,7 +230,7 @@ public class KVServer extends Thread implements IKVServer {
 
     public ECSNode getMetadata() { return metadata; }
 
-    private boolean isRunning() {
+    public boolean isRunning() {
         return running;
     }
 

@@ -57,16 +57,36 @@ public class KVClientConnection implements Runnable {
 
             while (isOpen) {
                 try {
+                    boolean breaker = false;
+
                     // sometimes the client sends weird empty messages, so this loop ensures we ignore those
                     TextMessage latestMsg = null;
                     while (latestMsg == null || latestMsg.getMsg().trim().length() < 1) {
-                        latestMsg = messenger.receiveMessage();
+                        logger.info("I am stuck here");
+                        latestMsg = messenger.receiveMessage(server);
+
+                        if (!server.isRunning()) {
+                            breaker = true;
+                            break;
+                        }
+
+                        if (Objects.equals(latestMsg.getMsg(), "shutdown")) {
+                            breaker = true;
+                            break;
+                        }
+                    }
+                    if (breaker) {
+                        break;
                     }
 
                     message = new KVMessage(latestMsg);
                     KV = true;
 
-                    if (Objects.equals(message.toString(), "{}")) {
+                    logger.info(message);
+
+                    if (Objects.equals(message.toString(), "{\"index\":0}")) {
+                        logger.info("this is a server message!");
+                        logger.info(message);
                         servermessage = new ServerMessage(latestMsg);
                         KV = false;
                     }
@@ -146,6 +166,10 @@ public class KVClientConnection implements Runnable {
                                 response = new KVMessage("", "", IKVMessage.StatusType.SERVER_STOPPED);
                                 break;
                             }
+                            case SERVER_SHUTDOWN: {
+                                serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_SHUTDOWN);
+                                break;
+                            }
                             case SERVER_LOCK_WRITE: {
                                 server.lockWrite();
                                 // TODO: convert these into success and failure message (although idk how it could fail)
@@ -185,6 +209,10 @@ public class KVClientConnection implements Runnable {
                         messenger.sendMessage(new TextMessage(response));
                     } else {
                         messenger.sendMessage(new TextMessage(serverresponse));
+                        if (serverresponse.getStatus() == IServerMessage.StatusType.SERVER_SHUTDOWN) {
+                            logger.info("About to kill the whole server");
+                            server.kill();
+                        }
                     }
                     /* connection either terminated by the client or lost due to
                      * network problems*/
@@ -194,7 +222,19 @@ public class KVClientConnection implements Runnable {
                 }
             }
         } finally {
+            logger.info("I am about to die :)");
             messenger.closeConnections();
         }
+    }
+
+    public void ziSha() {
+        logger.info("About to kill myself");
+        // kills current thread
+        String me = null;
+        me.length();
+    }
+
+    public boolean getIsOpen() {
+        return isOpen;
     }
 }
