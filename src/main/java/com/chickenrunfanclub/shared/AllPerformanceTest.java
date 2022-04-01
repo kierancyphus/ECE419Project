@@ -1,4 +1,4 @@
-package com.chickenrunfanclub;
+package com.chickenrunfanclub.shared;
 
 
 import com.chickenrunfanclub.app_kvECS.ECSClient;
@@ -50,10 +50,6 @@ public class AllPerformanceTest {
 
     }
 
-    public static void main(String[] args) {
-        new AllPerformanceTest(args[0], Integer.parseInt(args[1]), args[2], Integer.parseInt(args[3]),
-                Integer.parseInt(args[4]), Double.parseDouble(args[5])).runEvaluation();
-    }
 
     public void runClientBatch(ArrayList<ClientThreadUtil> clients) {
         ArrayList<Thread> allThreads = new ArrayList<>();
