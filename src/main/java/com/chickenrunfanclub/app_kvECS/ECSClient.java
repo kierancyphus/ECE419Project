@@ -328,7 +328,8 @@ public class ECSClient implements IECSClient {
 
     @Override
     public IECSNode getNodeByKey(String key) {
-        return allServerMetadata.findServerResponsible(key);
+        // TODO: check where this is used
+        return allServerMetadata.findServerResponsible(key, true);
     }
 
     public boolean isRunning() {

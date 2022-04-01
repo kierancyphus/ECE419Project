@@ -17,7 +17,7 @@ public class ClientThreadUtil implements Runnable {
     public void run(){
         for (String i: map.keySet()) {
             try{
-                client.put(i, map.get(i));
+                client.put(i, map.get(i), 0);
             }catch (Exception e){
                 e.printStackTrace();
             }

@@ -5,12 +5,14 @@ import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
+import com.chickenrunfanclub.shared.Hasher;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.google.gson.Gson;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,6 +24,11 @@ public class KVServerTest {
     public void serverReturnsStoppedWithoutInitialization() {
         int port = 50005;
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
+        ECSNode node = new ECSNode("localhost", port, "0".repeat(32), "F".repeat(32), true, false);
+        AllServerMetadata asm = new AllServerMetadata();
+        asm.addNode(node);
+        server.replaceAllServerMetadata(asm);
+
         server.clearStorage();
         server.start();
         utils.stall(2);
@@ -39,7 +46,7 @@ public class KVServerTest {
     }
 
     @Test
-    public void serverNotReturnsStoppedAfterInitialization() throws Exception {
+    public void serverNotReturnsStoppedAfterInitialization() {
         int port = 50006;
 
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
@@ -90,7 +97,7 @@ public class KVServerTest {
         Exception ex = null;
         try {
             for (int i = 0; i < 10; i++) {
-                kvClient.put(String.valueOf(i), String.valueOf(i));
+                kvClient.put(String.valueOf(i), String.valueOf(i), 0);
             }
         } catch (Exception e) {
             ex = e;
@@ -104,7 +111,7 @@ public class KVServerTest {
         otherServer.replaceAllServerMetadata(allServerMetadata);
 
         // transfer data
-        server.moveData(allServerMetadata.findServerResponsible("localhost" + 50008));
+        server.moveData(allServerMetadata.findServerResponsible("localhost" + 50008, false));
         Set<String> transferredKeys = otherServer.listKeys();
         // these values were computed to be in the range. If the hash function is changed these will change too.
         Set<String> correctKeys = new HashSet<>(Arrays.asList("6", "9"));
@@ -129,7 +136,7 @@ public class KVServerTest {
         IKVMessage response = null;
         Exception ex = null;
         try {
-            response = kvClient.put("key", "value");
+            response = kvClient.put("key", "value", 0);
         } catch (Exception e) {
             ex = e;
         }
@@ -152,7 +159,7 @@ public class KVServerTest {
         IKVMessage response = null;
         Exception ex = null;
         try {
-            kvClient.put("key", "value");
+            kvClient.put("key", "value", 0);
 
             // have to lock here so we can make sure the key is in the server
             server.lockWrite();
@@ -179,12 +186,12 @@ public class KVServerTest {
         IKVMessage response = null;
         Exception ex = null;
         try {
-            kvClient.put("key", null);
+            kvClient.put("key", null, 0);
 
             // have to lock and unlock here so we can delete value first
             server.lockWrite();
             server.unLockWrite();
-            response = kvClient.put("key", "value");
+            response = kvClient.put("key", "value", 0);
         } catch (Exception e) {
             ex = e;
         }
@@ -217,10 +224,14 @@ public class KVServerTest {
         Exception ex = null;
 
         try {
-            response = kvClient.put("9", "who cares");
+            response = kvClient.put("a key it is not responsible for", "who cares", 0);
         } catch (Exception e) {
             ex = e;
         }
+
+//        System.out.println(server.getMetadata());
+//        System.out.println(Hasher.hash("a key it is not responsible for"));
+
         assertNull(ex);
         assertSame(IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE, response.getStatus());
         assertEquals(response.getKey(), new Gson().toJson(someMetadata, AllServerMetadata.class));
@@ -235,13 +246,11 @@ public class KVServerTest {
         server.clearStorage();
         server.start();
 
-
-        ECSNode node = new ECSNode("localhost", port, "A".repeat(32), "F".repeat(32), false, false);
-        ECSNode otherNode = new ECSNode("localhost", port + 1, "A".repeat(32), "F".repeat(32), false, false);
-
+        // we have to add a lot of metadata because it only returns not responsible on get when it's not in the chain
         AllServerMetadata someMetadata = new AllServerMetadata();
-        someMetadata.addNode(node);
-        someMetadata.addNode(otherNode);
+        List<ECSNode> nodes = utils.generateECSNodes(port);
+        nodes.forEach(someMetadata::addNode);
+
         server.replaceAllServerMetadata(someMetadata);
 
         utils.stall(1);
@@ -251,12 +260,15 @@ public class KVServerTest {
         Exception ex = null;
 
         try {
-            response = kvClient.get("4");
+            response = kvClient.get("not in replication chain");
         } catch (Exception e) {
             ex = e;
         }
+
+        System.out.println(response);
+
         assertNull(ex);
         assertSame(IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE, response.getStatus());
-        assertEquals(response.getKey(), new Gson().toJson(someMetadata, AllServerMetadata.class));
+        assertEquals(new Gson().toJson(someMetadata, AllServerMetadata.class), response.getKey());
     }
 }

@@ -142,7 +142,7 @@ public class KVClient implements IKVClient {
 
     private void handlePut(String key, String value) {
         try {
-            IKVMessage putMessage = kvStore.put(key, value);
+            IKVMessage putMessage = kvStore.put(key, value, 0);
             logger.info("Put has completed.");
             IKVMessage.StatusType status = putMessage.getStatus();
             if (status == IKVMessage.StatusType.PUT_SUCCESS) {
@@ -163,7 +163,7 @@ public class KVClient implements IKVClient {
 
     private void handleDelete(String key) {
         try {
-            IKVMessage delMessage = kvStore.put(key, null);
+            IKVMessage delMessage = kvStore.put(key, null, 0);
             IKVMessage.StatusType status = delMessage.getStatus();
             if (status == IKVMessage.StatusType.DELETE_SUCCESS) {
                 System.out.println(PROMPT + "Key Deletion successful");

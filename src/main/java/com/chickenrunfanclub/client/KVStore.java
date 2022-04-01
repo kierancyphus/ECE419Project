@@ -125,6 +125,14 @@ public class KVStore implements KVCommInterface {
         return new KVMessage(response);
     }
 
+    public IKVMessage sendAndReceiveMessage(String key, String value, IKVMessage.StatusType status, int index) throws Exception {
+        KVMessage message = new KVMessage(key, value, status, index);
+        TextMessage textMessage = new TextMessage(message);
+        messenger.sendMessage(textMessage);
+        TextMessage response = messenger.receiveMessage();
+        return new KVMessage(response);
+    }
+
 
     public IServerMessage sendAndReceiveServerMessage(IServerMessage.StatusType status, String address, int port) throws Exception {
         connect(address, port);
@@ -167,18 +175,18 @@ public class KVStore implements KVCommInterface {
         return response;
     }
 
-    @Override
-    public IKVMessage put(String key, String value) throws Exception {
+//    @Override
+    public IKVMessage put(String key, String value, int index) {
         IKVMessage.StatusType returnStatus = IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE;
         IKVMessage kvresponse = null;
         int attempts = 0;
 
         while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE && attempts < 3){
             try {
-                ECSNode node_responsible = this.meta.findServerResponsible(key);
+                ECSNode node_responsible = this.meta.findServerResponsible(key, false);
                 connect(node_responsible.getHost(), node_responsible.getPort());
 
-                kvresponse = sendAndReceiveMessage(key, value, IKVMessage.StatusType.PUT);
+                kvresponse = sendAndReceiveMessage(key, value, IKVMessage.StatusType.PUT, index);
                 returnStatus = kvresponse.getStatus();
 
                 if (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE) {
@@ -189,8 +197,10 @@ public class KVStore implements KVCommInterface {
                     }
                 }
                 disconnect();
-            } catch (SocketTimeoutException e){
+            } catch (IOException e){
                 this.meta = pollAll();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
             attempts++;
         }
@@ -198,7 +208,7 @@ public class KVStore implements KVCommInterface {
     }
 
     @Override
-    public IKVMessage get(String key) throws Exception {
+    public IKVMessage get(String key) {
         IKVMessage.StatusType returnStatus = IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE;
         IKVMessage kvresponse = null;
         int attempts = 0;
@@ -206,7 +216,7 @@ public class KVStore implements KVCommInterface {
 
         while (returnStatus == IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE && attempts < 3) {
             try {
-                ECSNode node_responsible = this.meta.findServerResponsible(key);
+                ECSNode node_responsible = this.meta.findServerResponsible(key, true);
                 connect(node_responsible.getHost(), node_responsible.getPort());
 
                 kvresponse = sendAndReceiveMessage(key, null, IKVMessage.StatusType.GET);
@@ -220,8 +230,10 @@ public class KVStore implements KVCommInterface {
                     }
                 }
                 disconnect();
-            } catch (SocketTimeoutException e) {
+            } catch (IOException e) {
                 this.meta = pollAll();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             attempts++;
