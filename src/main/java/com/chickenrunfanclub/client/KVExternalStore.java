@@ -30,6 +30,10 @@ public class KVExternalStore implements IKVExternalStore {
 
     @Override
     public IKVMessage get(String key) {
+        if ((username == null) || (password == null)) {
+            return new KVMessage(key, null, IKVMessage.StatusType.NO_CREDENTIALS);
+        }
+
         IKVMessage kvresponse = null;
         int attempts = 0;
 
@@ -52,6 +56,10 @@ public class KVExternalStore implements IKVExternalStore {
 
     @Override
     public IKVMessage put(String key, String value, int index) {
+        if ((username == null) || (password == null)) {
+            return new KVMessage(key, value, IKVMessage.StatusType.NO_CREDENTIALS);
+        }
+
         IKVMessage kvresponse = null;
         int attempts = 0;
 

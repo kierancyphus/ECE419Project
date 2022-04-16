@@ -11,10 +11,8 @@ import org.apache.logging.log4j.core.config.Configurator;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.UnknownHostException;
 
-public class KVClient implements IKVClient {
-
+public class KVClient {
     private static Logger logger = LogManager.getLogger(KVClient.class);
     private static final String PROMPT = "KVClient> ";
     private final String configFile;
@@ -22,12 +20,8 @@ public class KVClient implements IKVClient {
     private KVExternalStore store;
     private boolean stop = false;
 
-    private String serverAddress;
-    private int serverPort;
-
     public KVClient(String configFile){
         this.configFile = configFile;
-//        kvStore = new KVStore(configFile, true);
         store = new KVExternalStore(configFile);
 
     }
@@ -48,7 +42,6 @@ public class KVClient implements IKVClient {
     }
 
     private void handleCommand(String cmdLine) {
-        // TODO Figure out if splitting by all whitespace is ok or if we should like be more careful since when we parse it back we just add spaces and like that's def not ideal and jsut not good
         if (cmdLine == null) {
             return;
         }
@@ -136,6 +129,8 @@ public class KVClient implements IKVClient {
                 System.out.println(PROMPT + "Key Value Update successful");
             } else if (status == IKVMessage.StatusType.PUT_ERROR) {
                 printError("Update/Insertion Unsuccessful!");
+            } else if (status == IKVMessage.StatusType.NO_CREDENTIALS) {
+                printError("Need to login before making requests!");
             } else {
                 printError("Unable to execute command!");
                 disconnect();
@@ -154,6 +149,8 @@ public class KVClient implements IKVClient {
                 System.out.println(PROMPT + "Key Deletion successful");
             } else if (status == IKVMessage.StatusType.DELETE_ERROR) {
                 printError("Key Deletion Unsuccessful!");
+            } else if (status == IKVMessage.StatusType.NO_CREDENTIALS) {
+                printError("Need to login before making requests!");
             } else {
                 printError("Unable to execute command!");
                 disconnect();
@@ -181,23 +178,14 @@ public class KVClient implements IKVClient {
                 System.out.println(value);
             } else if (status == IKVMessage.StatusType.GET_ERROR) {
                 printError("Get Unsuccessful!");
+            } else if (status == IKVMessage.StatusType.NO_CREDENTIALS) {
+                printError("Need to login before making requests!");
             } else {
                 printError("Unable to execute command!");
             }
         } catch (Exception e) {
             printError("Unable to execute command!");
-//            disconnect();
         }
-    }
-
-    @Override
-    public void newConnection(String hostname, int port) throws IOException, UnknownHostException {
-//        kvStore = new KVStore(config_file, true);
-//        try {
-//            kvStore.connect(hostname, port);
-//        } catch (Exception e) {
-//            logger.info("Error! Could not establish connection");
-//        }
     }
 
     private void disconnect() {
