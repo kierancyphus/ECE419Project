@@ -55,7 +55,7 @@ public class TextMessage implements Serializable {
     }
 
     /**
-     * Constructs a TextMessage object with a given IKVMessage that
+     * Constructs a TextMessage object with a given IServerMessage that
      * forms the message.
      *
      * @param msg the String that forms the message.
@@ -69,12 +69,26 @@ public class TextMessage implements Serializable {
     }
 
     /**
-     * Constructs a TextMessage object with a given IKVMessage that
+     * Constructs a TextMessage object with a given IECSMessage that
      * forms the message.
      *
      * @param msg the String that forms the message.
      */
     public TextMessage(IECSMessage msg) {
+        if (msg == null) {
+            logger.info("Received null message");
+        }
+        this.msg = msg.toString();
+        this.msgBytes = toByteArray(msg.toString());
+    }
+
+    /**
+     * Constructs a TextMessage object with a given IAuthMessage that
+     * forms the message.
+     *
+     * @param msg the String that forms the message.
+     */
+    public TextMessage(IAuthMessage msg) {
         if (msg == null) {
             logger.info("Received null message");
         }
