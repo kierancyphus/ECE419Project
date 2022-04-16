@@ -26,11 +26,8 @@ public class KVStore implements KVCommInterface {
     private Logger logger = LogManager.getLogger(KVStore.class);
     private AllServerMetadata meta;
     private boolean running;
-
     private Socket clientSocket;
 
-    private static final int BUFFER_SIZE = 1024;
-    private static final int DROP_SIZE = 1024 * BUFFER_SIZE;
 
     public KVStore(String address, int port, AllServerMetadata asm) {
         this.meta = asm;
