@@ -180,7 +180,6 @@ public class ECSClient implements IECSClient {
                     KVStore client = new KVStore(serverToAdd.getHost(), serverToAdd.getPort());
                     client.connect(serverToAdd.getHost(), serverToAdd.getPort());
                     client.disconnect();
-                    System.out.println("I am here");
                     // client.shutDown();
                     break;
                 } catch (Exception e) {
