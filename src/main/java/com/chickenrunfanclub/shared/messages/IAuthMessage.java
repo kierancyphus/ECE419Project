@@ -3,8 +3,10 @@ package com.chickenrunfanclub.shared.messages;
 public interface IAuthMessage {
 
     public enum StatusType {
+        ADD,                         /* Request to add username password pair */
         ADD_SUCCESS,                 /* username password pair added successfully */
         ADD_ERROR,                   /* username password pair could not be added */
+        AUTH,                        /* Request to authenticate */
         AUTH_SUCCESS,                /* Authentification successful */
         AUTH_ERROR,                  /* Authentification unsuccessful */
         FAILED,                      /* Operation failed */
