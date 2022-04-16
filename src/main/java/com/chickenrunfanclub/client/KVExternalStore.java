@@ -24,6 +24,7 @@ public class KVExternalStore implements IKVExternalStore {
     public KVExternalStore(String configFile) {
         // for ease of implementation we'll keep using asm, with just a single entry being responsible for everything
         this.asm = new AllServerMetadata(configFile);
+        this.asm.getAllNodes().forEach(asm::addNodeToHashRing);
     }
 
 
