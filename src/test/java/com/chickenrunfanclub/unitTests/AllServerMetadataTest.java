@@ -7,6 +7,7 @@ import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
 import com.chickenrunfanclub.shared.messages.ServerMessage;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -122,6 +123,7 @@ public class AllServerMetadataTest {
         assertTrue(getChain.contains(nodes.get(7)));
     }
 
+    @Disabled
     @Test
     public void helper() throws Exception {
 //        AllServerMetadata asm = new AllServerMetadata();

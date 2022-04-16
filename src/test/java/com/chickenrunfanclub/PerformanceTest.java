@@ -29,7 +29,7 @@ public class PerformanceTest {
         utils.stall(1);
     }
     
-//    @Disabled
+    @Disabled
     @Test
     public void test8020() {
         KVStore kvClient = new KVStore("localhost", port);
@@ -47,7 +47,7 @@ public class PerformanceTest {
         assertNull(ex);
     }
 
-//    @Disabled
+    @Disabled
     @Test
     public void test6535() {
         KVStore kvClient = new KVStore("localhost", port);
@@ -65,7 +65,7 @@ public class PerformanceTest {
         assertNull(ex);
     }
 
-//    @Disabled
+    @Disabled
     @Test
     public void test5050() {
         KVStore kvClient = new KVStore("localhost", port);
@@ -83,7 +83,7 @@ public class PerformanceTest {
         assertNull(ex);
     }
 
-//    @Disabled
+    @Disabled
     @Test
     public void test3565() {
         KVStore kvClient = new KVStore("localhost", port);
@@ -101,7 +101,7 @@ public class PerformanceTest {
         assertNull(ex);
     }
 
-//    @Disabled
+    @Disabled
     @Test
     public void test2080() {
         KVStore kvClient = new KVStore("localhost", port);
