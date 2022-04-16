@@ -26,7 +26,7 @@ public interface IAuthMessage {
      * @return a status string that is used to identify request types,
      * response types and error types associated to the message.
      */
-    public IServerMessage.StatusType getStatus();
+    public IAuthMessage.StatusType getStatus();
 
     /**
      * @return a string in the form `status key value` to be used in message passing
