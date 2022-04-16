@@ -1,7 +1,6 @@
 package com.chickenrunfanclub.app_kvClient;
 
-import com.chickenrunfanclub.client.KVCommInterface;
-import com.chickenrunfanclub.client.KVStore;
+import com.chickenrunfanclub.client.KVExternalStore;
 import com.chickenrunfanclub.logger.LogSetup;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import org.apache.logging.log4j.Level;
@@ -18,18 +17,19 @@ public class KVClient implements IKVClient {
 
     private static Logger logger = LogManager.getLogger(KVClient.class);
     private static final String PROMPT = "KVClient> ";
-    private final String config_file;
+    private final String configFile;
     private BufferedReader stdin;
-    private KVStore kvStore = null;
+    private KVExternalStore store;
     private boolean stop = false;
 
     private String serverAddress;
     private int serverPort;
 
-    public KVClient(String config_file){
+    public KVClient(String configFile){
+        this.configFile = configFile;
+//        kvStore = new KVStore(configFile, true);
+        store = new KVExternalStore(configFile);
 
-        this.config_file = config_file;
-        kvStore = new KVStore(config_file, true);
     }
 
     public void run() {
@@ -60,30 +60,9 @@ public class KVClient implements IKVClient {
             disconnect();
             System.out.println(PROMPT + "Application exit!");
 
-        } else if (tokens[0].equals("connect")) {
-            if (tokens.length == 3) {
-                try {
-                    serverAddress = tokens[1];
-                    serverPort = Integer.parseInt(tokens[2]);
-                    newConnection(serverAddress, serverPort);
-                    logger.info("Created new connection at " + serverAddress + ":" + serverPort);
-                } catch (NumberFormatException nfe) {
-                    printError("No valid address. Port must be a number!");
-                    logger.info("Unable to parse argument <port>", nfe);
-                } catch (UnknownHostException e) {
-                    printError("Unknown Host!");
-                    logger.info("Unknown Host!", e);
-                } catch (IOException e) {
-                    printError("Could not establish connection!");
-                    logger.warn("Could not establish connection!", e);
-                }
-            } else {
-                printError("Invalid number of parameters!");
-            }
-
         } else if (tokens[0].equals("put")) {
             if (tokens.length >= 2) {
-                if (kvStore != null && kvStore.isRunning()) {
+                if (store != null) {
                     StringBuilder value = new StringBuilder();
                     if (tokens.length > 2) {
                         for (int i = 2; i < tokens.length; i++) {
@@ -105,7 +84,7 @@ public class KVClient implements IKVClient {
 
         } else if (tokens[0].equals("get")) {
             if (tokens.length == 2) {
-                if (kvStore != null && kvStore.isRunning()) {
+                if (store != null) {
                     get(tokens[1]);
                 } else {
                     printError("Not connected!");
@@ -115,10 +94,6 @@ public class KVClient implements IKVClient {
             } else {
                 printError("Too many arguments!");
             }
-
-        } else if (tokens[0].equals("disconnect")) {
-            disconnect();
-            System.out.println(PROMPT + "Application exit!");
 
         } else if (tokens[0].equals("logLevel")) {
             if (tokens.length == 2) {
@@ -134,7 +109,15 @@ public class KVClient implements IKVClient {
                 printError("Invalid number of parameters!");
             }
 
-        } else if (tokens[0].equals("help")) {
+        } else if (tokens[0].equals("login")) {
+            if (tokens.length == 3) {
+                handleLogin(tokens[1], tokens[2]);
+            } else {
+                printError("Invalid number of parameters!");
+            }
+        }
+
+        else if (tokens[0].equals("help")) {
             printHelp();
         } else {
             printError("Unknown command");
@@ -144,7 +127,7 @@ public class KVClient implements IKVClient {
 
     private void handlePut(String key, String value) {
         try {
-            IKVMessage putMessage = kvStore.put(key, value, 0);
+            IKVMessage putMessage = store.put(key, value, 0);
             logger.info("Put has completed.");
             IKVMessage.StatusType status = putMessage.getStatus();
             if (status == IKVMessage.StatusType.PUT_SUCCESS) {
@@ -165,7 +148,7 @@ public class KVClient implements IKVClient {
 
     private void handleDelete(String key) {
         try {
-            IKVMessage delMessage = kvStore.put(key, null, 0);
+            IKVMessage delMessage = store.put(key, null, 0);
             IKVMessage.StatusType status = delMessage.getStatus();
             if (status == IKVMessage.StatusType.DELETE_SUCCESS) {
                 System.out.println(PROMPT + "Key Deletion successful");
@@ -181,10 +164,17 @@ public class KVClient implements IKVClient {
         }
     }
 
+    public void handleLogin(String username, String password) {
+        store.setUsername(username);
+        store.setPassword(password);
+        System.out.println("Remembered username and password. Note that if this fails internally an error message will" +
+                "be returned then");
+    }
+
 
     private void get(String key) {
         try {
-            IKVMessage getMessage = kvStore.get(key);
+            IKVMessage getMessage = store.get(key);
             String value = getMessage.getValue();
             IKVMessage.StatusType status = getMessage.getStatus();
             if (status == IKVMessage.StatusType.GET_SUCCESS) {
@@ -211,9 +201,9 @@ public class KVClient implements IKVClient {
     }
 
     private void disconnect() {
-        if (kvStore != null) {
-            kvStore.closeConnection();
-            kvStore = null;
+        if (store != null) {
+            store.disconnect();
+            store = null;
         }
     }
 
@@ -223,21 +213,19 @@ public class KVClient implements IKVClient {
         sb.append(PROMPT);
         sb.append("::::::::::::::::::::::::::::::::");
         sb.append("::::::::::::::::::::::::::::::::\n");
-        sb.append(PROMPT).append("connect <host> <port>");
-        sb.append("\t establishes a connection to a server\n");
+        sb.append(PROMPT).append("login <username> <password>");
+        sb.append("\t\t Saves the credential in the client. Note that actual authentication occurs on put and get \n");
         sb.append(PROMPT).append("put <key> <value>");
         sb.append("\t\t inserts updates a key value pair, If no value is given the key is deleted \n");
         sb.append(PROMPT).append("get <key>");
         sb.append("\t\t gets corresponding value of a key\n");
-        sb.append(PROMPT).append("disconnect");
-        sb.append("\t\t\t disconnects from the server \n");
         sb.append(PROMPT).append("logLevel");
         sb.append("\t\t\t changes the logLevel \n");
         sb.append(PROMPT).append("\t\t\t\t ");
         sb.append("ALL | DEBUG | INFO | WARN | ERROR | FATAL | OFF \n");
-        sb.append(PROMPT).append("quit ");
+        sb.append(PROMPT).append("quit");
         sb.append("\t\t\t exits the program");
-        System.out.println(sb.toString());
+        System.out.println(sb);
     }
 
     private void printPossibleLogLevels() {
@@ -276,11 +264,5 @@ public class KVClient implements IKVClient {
 
     private void printError(String error) {
         System.out.println(PROMPT + "Error! " + error);
-    }
-
-    @Override
-    public KVCommInterface getStore() {
-        // TODO Auto-generated method stub
-        return kvStore;
     }
 }
