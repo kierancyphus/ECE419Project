@@ -2,6 +2,7 @@ package com.chickenrunfanclub.unitTests;
 
 import com.chickenrunfanclub.TestUtils;
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
+import com.chickenrunfanclub.app_kvECS.ECSClient;
 import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
@@ -9,6 +10,7 @@ import com.chickenrunfanclub.shared.Hasher;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.IServerMessage;
 import com.google.gson.Gson;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -73,11 +75,17 @@ public class KVServerTest {
         assertNotSame(response.getStatus(), IKVMessage.StatusType.SERVER_STOPPED);
     }
 
+    @Disabled
     @Test
     public void serverUpdatesAllMetadata() {
-        int port = 50099;
+        int port = 50006;
 
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
+        AllServerMetadata asm = new AllServerMetadata();
+        ECSNode node = new ECSNode("localhost", port, null, null, false, false);
+        asm.addNodeToHashRing(node);
+        server.replaceAllServerMetadata(asm);
+
         server.clearStorage();
         server.start();
 //        server.updateServerStopped(false);
@@ -87,7 +95,7 @@ public class KVServerTest {
         IKVMessage response = null;
         Exception ex = null;
 
-        AllServerMetadata asm = new AllServerMetadata();
+        asm = new AllServerMetadata();
 
 
         try {
