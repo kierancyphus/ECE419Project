@@ -1,9 +1,9 @@
 package com.chickenrunfanclub.app_kvServer;
 
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
-import com.chickenrunfanclub.client.KVStore;
+import com.chickenrunfanclub.client.KVInternalStore;
 import com.chickenrunfanclub.ecs.ECSNode;
-import com.chickenrunfanclub.shared.Hasher;
+import com.chickenrunfanclub.shared.IRunning;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,7 +14,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
-public class KVServer extends Thread implements IKVServer {
+public class KVServer extends Thread implements IKVServer, IRunning {
     private int port;
     private int cacheSize;
     private IKVServer.CacheStrategy strategy;
@@ -193,13 +193,13 @@ public class KVServer extends Thread implements IKVServer {
 
     @Override
     public boolean moveData(ECSNode node) {
-        KVStore kvClient = new KVStore(node.getHost(), node.getPort());
+        KVInternalStore store = new KVInternalStore(allServerMetadata);
         List<Map.Entry<String, String>> failed = new ArrayList<>();
 
         this.repo.getEntriesInHashRange(node)
                 .forEach(entry -> {
                     try {
-                        kvClient.moveDataPut(entry.getKey(), entry.getValue(), node.getHost(), node.getPort());
+                        store.moveDataPut(entry.getKey(), entry.getValue(), node.getHost(), node.getPort());
                     } catch (Exception e) {
                         failed.add(entry);
                     }

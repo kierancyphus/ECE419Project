@@ -69,7 +69,7 @@ public class AllServerMetadata {
             }
         } catch (FileNotFoundException e) {
             System.out.println("Configuration file not found");
-            e.printStackTrace();
+            logger.debug(e);
             System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();

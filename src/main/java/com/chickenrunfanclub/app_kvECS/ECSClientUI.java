@@ -63,7 +63,7 @@ public class ECSClientUI {
         messenger = new Messenger(clientSocket);
         connected = true;
         setRunning(true);
-        logger.info("Connection established");
+        logger.debug("Connection established");
     }
 
     public void disconnect() {

@@ -2,11 +2,10 @@ package com.chickenrunfanclub.unitTests;
 
 import com.chickenrunfanclub.TestUtils;
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
-import com.chickenrunfanclub.app_kvECS.ECSClient;
 import com.chickenrunfanclub.app_kvServer.KVServer;
+import com.chickenrunfanclub.client.KVInternalStore;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
-import com.chickenrunfanclub.shared.Hasher;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.IServerMessage;
 import com.google.gson.Gson;
@@ -28,6 +27,7 @@ public class KVServerTest {
     public void serverReturnsStoppedWithoutInitialization() {
         int port = 50005;
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
+
         ECSNode node = new ECSNode("localhost", port, "0".repeat(32), "F".repeat(32), true, false);
         AllServerMetadata asm = new AllServerMetadata();
         asm.addNodeToHashRing(node);
@@ -37,11 +37,12 @@ public class KVServerTest {
         server.start();
         utils.stall(2);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_1.cfg", true);
+        KVInternalStore client = new KVInternalStore(asm);
+
         IKVMessage response = null;
         Exception ex = null;
         try {
-            response = kvClient.get("something");
+            response = client.get("something");
         } catch (Exception e) {
             ex = e;
         }
@@ -54,19 +55,24 @@ public class KVServerTest {
         int port = 50006;
 
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
+
+        ECSNode node = new ECSNode("localhost", port, "0".repeat(32), "F".repeat(32), true, false);
+        AllServerMetadata asm = new AllServerMetadata();
+        asm.addNodeToHashRing(node);
+        server.replaceAllServerMetadata(asm);
+
         server.clearStorage();
         server.start();
-//        server.updateServerStopped(false);
         utils.stall(1);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_2.cfg", true);
+        KVInternalStore client = new KVInternalStore(asm);
         IKVMessage response = null;
         Exception ex = null;
 
 
         try {
-            kvClient.start("localhost", port);
-            response = kvClient.get("something");
+            client.start("localhost", port);
+            response = client.get("something");
         } catch (Exception e) {
             ex = e;
         }
@@ -88,19 +94,17 @@ public class KVServerTest {
 
         server.clearStorage();
         server.start();
-//        server.updateServerStopped(false);
         utils.stall(1);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_2.cfg", true);
-        IKVMessage response = null;
+        KVInternalStore client = new KVInternalStore(asm);
         Exception ex = null;
 
         asm = new AllServerMetadata();
 
 
         try {
-            kvClient.start("localhost", port);
-            kvClient.updateAllMetadata(asm, "localhost", port);
+            client.start("localhost", port);
+            client.updateAllMetadata(asm, "localhost", port);
 //            response = kvClient.get("something");
         } catch (Exception e) {
             ex = e;
@@ -133,11 +137,14 @@ public class KVServerTest {
         utils.stall(2);
 
         // populate original server
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_3.cfg", true);
+        AllServerMetadata clientMetadata = new AllServerMetadata();
+        clientMetadata.addNodeToHashRing(firstNode);
+        KVInternalStore client = new KVInternalStore(clientMetadata);
+
         Exception ex = null;
         try {
             for (int i = 0; i < 10; i++) {
-                kvClient.put(String.valueOf(i), String.valueOf(i), 0);
+                client.put(String.valueOf(i), String.valueOf(i), 0);
             }
         } catch (Exception e) {
             ex = e;
@@ -166,17 +173,22 @@ public class KVServerTest {
 
         // initialize original server
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
+        AllServerMetadata asm = new AllServerMetadata();
+        ECSNode node = new ECSNode("localhost", port, null, null, false, false);
+        asm.addNodeToHashRing(node);
+        server.replaceAllServerMetadata(asm);
+
         server.clearStorage();
         server.start();
         server.updateServerStopped(false);
         server.lockWrite();
         utils.stall(1);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_4.cfg", true);
+        KVInternalStore client = new KVInternalStore(asm);
         IKVMessage response = null;
         Exception ex = null;
         try {
-            response = kvClient.put("key", "value", 0);
+            response = client.put("key", "value", 0);
         } catch (Exception e) {
             ex = e;
         }
@@ -190,20 +202,25 @@ public class KVServerTest {
 
         // initialize original server
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer");
+        AllServerMetadata asm = new AllServerMetadata();
+        ECSNode node = new ECSNode("localhost", port, null, null, false, false);
+        asm.addNodeToHashRing(node);
+        server.replaceAllServerMetadata(asm);
+
         server.clearStorage();
         server.start();
         server.updateServerStopped(false);
         utils.stall(1);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_5.cfg", true);
+        KVInternalStore client = new KVInternalStore(asm);
         IKVMessage response = null;
         Exception ex = null;
         try {
-            kvClient.put("key", "value", 0);
+            client.put("key", "value", 0);
 
             // have to lock here so we can make sure the key is in the server
             server.lockWrite();
-            response = kvClient.get("key");
+            response = client.get("key");
         } catch (Exception e) {
             ex = e;
         }
@@ -217,21 +234,24 @@ public class KVServerTest {
 
         // initialize original server
         KVServer server = new KVServer(port, 10, "FIFO", "./testStore/KVServer/" + port);
+        AllServerMetadata asm = new AllServerMetadata();
+        ECSNode node = new ECSNode("localhost", port, null, null, false, false);
+        asm.addNodeToHashRing(node);
+        server.replaceAllServerMetadata(asm);
+
         server.clearStorage();
         server.start();
         server.updateServerStopped(false);
         utils.stall(1);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_6.cfg", true);
+        KVInternalStore client = new KVInternalStore(asm);
         IKVMessage response = null;
         Exception ex = null;
         try {
-            kvClient.put("key", null, 0);
-
             // have to lock and unlock here so we can delete value first
             server.lockWrite();
             server.unLockWrite();
-            response = kvClient.put("key", "value", 0);
+            response = client.put("key", "value", 0);
         } catch (Exception e) {
             ex = e;
         }
@@ -239,8 +259,12 @@ public class KVServerTest {
         assertSame(IKVMessage.StatusType.PUT_SUCCESS, response.getStatus());
     }
 
+    @Disabled
     @Test
     public void serverReturnsNotResponsibleWithMetadataWhenPut() {
+        // Note for M4, we no longer need to send an update of the metadata since everything that needs it will be
+        // directly updated by ECS
+
         int port = 50012;
 
         // initialize original server
@@ -274,8 +298,11 @@ public class KVServerTest {
         assertEquals(response.getKey(), new Gson().toJson(someMetadata, AllServerMetadata.class));
     }
 
+    @Disabled
     @Test
     public void serverReturnsNotResponsibleWithMetadataWhenGet() {
+        // same as above
+
         int port = 50013;
 
         // initialize original server
@@ -324,12 +351,12 @@ public class KVServerTest {
 
         utils.stall(2);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_9.cfg", true);
+        KVInternalStore client = new KVInternalStore(asm);
         IKVMessage response = null;
         Exception ex = null;
 
         try {
-            response = kvClient.put("something", "else", 0);
+            response = client.put("something", "else", 0);
         } catch (Exception e) {
             ex = e;
         }
@@ -359,12 +386,12 @@ public class KVServerTest {
 
         utils.stall(2);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_10.cfg", true);
+        KVInternalStore client = new KVInternalStore(asm);
         IKVMessage response = null;
         Exception ex = null;
 
         try {
-            response = kvClient.put("something", "else", 0);
+            response = client.put("something", "else", 0);
         } catch (Exception e) {
             ex = e;
         }
@@ -395,13 +422,13 @@ public class KVServerTest {
 
         utils.stall(2);
 
-        KVStore kvClient = new KVStore("./src/test/resources/servers_kv_11.cfg", true);
+        KVInternalStore client = new KVInternalStore(asm);
         IKVMessage response = null;
         Exception ex = null;
 
         try {
-            kvClient.put("something", "else", 0);
-            response = kvClient.put("something", null, 0);
+            client.put("something", "else", 0);
+            response = client.put("something", null, 0);
         } catch (Exception e) {
             ex = e;
         }
@@ -492,6 +519,6 @@ public class KVServerTest {
         }
         assertNull(ex);
         assertSame(IServerMessage.StatusType.SERVER_HEARTBEAT, response.getStatus());
-        assertTrue("Hello".equals(response.getKey()));
+        assertEquals("Hello", response.getKey());
     }
 }

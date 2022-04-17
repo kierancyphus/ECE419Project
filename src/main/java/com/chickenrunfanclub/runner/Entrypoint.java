@@ -3,6 +3,7 @@ package com.chickenrunfanclub.runner;
 import com.chickenrunfanclub.app_kvAPI.KVAPIGateway;
 import com.chickenrunfanclub.app_kvAuth.AuthClient;
 import com.chickenrunfanclub.app_kvAuth.AuthService;
+import com.chickenrunfanclub.apiGateway.ApiGateway;
 import com.chickenrunfanclub.app_kvClient.KVClient;
 import com.chickenrunfanclub.app_kvECS.ECSClient;
 import com.chickenrunfanclub.app_kvECS.ECSClientUI;
@@ -175,6 +176,28 @@ public class Entrypoint {
         }
     }
 
+    public static void runApiGateway(String[] args) {
+        try {
+            new LogSetup("logs/server.log", Level.ALL);
+            if (args.length != 1) {
+                System.out.println("Error! Invalid number of arguments!");
+                System.out.println("Usage: api <port>!");
+            } else {
+                int port = Integer.parseInt(args[0]);
+                new ApiGateway(port).start();
+                System.out.println("Api Gateway started by ssh");
+            }
+        } catch (IOException e) {
+            System.out.println("Error! Unable to initialize logger!");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (NumberFormatException nfe) {
+            System.out.println("Error! Invalid argument <port>! Not a number!");
+            System.out.println("Usage: Server <port>!");
+            System.exit(1);
+        }
+    }
+
     /**
      * Main entry point for the m1 server application.
      *
@@ -196,6 +219,8 @@ public class Entrypoint {
             runPerformanceTest(Arrays.copyOfRange(args, 1, args.length));
         } else if (Objects.equals(args[0], "auth")) {
             runAuthService(Arrays.copyOfRange(args, 1, args.length));
+        } else if (Objects.equals(args[0], "api")) {
+            runApiGateway(Arrays.copyOfRange(args, 1, args.length));
         } else {
             System.out.println("Error! Not specified if server or client");
             System.out.println("Usage: \"./gradlew run --args=\"server\" \" or \"./gradlew run --args=\"client\" --console=plain\"");
