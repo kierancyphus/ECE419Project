@@ -6,10 +6,16 @@ public interface IAuthMessage {
         ADD,                         /* Request to add username password pair */
         ADD_SUCCESS,                 /* username password pair added successfully */
         ADD_ERROR,                   /* username password pair could not be added */
+        PASSWORD_UPDATE,             /* Updated a user's password */
         AUTH,                        /* Request to authenticate */
         AUTH_SUCCESS,                /* Authentification successful */
         AUTH_ERROR,                  /* Authentification unsuccessful */
         FAILED,                      /* Operation failed */
+        DELETE,                      /* Delete a user */
+        GET_SUCCESS,
+        GET_ERROR,
+        DELETE_SUCCESS,
+        DELETE_ERROR
     }
 
     /**

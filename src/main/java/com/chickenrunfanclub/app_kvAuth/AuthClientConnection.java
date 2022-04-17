@@ -55,8 +55,14 @@ public class AuthClientConnection implements Runnable {
                             } catch (Exception e) {
                                 response = new AuthMessage(message.getKey(), null, IAuthMessage.StatusType.FAILED);
                             }
-
-                            // response = ecs.removeNode(Integer.parseInt(message.getKey()));
+                            break;
+                        }
+                        case DELETE: {
+                            try {
+                                response = auth.delete(message.getKey());
+                            } catch (Exception e) {
+                                response = new AuthMessage(message.getKey(), null, IAuthMessage.StatusType.FAILED);
+                            }
                             break;
                         }
                     }

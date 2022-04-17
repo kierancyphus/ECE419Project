@@ -68,11 +68,17 @@ public class AuthClient implements IAuthClient{
 
     @Override
     public IAuthMessage add(String username, String password) throws Exception {
+        System.out.println("sending");
         return sendAndReceiveMessage(username, password, IAuthMessage.StatusType.ADD);
     }
 
     @Override
     public IAuthMessage authenticate(String username, String password) throws Exception {
         return sendAndReceiveMessage(username, password, IAuthMessage.StatusType.AUTH);
+    }
+
+    @Override
+    public IAuthMessage delete(String username) throws Exception {
+        return sendAndReceiveMessage(username, null, IAuthMessage.StatusType.DELETE);
     }
 }

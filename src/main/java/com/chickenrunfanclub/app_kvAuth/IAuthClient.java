@@ -23,4 +23,6 @@ public interface IAuthClient {
 
     public IAuthMessage authenticate(String username, String password) throws Exception;
 
+    public IAuthMessage delete(String username) throws Exception;
+
 }
