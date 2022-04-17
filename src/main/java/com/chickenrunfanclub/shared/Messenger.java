@@ -143,7 +143,7 @@ public class Messenger {
         return msg;
     }
 
-    public TextMessage receiveMessage(KVServer server) throws IOException {
+    public TextMessage receiveMessage(IRunning server) throws IOException {
         int index = 0;
         byte[] msgBytes = null, tmp = null;
         byte[] bufferBytes = new byte[BUFFER_SIZE];

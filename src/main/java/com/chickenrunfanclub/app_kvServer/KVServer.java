@@ -3,6 +3,7 @@ package com.chickenrunfanclub.app_kvServer;
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.client.KVInternalStore;
 import com.chickenrunfanclub.ecs.ECSNode;
+import com.chickenrunfanclub.shared.IRunning;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,7 +14,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
-public class KVServer extends Thread implements IKVServer {
+public class KVServer extends Thread implements IKVServer, IRunning {
     private int port;
     private int cacheSize;
     private IKVServer.CacheStrategy strategy;
