@@ -89,7 +89,7 @@ public class Entrypoint {
                 int port = Integer.parseInt(args[0]);
                 int cacheSize = Integer.parseInt(args[1]);
                 String strategy = args[2];
-                new KVServer(port, cacheSize, strategy).start();
+                new KVServer(port, cacheSize, strategy, "./store").start();
                 System.out.println("server started by ssh");
             }
         } catch (IOException e) {

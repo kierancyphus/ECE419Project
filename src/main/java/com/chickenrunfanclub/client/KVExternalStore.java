@@ -34,10 +34,10 @@ public class KVExternalStore implements IKVExternalStore {
             return new KVMessage(key, null, IKVMessage.StatusType.NO_CREDENTIALS);
         }
 
-        IKVMessage kvresponse = new KVMessage(key, null, IKVMessage.StatusType.GET_ERROR);
+        IKVMessage kvresponse = new KVMessage(key, null, IKVMessage.StatusType.FAILED);
         int attempts = 0;
 
-        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.GET_ERROR) {
+        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.FAILED) {
             try {
                 ECSNode nodeResponsible = asm.findServerResponsible(key, true);
 
@@ -45,7 +45,7 @@ public class KVExternalStore implements IKVExternalStore {
                 kvresponse = sendAndReceiveMessage(key, null, IKVMessage.StatusType.GET, 0, username, password);
                 disconnect();
             } catch (Exception e) {
-                logger.debug(e);
+                logger.info(e);
             }
 
             attempts++;
@@ -60,12 +60,13 @@ public class KVExternalStore implements IKVExternalStore {
             return new KVMessage(key, value, IKVMessage.StatusType.NO_CREDENTIALS);
         }
 
-        IKVMessage kvresponse = new KVMessage(key, value, IKVMessage.StatusType.PUT_ERROR);
+        IKVMessage kvresponse = new KVMessage(key, value, IKVMessage.StatusType.FAILED);
         int attempts = 0;
 
-        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.PUT_ERROR) {
+        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.FAILED) {
             try {
                 ECSNode node_responsible = asm.findServerResponsible(key, false);
+                logger.info("Connecting to " + node_responsible.getHost() + "@" + node_responsible.getPort());
                 connect(node_responsible.getHost(), node_responsible.getPort());
 
                 kvresponse = sendAndReceiveMessage(key, value, IKVMessage.StatusType.PUT, index, username, password);

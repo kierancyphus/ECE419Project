@@ -5,7 +5,7 @@ This project uses gradle, but if it's not installed on the machine can always us
 ### Server
 `./gradlew run --args="server 50000 1000 LRU"`
 ### Client
-`./gradlew run --args="client servers.cfg" --console=plain`
+`./gradlew run --args="client apiGateway.cfg" --console=plain`
 ### ECS UI
 `./gradlew run --args="ecsUI" --console=plain`
 ### ECS

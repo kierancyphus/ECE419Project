@@ -47,7 +47,6 @@ public class KVClientConnection implements Runnable {
      */
     public void run() {
         try {
-
             KVMessage message = null;
             IKVMessage response = null;
             IServerMessage servermessage = null;
@@ -61,6 +60,7 @@ public class KVClientConnection implements Runnable {
                     TextMessage latestMsg = null;
                     while (latestMsg == null || latestMsg.getMsg().trim().length() < 1) {
                         latestMsg = messenger.receiveMessage(server);
+                        logger.info(latestMsg.getMsg());
 
                         if (!server.isRunning()) {
                             breaker = true;
@@ -82,6 +82,7 @@ public class KVClientConnection implements Runnable {
 
                     response = null;
                     serverresponse = null;
+
                     if (KV) {
                         switch (message.getStatus()) {
                             case GET: {
@@ -202,7 +203,7 @@ public class KVClientConnection implements Runnable {
                                 break;
                             }
                             case SERVER_UPDATE_ALL_METADATA: {
-                                logger.debug("updating all metadata \n\n\n\n\n\n\n");
+                                logger.info("updating all metadata \n\n\n\n\n\n\n");
                                 AllServerMetadata asm = new Gson().fromJson(message.getKey(), AllServerMetadata.class);
                                 server.replaceAllServerMetadata(asm);
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
@@ -235,6 +236,7 @@ public class KVClientConnection implements Runnable {
                 }
             }
         } finally {
+            logger.info("tearing down connectionss");
             messenger.closeConnections();
         }
     }

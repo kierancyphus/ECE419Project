@@ -1,9 +1,12 @@
 package com.chickenrunfanclub.app_kvECS;
 
+import com.chickenrunfanclub.client.KVExternalStore;
+import com.chickenrunfanclub.client.KVInternalStore;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag;
 import com.chickenrunfanclub.ecs.IECSNode;
+import com.chickenrunfanclub.shared.messages.IKVMessage;
 import com.chickenrunfanclub.shared.messages.IServerMessage;
 import com.chickenrunfanclub.shared.messages.KVMessage;
 import com.chickenrunfanclub.shared.messages.ServerMessage;
@@ -30,6 +33,7 @@ public class ECSClient implements IECSClient {
     private CountDownLatch connectedSignal;
 
     private static final String SCRIPT_TEXT = "java -jar build/libs/ece419-1.3-SNAPSHOT-all.jar server %s %s %s &";
+    private static final String SCRIPT_GATEWAY_TEXT = "java -jar build/libs/ece419-1.3-SNAPSHOT-all.jar api %s &";
 
     private final int TIMEOUT = 15000;
     private int numServers = 0;
@@ -86,6 +90,9 @@ public class ECSClient implements IECSClient {
         heartbeat = new Heartbeat(allServerMetadata, this);
         Thread t = new Thread(heartbeat);
         t.start();
+
+        // need to start api gateway (always port 50500)
+        startGateway(50500, allServerMetadata);
     }
 
     @Override
@@ -132,12 +139,16 @@ public class ECSClient implements IECSClient {
     @Override
     public boolean shutdown() throws Exception {
         List<ECSNode> idleNodes = allServerMetadata.getAllNodesByStatus(ECSNodeFlag.START);
+        KVInternalStore store = new KVInternalStore(allServerMetadata);
+
         for (ECSNode node : idleNodes) {
             // shutdown each of the servers
-            KVStore client = new KVStore(node.getHost(), node.getPort());
-            IServerMessage response = client.shutDown(node.getHost(), node.getPort());
+            IServerMessage response = store.shutdown(node.getHost(), node.getPort());
             logger.info(response);
         }
+
+        // shutdown api gateway
+        store.shutdown("localhost", allServerMetadata.getGateway().getPort());
 
         allServerMetadata.updateStatus(ECSNodeFlag.START, ECSNodeFlag.SHUT_DOWN);
         removeAllNodes();
@@ -200,6 +211,48 @@ public class ECSClient implements IECSClient {
         return serverToAdd;
     }
 
+    public void startGateway(int port, AllServerMetadata asm) {
+        try {
+            logger.debug("Starting Api Gateway on port: " + port);
+
+            Runtime run = Runtime.getRuntime();
+            String file = createScriptGateway(port);
+            run.exec("chmod u+x " + file);
+            Process proc = run.exec(file);
+            proc.waitFor();
+
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            String s;
+            while ((s = stdInput.readLine()) != null) {
+                System.out.println(s);
+            }
+            KVExternalStore client = new KVExternalStore("./apiGateway.cfg");
+            client.setUsername("dummy");
+            client.setPassword("dum");
+            while (true) {
+                try {
+                    IKVMessage response = client.get("jkgaweffaj");
+                    logger.info("polling gateway");
+                    logger.info(response);
+                    TimeUnit.SECONDS.sleep(1);
+                    if (response.getStatus() != IKVMessage.StatusType.FAILED){
+                        break;
+                    }
+                } catch (Exception e) {
+                    // logger.error(e);
+                    TimeUnit.SECONDS.sleep(1);
+                }
+                finally {
+                    client.disconnect();
+                }
+            }
+            asm.setGateway(new ECSNode("localhost", port));
+
+        } catch (Exception e) {
+            logger.error("Could not start api gateway: " + e);
+        }
+    }
+
     public IECSNode addNode(ECSNode serverToAdd) throws InterruptedException, KeeperException, IOException {
         // sets the first stopped node to IDLE so that it can be started by start
 
@@ -248,7 +301,6 @@ public class ECSClient implements IECSClient {
     }
 
     public String createScript(ECSNode node) throws IOException {
-
         try {
             File configFile = new File("script.sh");
 
@@ -256,29 +308,43 @@ public class ECSClient implements IECSClient {
                 configFile.createNewFile();
             }
 
-            PrintWriter out = new PrintWriter(new FileOutputStream("script.sh",
-                    false));
+            PrintWriter out = new PrintWriter(new FileOutputStream("script.sh", false));
 
             InetAddress ia = InetAddress.getLocalHost();
-            String hostname = ia.getHostName();
-
-            String sPath = configFile.getAbsolutePath();
             String script = String.format(SCRIPT_TEXT, node.getPort(), node.getCacheSize(), node.getCacheStrategy());
             if (!(Objects.equals(node.getHost(), "127.0.0.1") || Objects.equals(node.getHost(), "localhost"))) {
                 script = "ssh -n " + node.getHost() + " nohup " + script;
             }
-            //script = "ssh -n " + node.getHost() + " nohup " + script;
             out.println(script);
-
             out.close();
             return configFile.getAbsolutePath();
         } catch (FileNotFoundException e) {
             logger.debug(e);
             System.out.println("Cannot create ssh script");
         }
-
         return null;
+    }
 
+    public String createScriptGateway(int port) throws IOException {
+        // only can be run on localhost rn
+        try {
+            File configFile = new File("script_gateway.sh");
+
+            if (!configFile.exists()) {
+                configFile.createNewFile();
+            }
+
+            PrintWriter out = new PrintWriter(new FileOutputStream("script_gateway.sh", false));
+
+            String script = String.format(SCRIPT_GATEWAY_TEXT, port);
+            out.println(script);
+            out.close();
+            return configFile.getAbsolutePath();
+        } catch (FileNotFoundException e) {
+            logger.debug(e);
+            System.out.println("Cannot create ssh script");
+        }
+        return null;
     }
 
     @Override
