@@ -77,7 +77,7 @@ public class ECSClient implements IECSClient {
             removeAllNodes();
         } catch (Exception e) {
             logger.info("Was unable to purge zookeeper :(");
-            e.printStackTrace();
+            logger.debug(e);
         }
 
 
@@ -273,7 +273,7 @@ public class ECSClient implements IECSClient {
             out.close();
             return configFile.getAbsolutePath();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            logger.debug(e);
             System.out.println("Cannot create ssh script");
         }
 

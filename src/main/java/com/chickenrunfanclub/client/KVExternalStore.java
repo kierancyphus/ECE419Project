@@ -34,10 +34,10 @@ public class KVExternalStore implements IKVExternalStore {
             return new KVMessage(key, null, IKVMessage.StatusType.NO_CREDENTIALS);
         }
 
-        IKVMessage kvresponse = null;
+        IKVMessage kvresponse = new KVMessage(key, null, IKVMessage.StatusType.GET_ERROR);
         int attempts = 0;
 
-        while (attempts < 3) {
+        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.GET_ERROR) {
             try {
                 ECSNode nodeResponsible = asm.findServerResponsible(key, true);
 
@@ -60,10 +60,10 @@ public class KVExternalStore implements IKVExternalStore {
             return new KVMessage(key, value, IKVMessage.StatusType.NO_CREDENTIALS);
         }
 
-        IKVMessage kvresponse = null;
+        IKVMessage kvresponse = new KVMessage(key, value, IKVMessage.StatusType.PUT_ERROR);
         int attempts = 0;
 
-        while (attempts < 3) {
+        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.PUT_ERROR) {
             try {
                 ECSNode node_responsible = asm.findServerResponsible(key, false);
                 connect(node_responsible.getHost(), node_responsible.getPort());
@@ -83,7 +83,7 @@ public class KVExternalStore implements IKVExternalStore {
     public void connect(String address, int port) throws IOException, UnknownHostException {
         clientSocket = new Socket(address, port);
         messenger = new Messenger(clientSocket);
-        logger.info("Connection established");
+        logger.debug("Connection established");
     }
 
     public void disconnect() {

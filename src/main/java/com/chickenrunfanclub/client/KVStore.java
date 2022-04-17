@@ -77,7 +77,7 @@ public class KVStore implements KVCommInterface {
             }
         } catch (FileNotFoundException e) {
             System.out.println("Configuration file not found");
-            e.printStackTrace();
+//            e.printStackTrace();
             System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
@@ -117,7 +117,7 @@ public class KVStore implements KVCommInterface {
         clientSocket = new Socket(address, port);
         messenger = new Messenger(clientSocket);
         setRunning(true);
-        logger.info("Connection established");
+        logger.debug("Connection established");
     }
 
     @Override
