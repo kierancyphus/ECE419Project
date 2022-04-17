@@ -20,6 +20,9 @@ To start these servers, in ECS UI call ```start```.
 To remove servers, in ECS UI call ```remove idx``` where ```idx``` is the index of the server node.
 
 To stop or shutdown ECS, call ```stop``` and ```shutdown```.
+### Api Gateway
+I decided to get rid of the host since we do everything on localhost anyway.
+`./gradlew run --args="api 50200"`
 ## To build a jar file:
 ```./gradlew shadowJar```
 
