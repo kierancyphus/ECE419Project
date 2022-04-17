@@ -1,8 +1,10 @@
 package com.chickenrunfanclub.apiGateway;
 
+import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.client.KVInternalStore;
 import com.chickenrunfanclub.shared.Messenger;
 import com.chickenrunfanclub.shared.messages.*;
+import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,11 +45,13 @@ public class ApiGatewayClientConnection implements Runnable {
                     boolean breaker = false;
 
                     // sometimes the client sends weird empty messages, so this loop ensures we ignore those
+                    logger.info("About to receive a message");
                     TextMessage latestMsg = null;
                     while (latestMsg == null || latestMsg.getMsg().trim().length() < 1) {
                         latestMsg = messenger.receiveMessage(server);
 
                         if (!server.isRunning()) {
+                            logger.info("server not running like an idiot");
                             breaker = true;
                             break;
                         }
@@ -64,6 +68,9 @@ public class ApiGatewayClientConnection implements Runnable {
                     message = new KVMessage(latestMsg);
                     servermessage = new ServerMessage(latestMsg);
                     KV = message.getStatus() != null;
+
+                    logger.info("Just received a message");
+                    logger.info(servermessage);
 
                     response = null;
                     if (KV) {
@@ -96,7 +103,15 @@ public class ApiGatewayClientConnection implements Runnable {
                                 response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
                         }
                     } else {
-                        if (servermessage.getStatus() == IServerMessage.StatusType.SERVER_HEARTBEAT) {
+                        if (servermessage.getStatus() == IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA) {
+                            logger.info("updating my hecking metadata");
+                            AllServerMetadata asm = new Gson().fromJson(message.getKey(), AllServerMetadata.class);
+                            server.replaceAllServerMetadata(asm);
+                            serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
+                            messenger.sendMessage(new TextMessage(serverresponse));
+                        }
+
+                        else if (servermessage.getStatus() == IServerMessage.StatusType.SERVER_HEARTBEAT) {
                             String hbResponse = server.heartBeat();
                             serverresponse = new ServerMessage(hbResponse, "", IServerMessage.StatusType.SERVER_HEARTBEAT);
                             messenger.sendMessage(new TextMessage(serverresponse));

@@ -30,7 +30,7 @@ public class KVRepo {
     private IKVCache cache;
 
     // Server Metadata
-    private ECSNode serverMetadata;
+    private KVServer server;
     private boolean writeLock = false;
     private boolean repoLocked = true;
 
@@ -48,32 +48,39 @@ public class KVRepo {
         initializeHash();
     }
 
-    public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy, ECSNode ECSNode) {
-        createStore(defaultStorePath);
-        createCache(cacheSize, strategy);
-        this.serverMetadata = ECSNode;
-        initializeHash();
-    }
+//    public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy, ECSNode ECSNode) {
+//        createStore(defaultStorePath);
+//        createCache(cacheSize, strategy);
+//        this.server.getMetadata() = ECSNode;
+//        initializeHash();
+//    }
+//
+//    public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy, String storePath, ECSNode ECSNode) {
+//        createStore(storePath);
+//        createCache(cacheSize, strategy);
+//        this.server.getMetadata() = ECSNode;
+//        initializeHash();
+//    }
 
-    public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy, String storePath, ECSNode ECSNode) {
+    public KVRepo(int cacheSize, IKVServer.CacheStrategy strategy, String storePath, KVServer server) {
         createStore(storePath);
         createCache(cacheSize, strategy);
-        this.serverMetadata = ECSNode;
+        this.server = server;
         initializeHash();
     }
 
     public IKVMessage put(String key, String value) {
-//        if (serverMetadata.notResponsibleFor(key)) {
+//        if (server.getMetadata().notResponsibleFor(key)) {
 //            logger.info("Repo not responsible. Put<" + key + ", " + value + "> failed");
 //            return new KVMessage(key, value, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
 //        }
 
-        if (serverMetadata.serverLocked()) {
-            logger.info("Repo is locked. Put<" + key + ", " + value + "> failed");
-            return new KVMessage(key, value, IKVMessage.StatusType.SERVER_STOPPED);
-        }
+//        if (server.getMetadata().serverLocked()) {
+//            logger.info("Repo is locked. Put<" + key + ", " + value + "> failed");
+//            return new KVMessage(key, value, IKVMessage.StatusType.SERVER_STOPPED);
+//        }
 
-        if (serverMetadata.writeLocked()) {
+        if (server.getMetadata().writeLocked()) {
             logger.info("Repo is write locked. Put<" + key + ", " + value + "> failed");
             return new KVMessage(key, value, IKVMessage.StatusType.SERVER_WRITE_LOCK);
         }
@@ -101,9 +108,9 @@ public class KVRepo {
     }
 
     public IKVMessage get(String key) {
-        if (serverMetadata.serverLocked()) {
-            return new KVMessage(key, null, IKVMessage.StatusType.SERVER_STOPPED);
-        }
+//        if (server.getMetadata().serverLocked()) {
+//            return new KVMessage(key, null, IKVMessage.StatusType.SERVER_STOPPED);
+//        }
 
         if (this.cacheStrategy != IKVServer.CacheStrategy.None) {
             String value = cache.get(key);

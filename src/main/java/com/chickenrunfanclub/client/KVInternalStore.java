@@ -14,7 +14,7 @@ import java.net.UnknownHostException;
 
 public class KVInternalStore implements IKVInternalStore{
     private AllServerMetadata asm;
-    private final static Logger logger = LogManager.getLogger(KVExternalStore.class);
+    private final static Logger logger = LogManager.getLogger(KVInternalStore.class);
     private Socket clientSocket;
     private Messenger messenger;
 
@@ -141,15 +141,18 @@ public class KVInternalStore implements IKVInternalStore{
         IServerMessage response = new ServerMessage(null, null, IServerMessage.StatusType.FAILED);
         try {
             connect(host, port);
-            String metadataString = new Gson().toJson(asm, ECSNode.class);
+            String metadataString = new Gson().toJson(asm, AllServerMetadata.class);
             ServerMessage message = new ServerMessage(metadataString, null, IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
             TextMessage textMessage = new TextMessage(message);
+            logger.info("sending textMessage: " + textMessage.getMsg());
             messenger.sendMessage(textMessage);
             TextMessage text = messenger.receiveMessage();
             response = new ServerMessage(text);
         } catch (Exception e) {
+            logger.info("failed for some reason");
             logger.debug(e);
         } finally {
+            logger.info("disconnecting after something");
             disconnect();
         }
 
@@ -261,9 +264,10 @@ public class KVInternalStore implements IKVInternalStore{
 
 
     public void connect(String address, int port) throws IOException, UnknownHostException {
+        logger.info("attempting to connect to " + address + " " + port);
         clientSocket = new Socket(address, port);
         messenger = new Messenger(clientSocket);
-        logger.debug("Connection established");
+        logger.info("Connection established");
     }
 
     public void disconnect() {

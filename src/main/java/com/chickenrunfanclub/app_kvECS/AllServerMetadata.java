@@ -1,5 +1,6 @@
 package com.chickenrunfanclub.app_kvECS;
 
+import com.chickenrunfanclub.client.KVInternalStore;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.Hasher;
@@ -15,6 +16,8 @@ import static com.chickenrunfanclub.ecs.ECSNode.ECSNodeFlag.STOP;
 
 public class AllServerMetadata {
     private HashMap<String, ECSNode> nodeHashesToServerInfo;
+    // currently only one gateway so we don't have to have a new hashmap
+    private ECSNode gateway;
     private static final Logger logger = LogManager.getLogger(AllServerMetadata.class);
     private List<ECSNode> nodesSortedByHash;
     private final static int chainLength = 2;  // number of additional servers -> this is a chain of three
@@ -175,6 +178,9 @@ public class AllServerMetadata {
 
 
     public void addNodeToHashRing(ECSNode node) {
+        // assume that any node being added to the hash ring has already been started
+        node.setStatus(ECSNode.ECSNodeFlag.START);
+
         String hash = Hasher.hash(node.getHost() + node.getPort());
 
         if (nodeHashesToServerInfo.size() == 0) {
@@ -228,15 +234,18 @@ public class AllServerMetadata {
     public void broadcastMetadata() {
         // only broadcast to servers that are running
         List<ECSNode> runningServers = getAllNodesByStatus(ECSNode.ECSNodeFlag.START);
-
+        KVInternalStore client = new KVInternalStore(this);
         runningServers.forEach(node -> {
-            KVStore kvClient = new KVStore(node.getHost(), node.getPort());
             try {
-                kvClient.updateAllMetadata(this, node.getHost(), node.getPort());
+                client.updateAllMetadata(this, node.getHost(), node.getPort());
             } catch (Exception e) {
                 logger.info(e);
             }
         });
+
+        // also need to broadcast the data to the api gateway
+        client.updateAllMetadata(this, gateway.getHost(), gateway.getPort());
+
     }
 
     public ECSNode findServerAheadInHashRing(ECSNode node, int ahead) {
@@ -256,6 +265,19 @@ public class AllServerMetadata {
         }
         responsibleServers.add(chainHead);
         return responsibleServers;
+    }
 
+    public void setGateway(ECSNode gateway) {
+        this.gateway = gateway;
+    }
+
+    public ECSNode getGateway() {
+        return gateway;
+    }
+
+    public boolean isEmpty() {
+//        logger.info("Gateway is null: " + (gateway == null));
+//        logger.info("no servers started: " + (nodeHashesToServerInfo.size() == 0));
+        return (gateway == null) && (nodeHashesToServerInfo.size() == 0);
     }
 }

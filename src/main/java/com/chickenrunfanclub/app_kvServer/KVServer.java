@@ -38,25 +38,25 @@ public class KVServer extends Thread implements IKVServer, IRunning {
      *                  currently not contained in the cache. Options are "FIFO", "LRU",
      *                  and "LFU".
      */
-    public KVServer(int port, int cacheSize, String strategy) {
-        this.port = port;
-        this.cacheSize = cacheSize;
-        try {
-            this.strategy = CacheStrategy.valueOf(strategy);
-        } catch (IllegalArgumentException e) {
-            logger.error("Error! Unknown cache strategy");
-            return;
-        }
-        metadata = new ECSNode();
-        HashMap<String, ECSNode> serverMetadatas = new HashMap<>();
-        serverMetadatas.put(metadata.getRangeStart(), metadata);
-        allServerMetadata = new AllServerMetadata(serverMetadatas);
-
-        this.repo = new KVRepo(cacheSize, this.strategy, metadata);
-        allServerMetadata = null;
-        threads = new ArrayList<>();
-
-    }
+//    public KVServer(int port, int cacheSize, String strategy) {
+//        this.port = port;
+//        this.cacheSize = cacheSize;
+//        try {
+//            this.strategy = CacheStrategy.valueOf(strategy);
+//        } catch (IllegalArgumentException e) {
+//            logger.error("Error! Unknown cache strategy");
+//            return;
+//        }
+//        metadata = new ECSNode();
+//        HashMap<String, ECSNode> serverMetadatas = new HashMap<>();
+//        serverMetadatas.put(metadata.getRangeStart(), metadata);
+//        allServerMetadata = new AllServerMetadata(serverMetadatas);
+//
+//        this.repo = new KVRepo(cacheSize, this.strategy, metadata);
+//        allServerMetadata = null;
+//        threads = new ArrayList<>();
+//
+//    }
 
     public KVServer(int port, int cacheSize, String strategy, String storePath) {
         this.port = port;
@@ -73,7 +73,7 @@ public class KVServer extends Thread implements IKVServer, IRunning {
         allServerMetadata = new AllServerMetadata(serverMetadatas);
 
 
-        repo = new KVRepo(cacheSize, this.strategy, storePath + "/" + port, metadata);
+        repo = new KVRepo(cacheSize, this.strategy, storePath + "/" + port, this);
         threads = new ArrayList<>();
     }
 
@@ -225,7 +225,11 @@ public class KVServer extends Thread implements IKVServer, IRunning {
         allServerMetadata = replacer;
 
         // need to update individual metadata too (this is the head)
-        metadata.updateMetadata(allServerMetadata.findServerResponsible(getHostname() + getPort(), false));
+        if (replacer.isEmpty()){
+            metadata.updateMetadata(new ECSNode(getHostname(), getPort()));
+        } else {
+            metadata.updateMetadata(allServerMetadata.findServerResponsible(getHostname() + getPort(), false));
+        }
     }
 
     public String heartBeat() {

@@ -136,6 +136,7 @@ public class ECSNode implements IECSNode, java.io.Serializable {
     }
 
     public void updateMetadata(ECSNode node) {
+        System.out.println(node);
         this.host = node.getHost();
         this.port = node.getPort();
         this.rangeStart = node.getRangeStart();

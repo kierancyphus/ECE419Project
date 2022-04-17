@@ -50,7 +50,6 @@ public class KVClient {
 
         if (tokens[0].equals("quit")) {
             stop = true;
-            disconnect();
             System.out.println(PROMPT + "Application exit!");
 
         } else if (tokens[0].equals("put")) {
@@ -121,6 +120,7 @@ public class KVClient {
     private void handlePut(String key, String value) {
         try {
             IKVMessage putMessage = store.put(key, value, 0);
+            logger.info(putMessage);
             logger.info("Put has completed.");
             IKVMessage.StatusType status = putMessage.getStatus();
             if (status == IKVMessage.StatusType.PUT_SUCCESS) {
@@ -133,11 +133,9 @@ public class KVClient {
                 printError("Need to login before making requests!");
             } else {
                 printError("Unable to execute command!");
-                disconnect();
             }
         } catch (Exception e) {
             printError("Unable to execute command!");
-            disconnect();
         }
     }
 
@@ -153,11 +151,9 @@ public class KVClient {
                 printError("Need to login before making requests!");
             } else {
                 printError("Unable to execute command!");
-                disconnect();
             }
         } catch (Exception e) {
             printError("Unable to execute command!");
-            disconnect();
         }
     }
 
@@ -185,13 +181,6 @@ public class KVClient {
             }
         } catch (Exception e) {
             printError("Unable to execute command!");
-        }
-    }
-
-    private void disconnect() {
-        if (store != null) {
-            store.disconnect();
-            store = null;
         }
     }
 

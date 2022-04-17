@@ -35,7 +35,6 @@ public class ApiGateway extends Thread implements IApiGateway, IRunning {
             while (isRunning()) {
                 try {
                     Socket client = serverSocket.accept();
-                    // TODO: REPLACE
                     ApiGatewayClientConnection connection = new ApiGatewayClientConnection(client, this);
                     threads.add(connection);
                     new Thread(connection).start();
@@ -73,6 +72,7 @@ public class ApiGateway extends Thread implements IApiGateway, IRunning {
     public void replaceAllServerMetadata(AllServerMetadata replacer) {
         // TODO: Since we are passing this to the client connections, we really need to create an update method
         // TODO: on allServerMetadata so they actually get the updated ones
+        replacer.print();
         allServerMetadata = replacer;
     }
 
@@ -85,10 +85,10 @@ public class ApiGateway extends Thread implements IApiGateway, IRunning {
     }
 
     private boolean initializeServer() {
-        logger.debug("Initialize Api Gateway ...");
+        logger.info("Initialize Api Gateway ...");
         try {
             serverSocket = new ServerSocket(port);
-            logger.debug("Api Gateway listening on port: "
+            logger.info("Api Gateway listening on port: "
                     + serverSocket.getLocalPort());
             return true;
 

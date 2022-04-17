@@ -1,7 +1,9 @@
 package com.chickenrunfanclub.unitTests;
 
 import com.chickenrunfanclub.TestUtils;
+import com.chickenrunfanclub.apiGateway.ApiGateway;
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
+import com.chickenrunfanclub.app_kvServer.KVServer;
 import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.IKVMessage;
@@ -11,9 +13,9 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AllServerMetadataTest {
 
@@ -121,6 +123,41 @@ public class AllServerMetadataTest {
         assertTrue(getChain.contains(nodes.get(4)));
         assertTrue(getChain.contains(nodes.get(6)));
         assertTrue(getChain.contains(nodes.get(7)));
+    }
+
+    @Test
+    public void broadcastMetadata() {
+        int gatewayPort = 50050;
+
+        // initialize a bunch of storage servers
+        List<Integer> ports = Arrays.asList(50051, 50052);
+        List<KVServer> servers = ports
+                .stream()
+                .map(p -> new KVServer(p, 10, "FIFO", "./testStore/KVServer/" + p))
+                .collect(Collectors.toList());
+        servers.forEach(KVServer::clearStorage);
+        AllServerMetadata asm = new AllServerMetadata();
+        ports.forEach(port -> asm.addNodeToHashRing(new ECSNode("localhost", port, null, null, false, false)));
+
+        // initialize api gateway
+        ApiGateway gateway = new ApiGateway(gatewayPort);
+        ECSNode gatewayNode = new ECSNode("localhost", gatewayPort);
+        asm.setGateway(gatewayNode);
+
+        // set everything to have empty metadata initially and start
+        servers.forEach(s -> s.replaceAllServerMetadata(new AllServerMetadata()));
+        servers.forEach(KVServer::start);
+        gateway.replaceAllServerMetadata(new AllServerMetadata());
+        gateway.start();
+
+        utils.stall(2);
+
+        // broadcast metadata and check to make sure not empty on servers and gateway
+        asm.broadcastMetadata();
+
+        assertFalse(gateway.getAllServerMetadata().isEmpty());
+        assertFalse(servers.get(0).getAllMetadata().isEmpty());
+        assertFalse(servers.get(1).getAllMetadata().isEmpty());
     }
 
     @Disabled
