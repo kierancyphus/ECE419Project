@@ -1,11 +1,10 @@
 package com.chickenrunfanclub.app_kvServer;
 
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
-import com.chickenrunfanclub.client.KVStore;
+import com.chickenrunfanclub.client.KVInternalStore;
 import com.chickenrunfanclub.ecs.ECSNode;
 import com.chickenrunfanclub.shared.messages.*;
 import com.google.gson.Gson;
-import com.google.gson.JsonParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.chickenrunfanclub.shared.Messenger;
@@ -61,7 +60,6 @@ public class KVClientConnection implements Runnable {
                     // sometimes the client sends weird empty messages, so this loop ensures we ignore those
                     TextMessage latestMsg = null;
                     while (latestMsg == null || latestMsg.getMsg().trim().length() < 1) {
-                        logger.info("I am stuck here");
                         latestMsg = messenger.receiveMessage(server);
 
                         if (!server.isRunning()) {
@@ -99,7 +97,7 @@ public class KVClientConnection implements Runnable {
                             case PUT: {
                                 // the first message was sent to the wrong head in the chain
                                 if (server.getMetadata().notResponsibleFor(message.getKey()) && message.getIndex() == 0) {
-                                    logger.info("Not responsible for first message");
+                                    logger.debug("Not responsible for first message");
                                     String allServerMetadata = new Gson().toJson(server.getAllMetadata(), AllServerMetadata.class) ;
                                     response = new KVMessage(allServerMetadata, null, IKVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
                                 }
@@ -107,30 +105,34 @@ public class KVClientConnection implements Runnable {
                                 else if (message.getIndex() >= 0 && message.getIndex() < 2) {
                                     // find next server in hash ring
                                     ECSNode nextServer = server.getAllMetadata().findServerAheadInHashRing(server.getMetadata(), 1);
-                                    logger.info("Passing message along to " + nextServer + " from " + server.getMetadata());
+                                    logger.debug("Passing message along to " + nextServer + " from " + server.getMetadata());
 
 
                                     // edge case here -> if we have a ring size of 1 this will be a deadlock because we are
                                     // trying to talk to ourselves. However, since this is also now the tail, we do nothing.
+                                    logger.info("Next server is ourselves: " + nextServer.equals(server.getMetadata()));
+
                                     if (!nextServer.equals(server.getMetadata())) {
                                         // pass message along and increment index
-                                        KVStore kvClient = new KVStore(nextServer.getHost(), nextServer.getPort(), server.getAllMetadata());
-                                        response = kvClient.put(message.getKey(), message.getValue(), nextServer.getHost(), nextServer.getPort(), message.getIndex() + 1);
+                                        KVInternalStore client = new KVInternalStore(server.getAllMetadata());
+                                        response = client.forwardPut(message.getKey(), message.getValue(), message.getIndex() + 1, nextServer.getHost(), nextServer.getPort());
 
                                         // persist to memory
                                         if (response.getStatus() != IKVMessage.StatusType.PUT_ERROR) {
-                                            logger.info(server.getMetadata() + " persisting");
+                                            logger.debug(server.getMetadata() + " persisting");
                                             repo.put(message.getKey(), message.getValue());
                                         }
                                     } else {
-                                        // ring size of 1 (just retur
+                                        // ring size of 1 (just return persistence response)
                                         response = repo.put(message.getKey(), message.getValue());
+                                        logger.info("ring size of 1");
+                                        logger.info(response);
                                     }
 
                                 }
                                 // reached the end of the chain, so just persist to disk
                                 else {
-                                    logger.info("Reached tail. Persisting.");
+                                    logger.debug("Reached tail. Persisting.");
                                     response = repo.put(message.getKey(), message.getValue());
                                 }
                                 break;
@@ -145,30 +147,30 @@ public class KVClientConnection implements Runnable {
                                 response = new KVMessage(message.getKey(), null, IKVMessage.StatusType.FAILED);
                         }
                     } else {
-                        logger.info("definitely a server message");
+                        logger.debug("definitely a server message");
 
                         switch (servermessage.getStatus()) {
                             case SERVER_START: {
-                                logger.info("start");
+                                logger.debug("start");
                                 server.updateServerStopped(false);
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_START);
                                 break;
                             }
                             case SERVER_STOP: {
-                                logger.info("stop");
+                                logger.debug("stop");
                                 server.updateServerStopped(false);
                                 response = new KVMessage("", "", IKVMessage.StatusType.SERVER_STOPPED);
                                 break;
                             }
                             case SERVER_SHUTDOWN: {
 
-                                logger.info("shutdown");
+                                logger.debug("shutdown");
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_SHUTDOWN);
                                 break;
                             }
                             case SERVER_LOCK_WRITE: {
 
-                                logger.info("lockwrite");
+                                logger.debug("lockwrite");
                                 server.lockWrite();
                                 // TODO: convert these into success and failure message (although idk how it could fail)
                                 response = new KVMessage("", "", IKVMessage.StatusType.SERVER_WRITE_LOCK);
@@ -176,14 +178,14 @@ public class KVClientConnection implements Runnable {
                             }
                             case SERVER_UNLOCK_WRITE: {
 
-                                logger.info("unlock");
+                                logger.debug("unlock");
                                 server.unLockWrite();
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_WRITE_UNLOCKED);
                                 break;
                             }
                             case SERVER_MOVE_DATA: {
 
-                                logger.info("move");
+                                logger.debug("move");
                                 // I'm storing the json of the metadata in the key field of the KVMessage lmao
                                 ECSNode metadata = new Gson().fromJson(message.getKey(), ECSNode.class);
                                 server.moveData(metadata);
@@ -192,7 +194,7 @@ public class KVClientConnection implements Runnable {
                             }
                             case SERVER_UPDATE_METADATA: {
 
-                                logger.info("single metadata");
+                                logger.debug("single metadata");
                                 // metadata also stored in the key
                                 ECSNode metadata = new Gson().fromJson(message.getKey(), ECSNode.class);
                                 server.updateMetadata(metadata);
@@ -200,7 +202,7 @@ public class KVClientConnection implements Runnable {
                                 break;
                             }
                             case SERVER_UPDATE_ALL_METADATA: {
-                                logger.info("updating all metadata \n\n\n\n\n\n\n");
+                                logger.debug("updating all metadata \n\n\n\n\n\n\n");
                                 AllServerMetadata asm = new Gson().fromJson(message.getKey(), AllServerMetadata.class);
                                 server.replaceAllServerMetadata(asm);
                                 serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);
@@ -212,7 +214,7 @@ public class KVClientConnection implements Runnable {
                                 break;
                             }
                             default:
-                                logger.info("I am dumb");
+                                logger.debug("I am dumb");
                                 serverresponse = new ServerMessage(message.getKey(), null, IServerMessage.StatusType.FAILED);
                         }
                     }
@@ -228,24 +230,12 @@ public class KVClientConnection implements Runnable {
                     /* connection either terminated by the client or lost due to
                      * network problems*/
                 } catch (IOException ioe) {
-                    logger.info("Error! Connection lost or client closed connection!", ioe);
+                    logger.debug("Error! Connection lost or client closed connection!", ioe);
                     isOpen = false;
                 }
             }
         } finally {
-            logger.info("I am about to die :)");
             messenger.closeConnections();
         }
-    }
-
-    public void ziSha() {
-        logger.info("About to kill myself");
-        // kills current thread
-        String me = null;
-        me.length();
-    }
-
-    public boolean getIsOpen() {
-        return isOpen;
     }
 }
