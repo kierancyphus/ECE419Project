@@ -98,6 +98,20 @@ public class TextMessage implements Serializable {
 
 
     /**
+     * Constructs a TextMessage object with a given IAPIMessage that
+     * forms the message.
+     *
+     * @param msg the String that forms the message.
+     */
+    public TextMessage(IAPIMessage msg) {
+        if (msg == null) {
+            logger.info("Received null message");
+        }
+        this.msg = msg.toString();
+        this.msgBytes = toByteArray(msg.toString());
+    }
+
+    /**
      * Returns the content of this TextMessage as a String.
      *
      * @return the content of this message in String format.

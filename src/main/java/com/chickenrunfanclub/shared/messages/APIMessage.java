@@ -1,6 +1,5 @@
 package com.chickenrunfanclub.shared.messages;
 
-import com.chickenrunfanclub.app_kvAPI.IAPIClient;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -8,6 +7,8 @@ import org.apache.logging.log4j.Logger;
 public class APIMessage implements IAPIMessage {
     private String key;
     private String value;
+    private String username;
+    private String password;
     private IAPIMessage.StatusType status;
     private final static Logger logger = LogManager.getLogger(com.chickenrunfanclub.shared.messages.APIMessage.class);
 
@@ -22,6 +23,16 @@ public class APIMessage implements IAPIMessage {
         this.key = message.getKey();
         this.value = message.getValue();
         this.status = message.getStatus();
+        this.username = message.getUsername();
+        this.password = message.getPassword();
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     @Override

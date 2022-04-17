@@ -7,8 +7,8 @@ public interface IKVAPIGateway {
 
     public void close();
 
-    public String getKV(String key) throws Exception;
+    public String get(String key) throws Exception;
 
-    public void putKV(String key, String value) throws Exception;
+    public void put(String key, String value) throws Exception;
 
 }
