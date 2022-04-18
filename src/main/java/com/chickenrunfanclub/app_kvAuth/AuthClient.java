@@ -1,6 +1,5 @@
 package com.chickenrunfanclub.app_kvAuth;
 
-import com.chickenrunfanclub.client.KVStore;
 import com.chickenrunfanclub.shared.Messenger;
 import com.chickenrunfanclub.shared.messages.*;
 import org.apache.logging.log4j.LogManager;
@@ -19,18 +18,9 @@ public class AuthClient implements IAuthClient{
     private boolean running;
     private Socket clientSocket;
 
-    /**
-     * Initialize KVStore with address and port of KVServer
-     *
-     * @param address the address of the KVServer
-     * @param port    the port of the KVServer
-     */
-    public AuthClient(String address, int port) {
-        try{
-            connect(address, port);
-        } catch (Exception e) {
-            logger.error(e);
-        }
+    public AuthClient() {
+        String address = "localhost";
+        int port = 50600;
     }
 
     public boolean isRunning() {
@@ -59,10 +49,12 @@ public class AuthClient implements IAuthClient{
     }
 
     public IAuthMessage sendAndReceiveMessage(String key, String value, IAuthMessage.StatusType status) throws Exception {
+        connect("localhost", 50600);
         AuthMessage message = new AuthMessage(key, value, status);
         TextMessage textMessage = new TextMessage(message);
         messenger.sendMessage(textMessage);
         TextMessage response = messenger.receiveMessage();
+        disconnect();
         return new AuthMessage(response);
     }
 
@@ -80,5 +72,19 @@ public class AuthClient implements IAuthClient{
     @Override
     public IAuthMessage delete(String username) throws Exception {
         return sendAndReceiveMessage(username, null, IAuthMessage.StatusType.DELETE);
+    }
+
+    public boolean isAuthenticated(String username, String password) {
+        try {
+            logger.info("I am here");
+            IAuthMessage response = authenticate(username, password);
+            logger.info(response);
+            return response.getStatus() == IAuthMessage.StatusType.AUTH_SUCCESS;
+        } catch (Exception e) {
+            logger.debug(e);
+            return false;
+        }
+
+
     }
 }

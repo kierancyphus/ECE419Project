@@ -176,10 +176,10 @@ public class KVInternalStore implements IKVInternalStore{
 
     @Override
     public IKVMessage get(String key) {
-        IKVMessage kvresponse = new KVMessage(key, null, IKVMessage.StatusType.GET_ERROR);
+        IKVMessage kvresponse = new KVMessage(key, null, IKVMessage.StatusType.FAILED);
         int attempts = 0;
 
-        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.GET_ERROR) {
+        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.FAILED) {
             try {
                 ECSNode nodeResponsible = asm.findServerResponsible(key, true);
                 connect(nodeResponsible.getHost(), nodeResponsible.getPort());
@@ -198,10 +198,10 @@ public class KVInternalStore implements IKVInternalStore{
 
     @Override
     public IKVMessage moveDataPut(String key, String value, String host, int port) {
-        IKVMessage kvresponse = new KVMessage(key, null, IKVMessage.StatusType.PUT_ERROR);
+        IKVMessage kvresponse = new KVMessage(key, null, IKVMessage.StatusType.FAILED);
         int attempts = 0;
 
-        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.PUT_ERROR) {
+        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.FAILED) {
             try {
                 connect(host, port);
                 kvresponse = sendAndReceiveMessage(key, value, IKVMessage.StatusType.MOVE_DATA_PUT, 0);
@@ -219,10 +219,10 @@ public class KVInternalStore implements IKVInternalStore{
 
     @Override
     public IKVMessage forwardPut(String key, String value, int index, String host, int port) {
-        IKVMessage kvresponse = new KVMessage(key, null, IKVMessage.StatusType.PUT_ERROR);
+        IKVMessage kvresponse = new KVMessage(key, null, IKVMessage.StatusType.FAILED);
         int attempts = 0;
 
-        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.PUT_ERROR) {
+        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.FAILED) {
             try {
                 connect(host, port);
                 kvresponse = sendAndReceiveMessage(key, value, IKVMessage.StatusType.PUT, index);
@@ -240,10 +240,10 @@ public class KVInternalStore implements IKVInternalStore{
 
     @Override
     public IKVMessage put(String key, String value, int index) {
-        IKVMessage kvresponse = new KVMessage(key, null, IKVMessage.StatusType.PUT_ERROR);
+        IKVMessage kvresponse = new KVMessage(key, null, IKVMessage.StatusType.FAILED);
         int attempts = 0;
 
-        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.PUT_ERROR) {
+        while (attempts < 3 && kvresponse.getStatus() == IKVMessage.StatusType.FAILED) {
             try {
                 ECSNode node_responsible = asm.findServerResponsible(key, false);
                 connect(node_responsible.getHost(), node_responsible.getPort());

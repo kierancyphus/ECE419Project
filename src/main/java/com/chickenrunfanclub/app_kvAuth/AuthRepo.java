@@ -14,8 +14,7 @@ public class AuthRepo {
     // Essentials
     private String storePath;
     private static Logger logger = LogManager.getLogger(AuthRepo.class);
-    private Set<String> keys;
-    private String defaultStorePath = ".../auth";
+    private String defaultStorePath = "./auth";
     private ConcurrentHashMap<String, AuthFileAccessor> filesInUse;
 
     public AuthRepo() {

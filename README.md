@@ -2,6 +2,38 @@
 This project uses gradle, but if it's not installed on the machine can always use the `./gradlew` build script.
 
 ## Running
+Complete flow
+`./gradlew clean shadowJar`
+
+In one window
+`./gradlew run --args="ecs servers.cfg LFU 1000 50100"`
+
+In another window
+`./gradlew run --args="ecsUI" --console=plain`
+
+when the console comes up enter
+
+`connect localhost 50100`
+
+`add 3`
+
+`start`
+
+In a third window run
+`./gradlew run --args="client apiGateway.cfg" --console=plain`
+
+within the window you need to login with
+
+`login test eubhadfbhjfd`
+
+and then 
+
+`put key value`
+
+`get key`
+
+where username is the name of a file you added under the auth folder and password is the content in it
+
 ### Server
 `./gradlew run --args="server 50000 1000 LRU"`
 ### Client

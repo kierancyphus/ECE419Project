@@ -94,6 +94,9 @@ public class ECSClient implements IECSClient {
 
         // need to start api gateway (always port 50500)
         startGateway(50500, allServerMetadata);
+
+        // start auth
+        startAuth(50600);
     }
 
     @Override
@@ -372,7 +375,7 @@ public class ECSClient implements IECSClient {
                 configFile.createNewFile();
             }
 
-            PrintWriter out = new PrintWriter(new FileOutputStream("script_gauth.sh", false));
+            PrintWriter out = new PrintWriter(new FileOutputStream("script_auth.sh", false));
 
             String script = String.format(SCRIPT_AUTH_TEXT, port);
             out.println(script);

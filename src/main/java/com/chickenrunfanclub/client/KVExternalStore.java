@@ -68,7 +68,7 @@ public class KVExternalStore implements IKVExternalStore {
                 ECSNode node_responsible = asm.findServerResponsible(key, false);
                 logger.info("Connecting to " + node_responsible.getHost() + "@" + node_responsible.getPort());
                 connect(node_responsible.getHost(), node_responsible.getPort());
-
+                logger.info(username + password);
                 kvresponse = sendAndReceiveMessage(key, value, IKVMessage.StatusType.PUT, index, username, password);
                 disconnect();
 

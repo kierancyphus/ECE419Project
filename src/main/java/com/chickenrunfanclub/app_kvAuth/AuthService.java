@@ -1,6 +1,5 @@
 package com.chickenrunfanclub.app_kvAuth;
 
-import com.chickenrunfanclub.app_kvECS.ECSClientConnection;
 import com.chickenrunfanclub.shared.messages.AuthMessage;
 import com.chickenrunfanclub.shared.messages.IAuthMessage;
 import org.apache.logging.log4j.LogManager;
@@ -10,13 +9,6 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
-
-import java.io.*;
-import java.net.*;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class AuthService {
     private AuthRepo store;

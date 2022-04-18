@@ -76,9 +76,7 @@ public class ApiGatewayClientConnection implements Runnable {
                     if (KV) {
                         switch (message.getStatus()) {
                             case GET: {
-                                // TODO: make call to auth service
-                                // boolean authenticated = server.getAuthClient().isAuthenticated(message.getUsername(), message.getPassword());
-                                boolean authenticated = true;
+                                boolean authenticated = server.getAuthClient().isAuthenticated(message.getUsername(), message.getPassword());
                                 if (authenticated) {
                                     response = store.get(message.getKey());
                                 } else {
@@ -87,15 +85,12 @@ public class ApiGatewayClientConnection implements Runnable {
                                 break;
                             }
                             case PUT: {
-                                // TODO: make call to auth service
-                                // boolean authenticated = server.getAuthClient().isAuthenticated(message.getUsername(), message.getPassword());
-                                boolean authenticated = true;
+                                boolean authenticated = server.getAuthClient().isAuthenticated(message.getUsername(), message.getPassword());
                                 if (authenticated) {
                                     response = store.put(message.getKey(), message.getValue(), 0);
                                 } else {
                                     response = new KVMessage(message.getKey(), message.getValue(), IKVMessage.StatusType.INVALID_CREDENTIALS);
                                 }
-                                // auth and then call
                                 break;
                             }
 
@@ -104,7 +99,6 @@ public class ApiGatewayClientConnection implements Runnable {
                         }
                     } else {
                         if (servermessage.getStatus() == IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA) {
-                            logger.info("updating my hecking metadata");
                             AllServerMetadata asm = new Gson().fromJson(message.getKey(), AllServerMetadata.class);
                             server.replaceAllServerMetadata(asm);
                             serverresponse = new ServerMessage("", "", IServerMessage.StatusType.SERVER_UPDATE_ALL_METADATA);

@@ -1,5 +1,6 @@
 package com.chickenrunfanclub.apiGateway;
 
+import com.chickenrunfanclub.app_kvAuth.AuthClient;
 import com.chickenrunfanclub.app_kvECS.AllServerMetadata;
 import com.chickenrunfanclub.shared.IRunning;
 import org.apache.logging.log4j.LogManager;
@@ -19,11 +20,13 @@ public class ApiGateway extends Thread implements IApiGateway, IRunning {
     private static final Logger logger = LogManager.getLogger(ApiGateway.class);
     private ServerSocket serverSocket;
     private boolean running;
+    private AuthClient authClient;
 
     public ApiGateway(int port) {
         this.port = port;
         allServerMetadata = new AllServerMetadata();
         threads = new ArrayList<>();
+        authClient = new AuthClient();
     }
 
     @Override
@@ -99,5 +102,9 @@ public class ApiGateway extends Thread implements IApiGateway, IRunning {
             }
             return false;
         }
+    }
+
+    public AuthClient getAuthClient() {
+        return authClient;
     }
 }
