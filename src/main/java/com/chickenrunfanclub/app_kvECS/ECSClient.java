@@ -34,6 +34,7 @@ public class ECSClient implements IECSClient {
 
     private static final String SCRIPT_TEXT = "java -jar build/libs/ece419-1.3-SNAPSHOT-all.jar server %s %s %s &";
     private static final String SCRIPT_GATEWAY_TEXT = "java -jar build/libs/ece419-1.3-SNAPSHOT-all.jar api %s &";
+    private static final String SCRIPT_AUTH_TEXT = "java -jar build/libs/ece419-1.3-SNAPSHOT-all.jar auth %s &";
 
     private final int TIMEOUT = 15000;
     private int numServers = 0;
@@ -253,6 +254,21 @@ public class ECSClient implements IECSClient {
         }
     }
 
+    public void startAuth(int port) {
+        try {
+            logger.debug("Starting Auth on port: " + port);
+
+            Runtime run = Runtime.getRuntime();
+            String file = createScriptAuth(port);
+            run.exec("chmod u+x " + file);
+            Process proc = run.exec(file);
+            proc.waitFor();
+
+        } catch (Exception e) {
+            logger.error("Could not start auth: " + e);
+        }
+    }
+
     public IECSNode addNode(ECSNode serverToAdd) throws InterruptedException, KeeperException, IOException {
         // sets the first stopped node to IDLE so that it can be started by start
 
@@ -346,6 +362,29 @@ public class ECSClient implements IECSClient {
         }
         return null;
     }
+
+    public String createScriptAuth(int port) throws IOException {
+        // only can be run on localhost rn
+        try {
+            File configFile = new File("script_auth.sh");
+
+            if (!configFile.exists()) {
+                configFile.createNewFile();
+            }
+
+            PrintWriter out = new PrintWriter(new FileOutputStream("script_gauth.sh", false));
+
+            String script = String.format(SCRIPT_AUTH_TEXT, port);
+            out.println(script);
+            out.close();
+            return configFile.getAbsolutePath();
+        } catch (FileNotFoundException e) {
+            logger.debug(e);
+            System.out.println("Cannot create ssh script");
+        }
+        return null;
+    }
+
 
     @Override
     public List<IECSNode> addNodes(int count) throws Exception {
