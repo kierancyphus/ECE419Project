@@ -1,5 +1,8 @@
 package com.chickenrunfanclub.runner;
 
+import com.chickenrunfanclub.app_kvAPI.KVAPIGateway;
+import com.chickenrunfanclub.app_kvAuth.AuthClient;
+import com.chickenrunfanclub.app_kvAuth.AuthService;
 import com.chickenrunfanclub.apiGateway.ApiGateway;
 import com.chickenrunfanclub.app_kvClient.KVClient;
 import com.chickenrunfanclub.app_kvECS.ECSClient;
@@ -60,6 +63,50 @@ public class Entrypoint {
             e.printStackTrace();
         } catch (KeeperException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void runAuthService(String[] args) {
+        try {
+            new LogSetup("logs/auth.log", Level.ALL);
+            if (args.length != 1) {
+                System.out.println("Error! Invalid number of arguments!");
+                System.out.println("Usage: auth <port>!");
+            } else {
+                int port = Integer.parseInt(args[0]);
+                AuthService auth = new AuthService(port);
+                auth.run();
+            }
+        } catch (IOException e) {
+            System.out.println("Error! Unable to initialize logger!");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (NumberFormatException nfe) {
+            System.out.println("Error! Cache Size must be an integer");
+            System.exit(1);
+        }
+    }
+
+    public static void runAPIGateway(String[] args) {
+        try {
+            new LogSetup("logs/api.log", Level.ALL);
+            if (args.length != 3) {
+                System.out.println("Error! Invalid number of arguments!");
+                System.out.println("Usage: api <port> <auth_address> <auth_port!");
+            } else {
+                int port = Integer.parseInt(args[0]);
+                String auth_address = args[1];
+                int auth_port = Integer.parseInt(args[2]);
+                KVAPIGateway API = new KVAPIGateway(port, auth_address, auth_port);
+                API.run();
+            }
+        } catch (IOException e) {
+            System.out.println("Error! Unable to initialize logger!");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (NumberFormatException nfe) {
+            System.out.println("Error! Cache Size must be an integer");
+            System.exit(1);
         }
     }
 
@@ -170,6 +217,8 @@ public class Entrypoint {
             runECSUI(Arrays.copyOfRange(args, 1, args.length));
         } else if (Objects.equals(args[0], "perftest")) {
             runPerformanceTest(Arrays.copyOfRange(args, 1, args.length));
+        } else if (Objects.equals(args[0], "auth")) {
+            runAuthService(Arrays.copyOfRange(args, 1, args.length));
         } else if (Objects.equals(args[0], "api")) {
             runApiGateway(Arrays.copyOfRange(args, 1, args.length));
         } else {
